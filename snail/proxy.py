@@ -16,9 +16,10 @@ def _free_port():
 
 
 class Proxy():
-    def __init__(self, quiet=True, port=None):
+    def __init__(self, quiet=True, port=None, upstream_proxy=None):
         self._quiet = quiet
         self._port = port if port else _free_port()
+        self._upstream = upstream_proxy
         self._process = None
     
     def url(self):
@@ -28,6 +29,8 @@ class Proxy():
         args = ['--listen-port', str(self._port)]
         if self._quiet:
             args.append('-q')
+        if self._upstream:
+            args.extend(['--mode', f'upstream:{self._upstream}'])
         self._process = Process(target=main.mitmdump, args=(args,), daemon=True)
         self._process.start()
         if wait_for_ready:
