@@ -50,7 +50,7 @@ def main():
     p.start()
     logger.info('proxy ready on %s', p.url())
     try:
-        _main(client.Client(proxy='http://127.0.0.1:8080')) #p.url()))
+        _main(client.Client(proxy=p.url()))
     finally:
         p.stop()
 
