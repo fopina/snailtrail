@@ -25,17 +25,18 @@ class Client(requests.Session):
     def request(self, method, url, *args, **kwargs):
         return super().request(method, self.URL, *args, **kwargs)
 
-    def get_all_snails(self, offset=0, filters={}):
+    def get_all_snails_marketplace(self, offset=0, filters={}):
         r = self.post(
             '',
             json={
                 "operationName": "getAllSnail",
                 "variables": {
-                    "filters": filters
+                    "filters": filters,
+                    "offset": offset,
                 },
                 "query": """
-                    query getAllSnail($filters: SnailFilters) {
-                        marketplace_promise(limit: 20, offset: """ + str(offset) + """, order: 1, filters: $filters) {
+                    query getAllSnail($filters: SnailFilters, $offset: Int) {
+                        marketplace_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
                             ... on Snails {
                             snails {
                                 id
@@ -76,13 +77,56 @@ class Client(requests.Session):
         r.raise_for_status()
         return r.json()['data']
 
+    def iterate_all_snails_marketplace(self, filters={}):
+        c = 0
+        while True:
+            snails = self.get_all_snails_marketplace(offset=c, filters=filters)
+            if not snails['marketplace_promise']['snails']:
+                break
+            yield from snails['marketplace_promise']['snails']
+            c += 20
+
+    def get_all_snails(self, offset=0, filters={}):
+        r = self.post(
+            '',
+            json={
+                "operationName": "getAllSnail",
+                "variables": {
+                    "filters": filters,
+                    "offset": offset,
+                },
+                "query": """
+                    query getAllSnail($filters: SnailFilters, $offset: Int) {
+                        snails_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
+                            ... on Snails {
+                            snails {
+                                id
+                                adaptations
+                                name
+                                gender {
+                                id
+                                }
+                                stats {
+                                    experience {level, remaining}
+                                }
+                            }
+                            count
+                            }
+                        }
+                        }
+                """
+            }
+        )
+        r.raise_for_status()
+        return r.json()['data']
+
     def iterate_all_snails(self, filters={}):
         c = 0
         while True:
             snails = self.get_all_snails(offset=c, filters=filters)
-            if not snails['marketplace_promise']['snails']:
+            if not snails['snails_promise']['snails']:
                 break
-            yield from snails['marketplace_promise']['snails']
+            yield from snails['snails_promise']['snails']
             c += 20
 
     def get_mission_races(self, offset=0, filters={}):
