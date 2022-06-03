@@ -141,3 +141,54 @@ class Client(requests.Session):
             yield from snails['mission_races_promise']['all']
             yield snails['mission_races_promise']['own']
             c += 20
+
+    def get_my_snails_for_missions(self, owner, offset=0, ):
+        r = self.post(
+            '',
+            json={
+                "operationName": "getMySnailsForMissions",
+                "variables": {
+                    "owner": owner,
+                    "limit": 20,
+                    "offset": offset,
+                },
+                "query": """
+                    query getMySnailsForMissions($limit: Int, $offset: Int, $owner: String!) {
+                        my_snails_mission_promise(limit: $limit, offset: $offset, owner: $owner) {
+                            ... on Problem {
+                            problem
+                            __typename
+                            }
+                            ... on Snails {
+                            snails {
+                                id
+                                adaptations
+                                image_headshot
+                                name
+                                queueable_at
+                                stats {
+                                mission_tickets
+                                __typename
+                                }
+                                __typename
+                            }
+                            count
+                            __typename
+                            }
+                            __typename
+                        }
+                        }
+                """
+            }
+        )
+        r.raise_for_status()
+        return r.json()['data']
+
+    def iterate_my_snails_for_missions(self, owner):
+        c = 0
+        while True:
+            snails = self.get_my_snails_for_missions(owner, offset=c)
+            if not snails['my_snails_mission_promise']['snails']:
+                break
+            yield from snails['my_snails_mission_promise']['snails']
+            c += 20
