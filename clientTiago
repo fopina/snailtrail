@@ -1,0 +1,71 @@
+import requests
+import json
+
+
+class Client(requests.Session):
+    URL = 'https://api.snailtrail.art/graphql/'
+
+    def __init__(self, http_token=None, proxy=None):
+        super().__init__()
+        self.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0) Gecko/20100101 Firefox/91.0',
+        })
+        if http_token:
+            self.headers.update({'authorization': f'Basic {http_token}'})
+        if proxy:
+            self.proxies = {
+                'http': proxy,
+                'https': proxy,
+            }
+            # TODO: fetch mitmproxy CA and use it
+            self.verify = False
+    
+    def request(self, method, url, *args, **kwargs):
+        return super().request(method, self.URL, *args, **kwargs)
+
+    def get_all_races(self, offset=0, filters={}):
+        r = self.post(
+            '',
+            json={
+                "operationName": "getOnboardingRaces",
+                "variables": {
+                     "limit":20,
+                     "offset":0,
+                     "filters":{
+                         "league":6},
+                },
+                "query": """
+                    query getOnboardingRaces(^$limit: Int, ^$offset: Int, ^$filters: RaceFilters) {
+                        onboarding_races_promise((limit: 20, offset: 0, filters: { league: 6 })) {
+                            ... on Races {
+                            all {
+                                id
+                                conditions
+                                distance
+                                league
+                                status
+                                race_type
+                                prize_pool
+                                track
+                                __typename
+                                }
+                                
+                                }
+                                __typename
+                                }
+                                __typename
+                            }
+                """
+            }
+        )
+        r.raise_for_status()
+        return r.json()['data']
+
+    def iterate_all_races(self, filters={}):
+        c = 0
+        while True:
+            races = self.get_all_races(offset=c, filters=filters)
+            if not races['onboarding_races_promise']['races']:
+                break
+            yield from races['onboarding_races_promise']['races']
+            c += 20
