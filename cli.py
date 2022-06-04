@@ -41,9 +41,6 @@ class CLI:
 
     def list_missions(self):
         for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
-            if not x:
-                # TODO: remove this after fixing "own" / check if "participation" means own...?
-                continue
             del x['__typename']
             del x['distance']
             x['athletes'] = len(x['athletes'])

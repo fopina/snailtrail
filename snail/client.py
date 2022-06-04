@@ -156,15 +156,6 @@ class Client(requests.Session):
                                 participation
                                 __typename
                             }
-                            own {
-                                id
-                                conditions
-                                distance
-                                athletes
-                                track
-                                participation
-                                __typename
-                            }
                             __typename
                             }
                             __typename
@@ -183,7 +174,6 @@ class Client(requests.Session):
             if not snails['mission_races_promise']['all']:
                 break
             yield from snails['mission_races_promise']['all']
-            yield snails['mission_races_promise']['own']
             c += 20
 
     def get_my_snails_for_missions(self, owner, offset=0, ):
