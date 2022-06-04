@@ -1,6 +1,28 @@
 `snail/proxy.py` handles mitmproxy startup/shutdown
 `snail/client.py` implements GraphQL operations
 
+## Configuration
+
+Create `owner.conf` with your wallet address
+
+```
+$ cat owner.conf
+0xbadbadbadbadbadbadbadbadbadbadbadbadbad0
+```
+
+Create `pkey.conf` with your private key (hex string, as expored from MetaMask)
+
+```
+$ cat pkey.conf
+badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0
+```
+
+Create `web3provider.conf` with your provider HTTP address - tested with [infura](https://infura.io/)
+
+```
+$ cat web3provider.conf
+https://mainnet.infura.io/v3/bedbedbedbedbedbedbedbedbedbed00
+```
 
 ## Quickstart
 

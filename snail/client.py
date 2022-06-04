@@ -1,11 +1,13 @@
 import requests
 from Crypto.Hash import keccak
+from web3 import Web3
+from eth_account.messages import encode_defunct
 
 
 class Client(requests.Session):
     URL = 'https://api.snailtrail.art/graphql/'
 
-    def __init__(self, http_token=None, proxy=None):
+    def __init__(self, http_token=None, proxy=None, private_key=None, web3_provider=None, web3_provider_class=Web3.HTTPProvider):
         super().__init__()
         self.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0) Gecko/20100101 Firefox/91.0',
@@ -20,7 +22,10 @@ class Client(requests.Session):
             }
             # TODO: fetch mitmproxy CA and use it
             self.verify = False
-    
+        if private_key and web3_provider:
+            self.web3 = Web3(web3_provider_class(web3_provider))
+            self.__pkey = private_key
+
     def request(self, method, url, *args, **kwargs):
         return super().request(method, self.URL, *args, **kwargs)
 
@@ -228,11 +233,13 @@ class Client(requests.Session):
 
     def join_daily_mission(self, owner, snail, race):
         """Join a daily mission (non-last spot)
-        >>> o = Client()
-        >>> o.join_daily_mission('76e83242f3294e1eb64d7f4b8645c50b63bd767e', 1816, 44660)
-        '0xe55bf5b92476ec8733c4961463a657de186e747e7f8a4b13b12ab1675e70b206'
+        >>> o = Client(private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> o.join_daily_mission('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
+        '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
         # TODO: SIGN!!! and join with graphql
         keccak_hash = keccak.new(digest_bits=256)
         keccak_hash.update(snail.to_bytes(32, 'big') + race.to_bytes(32, 'big') + bytes.fromhex(owner.replace('0x', '')))
-        return '0x' + keccak_hash.hexdigest()
+        sign_payload = keccak_hash.digest()
+        message = encode_defunct(sign_payload)
+        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
