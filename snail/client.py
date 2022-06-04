@@ -1,6 +1,5 @@
-from re import L
 import requests
-import json
+import sha3
 
 
 class Client(requests.Session):
@@ -226,3 +225,12 @@ class Client(requests.Session):
                 break
             yield from snails['my_snails_mission_promise']['snails']
             c += 20
+
+    def join_daily_mission(self, owner, snail, race):
+        """Join a daily mission (non-last spot)
+        >>> o = Client()
+        >>> o.join_daily_mission('76e83242f3294e1eb64d7f4b8645c50b63bd767e', 1816, 44660)
+        '0xe55bf5b92476ec8733c4961463a657de186e747e7f8a4b13b12ab1675e70b206'
+        """
+        # TODO: SIGN!!! and join with graphql
+        return '0x' + sha3.keccak_256(snail.to_bytes(32, 'big') + race.to_bytes(32, 'big') + bytes.fromhex(owner.replace('0x', ''))).hexdigest()
