@@ -1,5 +1,5 @@
 import requests
-import sha3
+from Crypto.Hash import keccak
 
 
 class Client(requests.Session):
@@ -233,4 +233,6 @@ class Client(requests.Session):
         '0xe55bf5b92476ec8733c4961463a657de186e747e7f8a4b13b12ab1675e70b206'
         """
         # TODO: SIGN!!! and join with graphql
-        return '0x' + sha3.keccak_256(snail.to_bytes(32, 'big') + race.to_bytes(32, 'big') + bytes.fromhex(owner.replace('0x', ''))).hexdigest()
+        keccak_hash = keccak.new(digest_bits=256)
+        keccak_hash.update(snail.to_bytes(32, 'big') + race.to_bytes(32, 'big') + bytes.fromhex(owner.replace('0x', '')))
+        return '0x' + keccak_hash.hexdigest()
