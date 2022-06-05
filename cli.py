@@ -66,6 +66,9 @@ class CLI:
         queueable = []
 
         for x in self.client.iterate_my_snails_for_missions(self.owner):
+            if x['id'] in (8315, 6081):
+                # save these for later
+                continue
             to_queue = datetime.strptime(x['queueable_at'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
             if to_queue < now:
                 queueable.append(x)
