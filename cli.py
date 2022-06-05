@@ -4,9 +4,12 @@ import argparse
 import time
 from colorama import Fore
 from datetime import datetime, timezone
+from requests.exceptions import HTTPError
 from snail import proxy, client
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
+logging.addLevelName(logging.ERROR, f'{Fore.RED}{logging.getLevelName(logging.ERROR)}{Fore.RESET}')
 logger = logging.getLogger(__name__)
 
 
@@ -113,6 +116,12 @@ class CLI:
                     try:
                         self.join_missions()
                         time.sleep(30)
+                    except HTTPError as e:
+                        if e.response.status_code == 502:
+                            logger.error('site 502... waiting')
+                        else:
+                            logger.exception('crash, waiting 2min')
+                        time.sleep(120)
                     except Exception:
                         logger.exception('crash, waiting 2min')
                         time.sleep(120)
