@@ -9,7 +9,6 @@ class Client:
         private_key,
         web3_provider,
         web3_provider_class=None,
-        proxy=None,
     ):
         if web3_provider_class is None:
             web3_provider_class = Web3.HTTPProvider

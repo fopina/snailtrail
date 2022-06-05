@@ -21,8 +21,6 @@ class CLI:
         self.args = args
         self._read_conf()
         self.client = client.Client(proxy=proxy_url, private_key=self.wallet_key, web3_provider=self.web3provider)
-        if self.args.owner:
-            self.owner = self.args.owner
 
     def find_female_snails(self):
         all_snails = []
@@ -98,18 +96,26 @@ class CLI:
             queueable.remove(snail)
 
     def _read_conf(self):
-        with open('owner.conf') as f:
-            self.owner = f.read().strip()
         try:
-            with open('web3provider.conf') as f:
+            with open(self.args.owner_file) as f:
+                self.owner = f.read().strip()
+        except FileNotFoundError:
+            """ignore, optional config"""
+        try:
+            with open(self.args.web3_file) as f:
                 self.web3provider = f.read().strip()
         except FileNotFoundError:
             """ignore, optional config"""
         try:
-            with open('pkey.conf') as f:
+            with open(self.args.web3_wallet_key) as f:
                 self.wallet_key = f.read().strip()
         except FileNotFoundError:
             """ignore, optional config"""
+
+    def rename_snail(self):
+        r = self.client.gql.name_change(self.args.name)
+        if not r.get('status'):
+            raise Exception(r)
 
     def run(self):
         if self.args.cmd == 'missions':
@@ -134,11 +140,15 @@ class CLI:
                 self.find_female_snails()
             elif self.args.mine:
                 self.list_owned_snails()
+        elif self.args.cmd == 'rename':
+            self.rename_snail()
 
 
 def build_parser():
     parser = argparse.ArgumentParser(prog=__name__)
-    parser.add_argument('--owner', type=str, help='owner wallet (used for some filters/queries)')
+    parser.add_argument('--owner-file', type=str, default='owner.conf', help='owner wallet (used for some filters/queries)')
+    parser.add_argument('--web3-file', type=str, default='web3provider.conf', help='file with web3 http endpoint')
+    parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
     pm = subparsers.add_parser('missions')
@@ -147,6 +157,9 @@ def build_parser():
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
     ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
+    pr = subparsers.add_parser('rename')
+    pr.add_argument('snail', type=int, help='snail')
+    pr.add_argument('name', type=str, help='new name')
     return parser
 
 
