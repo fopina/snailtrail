@@ -63,6 +63,7 @@ class CLI:
         now = datetime.now(tz=timezone.utc)
         queueable = []
 
+        closest = None
         for x in self.client.iterate_my_snails_for_missions(self.owner):
             if self.args.exclude and x['id'] in self.args.exclude:
                 continue
@@ -71,10 +72,17 @@ class CLI:
                 queueable.append(x)
                 logger.info(f"{Fore.GREEN}{x['id']} : {x['name']} : {x['adaptations']}{Fore.RESET}")
             else:
-                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} : {to_queue - now}{Fore.RESET}")
-        
+                tleft = to_queue - now
+                if closest is None or tleft < closest:
+                    closest = tleft
+                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} : {tleft}{Fore.RESET}")
+        if closest:
+            closest = int(closest.total_seconds())
+        else:
+            closest = 30
+
         if not queueable:
-            return
+            return closest
 
         for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
             if race['participation']:
@@ -94,6 +102,10 @@ class CLI:
             logger.info(self.client.join_mission_races(snail['id'], race['id'], self.owner))
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
+
+        if queueable:
+            return 30
+        return closest
 
     def _read_conf(self):
         try:
@@ -122,8 +134,11 @@ class CLI:
             if self.args.auto:
                 while True:
                     try:
-                        self.join_missions()
-                        time.sleep(30)
+                        w = self.join_missions()
+                        if w is None or w <= 0:
+                            w = 30
+                        logger.info('waiting %d seconds', w)
+                        time.sleep(w)
                     except HTTPError as e:
                         if e.response.status_code == 502:
                             logger.error('site 502... waiting')
