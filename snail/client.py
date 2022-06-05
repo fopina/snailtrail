@@ -5,20 +5,29 @@ from eth_account.messages import encode_defunct
 
 
 class Client(requests.Session):
-    URL = 'https://api.snailtrail.art/graphql/'
+    URL = "https://api.snailtrail.art/graphql/"
 
-    def __init__(self, http_token=None, proxy=None, private_key=None, web3_provider=None, web3_provider_class=Web3.HTTPProvider):
+    def __init__(
+        self,
+        http_token=None,
+        proxy=None,
+        private_key=None,
+        web3_provider=None,
+        web3_provider_class=Web3.HTTPProvider,
+    ):
         super().__init__()
-        self.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0) Gecko/20100101 Firefox/91.0',
-        })
+        self.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0) Gecko/20100101 Firefox/91.0",
+            }
+        )
         self.trust_env = False
         if http_token:
-            self.headers.update({'authorization': f'Basic {http_token}'})
+            self.headers.update({"authorization": f"Basic {http_token}"})
         if proxy:
             self.proxies = {
-                'http': proxy,
-                'https': proxy,
+                "http": proxy,
+                "https": proxy,
             }
             # TODO: fetch mitmproxy CA and use it
             self.verify = False
@@ -31,7 +40,7 @@ class Client(requests.Session):
 
     def get_all_snails_marketplace(self, offset=0, filters={}):
         r = self.post(
-            '',
+            "",
             json={
                 "operationName": "getAllSnail",
                 "variables": {
@@ -75,24 +84,24 @@ class Client(requests.Session):
                             __typename
                         }
                         }
-                """
-            }
+                """,
+            },
         )
         r.raise_for_status()
-        return r.json()['data']
+        return r.json()["data"]
 
     def iterate_all_snails_marketplace(self, filters={}):
         c = 0
         while True:
             snails = self.get_all_snails_marketplace(offset=c, filters=filters)
-            if not snails['marketplace_promise']['snails']:
+            if not snails["marketplace_promise"]["snails"]:
                 break
-            yield from snails['marketplace_promise']['snails']
-            c += 20
+            yield from snails["marketplace_promise"]["snails"]
+            c += len(snails["marketplace_promise"]["snails"])
 
     def get_all_snails(self, offset=0, filters={}):
         r = self.post(
-            '',
+            "",
             json={
                 "operationName": "getAllSnail",
                 "variables": {
@@ -118,24 +127,24 @@ class Client(requests.Session):
                             }
                         }
                         }
-                """
-            }
+                """,
+            },
         )
         r.raise_for_status()
-        return r.json()['data']
+        return r.json()["data"]
 
     def iterate_all_snails(self, filters={}):
         c = 0
         while True:
             snails = self.get_all_snails(offset=c, filters=filters)
-            if not snails['snails_promise']['snails']:
+            if not snails["snails_promise"]["snails"]:
                 break
-            yield from snails['snails_promise']['snails']
-            c += 20
+            yield from snails["snails_promise"]["snails"]
+            c += len(snails["snails_promise"]["snails"])
 
     def get_mission_races(self, offset=0, filters={}):
         r = self.post(
-            '',
+            "",
             json={
                 "operationName": "getMissionRaces",
                 "variables": {
@@ -165,24 +174,28 @@ class Client(requests.Session):
                             __typename
                         }
                         }
-                """
-            }
+                """,
+            },
         )
         r.raise_for_status()
-        return r.json()['data']
+        return r.json()["data"]
 
     def iterate_mission_races(self, filters={}):
         c = 0
         while True:
             snails = self.get_mission_races(offset=c, filters=filters)
-            if not snails['mission_races_promise']['all']:
+            if not snails["mission_races_promise"]["all"]:
                 break
-            yield from snails['mission_races_promise']['all']
-            c += 20
+            yield from snails["mission_races_promise"]["all"]
+            c += len(snails["mission_races_promise"]["all"])
 
-    def get_my_snails_for_missions(self, owner, offset=0, ):
+    def get_my_snails_for_missions(
+        self,
+        owner,
+        offset=0,
+    ):
         r = self.post(
-            '',
+            "",
             json={
                 "operationName": "getMySnailsForMissions",
                 "variables": {
@@ -216,30 +229,93 @@ class Client(requests.Session):
                             __typename
                         }
                         }
-                """
-            }
+                """,
+            },
         )
         r.raise_for_status()
-        return r.json()['data']
+        return r.json()["data"]
 
     def iterate_my_snails_for_missions(self, owner):
         c = 0
         while True:
             snails = self.get_my_snails_for_missions(owner, offset=c)
-            if not snails['my_snails_mission_promise']['snails']:
+            if not snails["my_snails_mission_promise"]["snails"]:
                 break
-            yield from snails['my_snails_mission_promise']['snails']
-            c += 20
+            yield from snails["my_snails_mission_promise"]["snails"]
+            c += len(snails["my_snails_mission_promise"]["snails"])
 
-    def join_daily_mission(self, owner, snail, race):
-        """Join a daily mission (non-last spot)
+    def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str = None):
+        """join mission race - signature is generated by `sign_daily_mission` if not provided"""
+        if signature is None:
+            signature = self.sign_daily_mission(address, snail_id, race_id)
+        r = self.post(
+            "",
+            json={
+                "operationName": "joinMissionRaces",
+                "variables": {
+                    "params": {
+                        "token_id": snail_id,
+                        "race_id": race_id,
+                        "signature": signature,
+                        "address": address,
+                    }
+                },
+                "query": """
+                    mutation joinMissionRaces($params: JoinRaceParams) {
+                        join_mission_promise(params: $params) {
+                            ... on Problem {
+                            problem
+                            __typename
+                            }
+                            ... on JoinRaceResponse {
+                            status
+                            message
+                            signature
+                            payload {
+                                ... on MissionPayload {
+                                race_id
+                                token_id
+                                address
+                                athletes
+                                owners
+                                size
+                                timeout
+                                salt
+                                completed_races {
+                                    race_id
+                                    owners
+                                    __typename
+                                }
+                                __typename
+                                }
+                                __typename
+                            }
+                            __typename
+                            }
+                            __typename
+                        }
+                    }
+                """,
+            },
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+
+    def sign_daily_mission(self, owner: str, snail_id: int, race_id: int):
+        """Generate and sign payload to join a daily mission
         >>> o = Client(private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
-        >>> o.join_daily_mission('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
+        >>> o.sign_daily_mission('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
         # TODO: SIGN!!! and join with graphql
         keccak_hash = keccak.new(digest_bits=256)
-        keccak_hash.update(snail.to_bytes(32, 'big') + race.to_bytes(32, 'big') + bytes.fromhex(owner.replace('0x', '')))
+        keccak_hash.update(
+            snail_id.to_bytes(32, "big")
+            + race_id.to_bytes(32, "big")
+            + bytes.fromhex(owner.replace("0x", ""))
+        )
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
-        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+        return self.web3.eth.account.sign_message(
+            message, private_key=self.__pkey
+        ).signature.hex()

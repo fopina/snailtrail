@@ -1,3 +1,4 @@
 mitmproxy==8.1.0
 requests==2.27.1
 web3==5.29.2
+colorama==0.4.4
