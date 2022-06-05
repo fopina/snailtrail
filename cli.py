@@ -66,6 +66,8 @@ class CLI:
         queueable = []
 
         for x in self.client.iterate_my_snails_for_missions(self.owner):
+            if self.args.exclude and x['id'] in self.args.exclude:
+                continue
             to_queue = datetime.strptime(x['queueable_at'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
             if to_queue < now:
                 queueable.append(x)
@@ -141,6 +143,7 @@ def build_parser():
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
+    pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
     ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
