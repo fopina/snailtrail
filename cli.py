@@ -99,11 +99,16 @@ class CLI:
                 # no snail for this track
                 continue
             logger.info(f'{Fore.CYAN}Joining {race["id"]} ({race["conditions"]}) with {snail["name"]} ({snail["adaptations"]}){Fore.RESET}')
-            logger.info(self.client.join_mission_races(snail['id'], race['id'], self.owner))
+            r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
+            if r.get('status') == 0:
+                logger.info(f'{Fore.CYAN}{["message"]}{Fore.RESET}')
+            else:
+                logger.error(r)
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
         if queueable:
+            logger.info(f'{len(queueable)} without matching race')
             return 30
         return closest
 
