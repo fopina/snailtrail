@@ -6,13 +6,14 @@ class Client:
         self,
         http_token=None,
         proxy=None,
+        wallet=None,
         private_key=None,
         web3_provider=None,
         web3_provider_class=None,
     ):
         self.gql = gqlclient.Client(http_token=http_token, proxy=proxy)
-        if private_key and web3_provider:
-            self.web3 = web3client.Client(private_key, web3_provider, web3_provider_class=web3_provider_class)
+        if wallet and private_key and web3_provider:
+            self.web3 = web3client.Client(wallet, private_key, web3_provider, web3_provider_class=web3_provider_class)
 
     def iterate_all_snails_marketplace(self, filters={}):
         c = 0

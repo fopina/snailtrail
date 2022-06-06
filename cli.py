@@ -20,7 +20,7 @@ class CLI:
     def __init__(self, proxy_url, args):
         self.args = args
         self._read_conf()
-        self.client = client.Client(proxy=proxy_url, private_key=self.wallet_key, web3_provider=self.web3provider)
+        self.client = client.Client(proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider)
 
     def find_female_snails(self):
         all_snails = []
@@ -133,6 +133,7 @@ class CLI:
         r = self.client.gql.name_change(self.args.name)
         if not r.get('status'):
             raise Exception(r)
+        print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
     def run(self):
         if self.args.cmd == 'missions':
