@@ -140,7 +140,7 @@ class CLI:
                     try:
                         w = self.join_missions()
                         if w is None or w <= 0:
-                            w = 30
+                            w = self.args.wait
                         logger.info('waiting %d seconds', w)
                         time.sleep(w)
                     except HTTPError as e:
@@ -173,6 +173,7 @@ def build_parser():
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
+    pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
     ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
