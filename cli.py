@@ -82,17 +82,22 @@ class CLI:
         if not queueable:
             return closest
 
+        boosted = set(self.args.boost or [])
+
         for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
             if race['participation']:
                 # already joined
                 continue
-            if len(race['athletes']) == 9:
-                # cannot afford
-                continue
             for snail in queueable:
                 # FIXME: update for multiple adaptations
-                if snail['adaptations'][0] in race['conditions']:
-                    break
+                if len(race['athletes']) == 9:
+                    # don't queue non-boosted!
+                    if snail['id'] in boosted and ((snail['adaptations'][0] in race['conditions']) or self.args.no_adapt):
+                        break
+                else:
+                    # don't queue boosted here, so they wait for a last spot
+                    if snail['id'] not in boosted and (snail['adaptations'][0] in race['conditions']):
+                        break
             else:
                 # no snail for this track
                 continue
@@ -100,6 +105,23 @@ class CLI:
             r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{["message"]}{Fore.RESET}')
+            elif r.get('status') == 1 and snail['id'] in boosted:
+                logger.warning('requires transaction')
+                print(self.client.web3.join_daily_mission(
+                    (
+                        r['payload']['race_id'],
+                        r['payload']['token_id'],
+                        r['payload']['address'],
+                    ),
+                    r['payload']['size'],
+                    [
+                        (x['race_id'], x['owners'])
+                        for x in r['payload']['completed_races']
+                    ],
+                    r['payload']['timeout'],
+                    r['payload']['salt'],
+                    r['signature'],
+                ))
             else:
                 logger.error(r)
             # remove snail from queueable (as it is no longer available)
@@ -173,6 +195,8 @@ def build_parser():
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
+    pm.add_argument('-b', '--boost', type=int, action='append', help='If auto, these snail ids should always take last spots (boost)')
+    pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
