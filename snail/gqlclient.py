@@ -108,6 +108,7 @@ class Client(requests.Session):
                         }
                         stats {
                             experience {level, remaining}
+                            mission_tickets
                         }
                     }
                     count

@@ -78,8 +78,6 @@ class CLI:
                 logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} : {tleft}{Fore.RESET}")
         if closest:
             closest = int(closest.total_seconds())
-        else:
-            closest = 30
 
         if not queueable:
             return closest
@@ -109,7 +107,7 @@ class CLI:
 
         if queueable:
             logger.info(f'{len(queueable)} without matching race')
-            return 30
+            return
         return closest
 
     def _read_conf(self):

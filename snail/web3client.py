@@ -6,6 +6,7 @@ from web3.middleware import geth_poa_middleware
 from . import abi
 
 CONTRACT_PREFERENCES = '0xfDC483EE4ff24d3a8580504a5D04128451972e1e'
+CONTRACT_RACE = '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0'
 
 
 class Client:
