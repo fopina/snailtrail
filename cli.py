@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
+import requests
 
 from colorama import Fore
 from requests.exceptions import HTTPError
@@ -25,6 +26,13 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
+
+    def _notify(self, message, format='Markdown'):
+        if self.args.notify:
+            print(requests.post(
+                f'https://tgbots.skmobi.com/pushit/{self.args.notify}',
+                json={'msg': message, 'format': format},
+            ))
 
     def find_female_snails(self):
         all_snails = []
@@ -117,6 +125,7 @@ class CLI:
             r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{["message"]}{Fore.RESET}')
+                self._notify(f'`{snail["name"]}` joined mission')
             elif r.get('status') == 1 and snail['id'] in boosted:
                 logger.warning('requires transaction')
                 print(
@@ -133,8 +142,10 @@ class CLI:
                         r['signature'],
                     )
                 )
+                self._notify(f'`{snail["name"]}` joined mission LAST SPOT')
             else:
                 logger.error(r)
+                self._notify(f'`{snail["name"]}` FAILED to join mission')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -204,6 +215,7 @@ def build_parser():
     parser.add_argument('--web3-file', type=str, default='web3provider.conf', help='file with web3 http endpoint')
     parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
+    parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
