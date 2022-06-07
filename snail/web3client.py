@@ -1,8 +1,10 @@
-from Crypto.Hash import keccak
-from web3 import Web3
-from eth_account.messages import encode_defunct
 from functools import cached_property
+
+from Crypto.Hash import keccak
+from eth_account.messages import encode_defunct
+from web3 import Web3
 from web3.middleware import geth_poa_middleware
+
 from . import abi
 
 CONTRACT_PREFERENCES = "0xfDC483EE4ff24d3a8580504a5D04128451972e1e"
@@ -33,20 +35,26 @@ class Client:
 
     @cached_property
     def race_contract(self):
-        return self.web3.eth.contract(
-            address=self.web3.toChecksumAddress(CONTRACT_RACE), abi=abi.RACE
-        )
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_RACE), abi=abi.RACE)
 
     def set_snail_name(self, snail_id: int, new_name: str):
         nonce = self.web3.eth.getTransactionCount(self.wallet)
-        tx = self.preferences_contract.functions.setSnailName(
-            snail_id, new_name
-        ).buildTransaction({"nonce": nonce, "from": self.wallet})
+        tx = self.preferences_contract.functions.setSnailName(snail_id, new_name).buildTransaction(
+            {"nonce": nonce, "from": self.wallet}
+        )
         signed_txn = self.web3.eth.account.signTransaction(tx, private_key=self.__pkey)
         print(self.web3.eth.send_raw_transaction(signed_txn.rawTransaction))
         print(self.web3.eth.getBalance(self.wallet))
 
-    def join_daily_mission(self, race_info: tuple[int, int, str], result_size: int, results: list[tuple[int, list[str]]], timeout: int, salt: int, signature: str):
+    def join_daily_mission(
+        self,
+        race_info: tuple[int, int, str],
+        result_size: int,
+        results: list[tuple[int, list[str]]],
+        timeout: int,
+        salt: int,
+        signature: str,
+    ):
         nonce = self.web3.eth.getTransactionCount(self.wallet)
         tx = self.race_contract.functions.joinDailyMission(
             race_info,
@@ -70,12 +78,8 @@ class Client:
         # TODO: SIGN!!! and join with graphql
         keccak_hash = keccak.new(digest_bits=256)
         keccak_hash.update(
-            snail_id.to_bytes(32, "big")
-            + race_id.to_bytes(32, "big")
-            + bytes.fromhex(owner.replace("0x", ""))
+            snail_id.to_bytes(32, "big") + race_id.to_bytes(32, "big") + bytes.fromhex(owner.replace("0x", ""))
         )
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
-        return self.web3.eth.account.sign_message(
-            message, private_key=self.__pkey
-        ).signature.hex()
+        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()

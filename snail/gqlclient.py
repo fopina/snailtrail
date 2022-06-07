@@ -192,9 +192,7 @@ class Client(requests.Session):
             """,
         )['my_snails_mission_promise']
 
-    def join_mission_races(
-        self, snail_id: int, race_id: int, address: str, signature: str
-    ):
+    def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str):
         return self.query(
             "joinMissionRaces",
             {

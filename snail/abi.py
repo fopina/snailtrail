@@ -179,9 +179,7 @@ PREFERENCES = [
     {
         "inputs": [],
         "name": "nftContract",
-        "outputs": [
-            {"internalType": "contract IERC721", "name": "", "type": "address"}
-        ],
+        "outputs": [{"internalType": "contract IERC721", "name": "", "type": "address"}],
         "stateMutability": "view",
         "type": "function",
     },
@@ -235,9 +233,7 @@ PREFERENCES = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256", "name": "newPriceRate", "type": "uint256"}
-        ],
+        "inputs": [{"internalType": "uint256", "name": "newPriceRate", "type": "uint256"}],
         "name": "setNameChangePriceRate",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -602,9 +598,7 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256[]", "name": "raceIDs", "type": "uint256[]"}
-        ],
+        "inputs": [{"internalType": "uint256[]", "name": "raceIDs", "type": "uint256[]"}],
         "name": "getRacerCount",
         "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
         "stateMutability": "view",
@@ -857,9 +851,7 @@ RACE = [
     {
         "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "name": "raceTypeTracker",
-        "outputs": [
-            {"internalType": "enum SnailRaceType", "name": "", "type": "uint8"}
-        ],
+        "outputs": [{"internalType": "enum SnailRaceType", "name": "", "type": "uint8"}],
         "stateMutability": "view",
         "type": "function",
     },
@@ -885,18 +877,14 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "address", "name": "newAddress", "type": "address"}
-        ],
+        "inputs": [{"internalType": "address", "name": "newAddress", "type": "address"}],
         "name": "setCompTreasuryContract",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256[]", "name": "newDist", "type": "uint256[]"}
-        ],
+        "inputs": [{"internalType": "uint256[]", "name": "newDist", "type": "uint256[]"}],
         "name": "setCompetitiveDist",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -910,18 +898,14 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256[]", "name": "newDist", "type": "uint256[]"}
-        ],
+        "inputs": [{"internalType": "uint256[]", "name": "newDist", "type": "uint256[]"}],
         "name": "setDailyMissionDist",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256", "name": "rewardAmount", "type": "uint256"}
-        ],
+        "inputs": [{"internalType": "uint256", "name": "rewardAmount", "type": "uint256"}],
         "name": "setDailyMissionReward",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -935,9 +919,7 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "address", "name": "newAddress", "type": "address"}
-        ],
+        "inputs": [{"internalType": "address", "name": "newAddress", "type": "address"}],
         "name": "setDailyTreasuryContract",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -958,9 +940,7 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "address", "name": "newAddress", "type": "address"}
-        ],
+        "inputs": [{"internalType": "address", "name": "newAddress", "type": "address"}],
         "name": "setSigner",
         "outputs": [],
         "stateMutability": "nonpayable",
