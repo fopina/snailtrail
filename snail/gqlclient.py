@@ -97,7 +97,7 @@ class Client(requests.Session):
             },
             """
             query getAllSnail($filters: SnailFilters, $offset: Int) {
-                snails_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
+                snails_promise(limit: 10, offset: $offset, order: 1, filters: $filters) {
                     ... on Snails {
                     snails {
                         id

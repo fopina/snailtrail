@@ -41,6 +41,9 @@ class CLI:
                 break
             all_snails.append(snail)
 
+        for x in self.client.iterate_all_snails(filters={'id': [x['id'] for x in all_snails][:22]}):
+            print(x)
+        return
         cycle_end = []
         for snail in all_snails:
             if snail['gender']['id'] == 1:
@@ -177,39 +180,44 @@ class CLI:
             raise Exception(r)
         print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
-    def run(self):
-        if self.args.cmd == 'missions':
-            if self.args.auto:
-                while True:
-                    try:
-                        w = self.join_missions()
-                        if w is None or w <= 0:
-                            w = self.args.wait
-                        logger.info('waiting %d seconds', w)
-                        time.sleep(w)
-                    except HTTPError as e:
-                        if e.response.status_code == 502:
-                            logger.error('site 502... waiting')
-                        else:
-                            logger.exception('crash, waiting 2min')
-                        time.sleep(120)
-                    except Exception:
+    def cmd_balance(self):
+        print(f'Unclaimed SLIME: {self.client.web3.claimable_rewards()}')
+        print(f'SLIME: {self.client.web3.balance_of_slime()}')
+        print(f'SNAILS: {self.client.web3.balance_of_snails()}')
+        print(f'AVAX: {self.client.web3.get_balance()}')
+
+    def cmd_missions(self):
+        if self.args.auto:
+            while True:
+                try:
+                    w = self.join_missions()
+                    if w is None or w <= 0:
+                        w = self.args.wait
+                    logger.info('waiting %d seconds', w)
+                    time.sleep(w)
+                except HTTPError as e:
+                    if e.response.status_code == 502:
+                        logger.error('site 502... waiting')
+                    else:
                         logger.exception('crash, waiting 2min')
-                        time.sleep(120)
-            else:
-                self.list_missions()
-        elif self.args.cmd == 'snails':
-            if self.args.females:
-                self.find_female_snails()
-            elif self.args.mine:
-                self.list_owned_snails()
-        elif self.args.cmd == 'rename':
-            self.rename_snail()
-        elif self.args.cmd == 'balance':
-            print(f'Unclaimed SLIME: {self.client.web3.claimable_rewards()}')
-            print(f'SLIME: {self.client.web3.balance_of_slime()}')
-            print(f'SNAILS: {self.client.web3.balance_of_snails()}')
-            print(f'AVAX: {self.client.web3.get_balance()}')
+                    time.sleep(120)
+                except Exception:
+                    logger.exception('crash, waiting 2min')
+                    time.sleep(120)
+        else:
+            self.list_missions()
+
+    def cmd_snails(self):
+        if self.args.females:
+            self.find_female_snails()
+        elif self.args.mine:
+            self.list_owned_snails()
+
+    def cmd_rename(self):
+        self.rename_snail()
+
+    def run(self):
+        getattr(self, f'cmd_{self.args.cmd}')()
 
 
 def build_parser():

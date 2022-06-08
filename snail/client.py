@@ -32,6 +32,8 @@ class Client:
                 break
             yield from snails["snails"]
             c += len(snails["snails"])
+            print(snails['count'])
+            print(c)
 
     def iterate_mission_races(self, filters={}):
         c = 0
