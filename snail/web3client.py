@@ -7,8 +7,10 @@ from web3.middleware import geth_poa_middleware
 
 from . import abi
 
-CONTRACT_PREFERENCES = "0xfDC483EE4ff24d3a8580504a5D04128451972e1e"
-CONTRACT_RACE = "0x58B699642f2a4b91Dd10800Ef852427B719dB1f0"
+CONTRACT_PREFERENCES = '0xfDC483EE4ff24d3a8580504a5D04128451972e1e'
+CONTRACT_RACE = '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0'
+CONTRACT_SLIME = '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8'
+CONTRACT_SNAILNFT = '0xec675B7C5471c67E9B203c6D1C604df28A89FB7f'
 
 
 class Client:
@@ -37,14 +39,25 @@ class Client:
     def race_contract(self):
         return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_RACE), abi=abi.RACE)
 
-    def set_snail_name(self, snail_id: int, new_name: str):
+    @cached_property
+    def slime_contract(self):
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SLIME), abi=abi.ACCOUNT)
+
+    @cached_property
+    def snailnft_contract(self):
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SNAILNFT), abi=abi.ACCOUNT)
+
+    def _bss(self, function_call):
+        """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
-        tx = self.preferences_contract.functions.setSnailName(snail_id, new_name).buildTransaction(
-            {"nonce": nonce, "from": self.wallet}
+        tx = function_call.buildTransaction({"nonce": nonce, "from": self.wallet})
+        signed_txn = self.web3.eth.account.sign_transaction(tx, private_key=self.__pkey)
+        return self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+
+    def set_snail_name(self, snail_id: int, new_name: str):
+        return self._bss(
+            self.preferences_contract.functions.setSnailName(snail_id, new_name)
         )
-        signed_txn = self.web3.eth.account.signTransaction(tx, private_key=self.__pkey)
-        print(self.web3.eth.send_raw_transaction(signed_txn.rawTransaction))
-        print(self.web3.eth.getBalance(self.wallet))
 
     def join_daily_mission(
         self,
@@ -55,19 +68,28 @@ class Client:
         salt: int,
         signature: str,
     ):
-        nonce = self.web3.eth.getTransactionCount(self.wallet)
-        tx = self.race_contract.functions.joinDailyMission(
-            race_info,
-            result_size,
-            results,
-            timeout,
-            salt,
-            signature,
-        ).buildTransaction({"nonce": nonce, "from": self.wallet})
-        print(tx)
-        signed_txn = self.web3.eth.account.sign_transaction(tx, private_key=self.__pkey)
-        print(self.web3.eth.send_raw_transaction(signed_txn.rawTransaction))
-        print(self.web3.eth.get_balance(self.wallet))
+        return self._bss(
+            self.race_contract.functions.joinDailyMission(
+                race_info,
+                result_size,
+                results,
+                timeout,
+                salt,
+                signature,
+            )
+        )
+
+    def claimable_rewards(self):
+        return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
+
+    def balance_of_slime(self):
+        return self.slime_contract.functions.balanceOf(self.wallet).call({'from': self.wallet}) / 1000000000000000000
+
+    def balance_of_snails(self):
+        return self.snailnft_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
+
+    def get_balance(self):
+        return self.web3.eth.get_balance(self.wallet) / 1000000000000000000
 
     def sign_daily_mission(self, owner: str, snail_id: int, race_id: int):
         """Generate and sign payload to join a daily mission

@@ -205,6 +205,11 @@ class CLI:
                 self.list_owned_snails()
         elif self.args.cmd == 'rename':
             self.rename_snail()
+        elif self.args.cmd == 'balance':
+            print(f'Unclaimed SLIME: {self.client.web3.claimable_rewards()}')
+            print(f'SLIME: {self.client.web3.balance_of_slime()}')
+            print(f'SNAILS: {self.client.web3.balance_of_snails()}')
+            print(f'AVAX: {self.client.web3.get_balance()}')
 
 
 def build_parser():
@@ -217,6 +222,7 @@ def build_parser():
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
     parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
+
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
@@ -229,12 +235,16 @@ def build_parser():
     )
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
+
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
     ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
+
     pr = subparsers.add_parser('rename')
     pr.add_argument('snail', type=int, help='snail')
     pr.add_argument('name', type=str, help='new name')
+
+    subparsers.add_parser('balance')
     return parser
 
 
