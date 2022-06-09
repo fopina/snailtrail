@@ -89,12 +89,12 @@ class CLI:
             to_queue = datetime.strptime(x['queueable_at'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
             if to_queue < now:
                 queueable.append(x)
-                logger.info(f"{Fore.GREEN}{x['id']} : {x['name']} : {x['adaptations']}{Fore.RESET}")
+                logger.info(f"{Fore.GREEN}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {x['adaptations']}{Fore.RESET}")
             else:
                 tleft = to_queue - now
                 if closest is None or tleft < closest:
                     closest = tleft
-                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} : {tleft}{Fore.RESET}")
+                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {tleft}{Fore.RESET}")
         if closest:
             closest = int(closest.total_seconds())
 
@@ -127,8 +127,8 @@ class CLI:
             )
             r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
             if r.get('status') == 0:
-                logger.info(f'{Fore.CYAN}{["message"]}{Fore.RESET}')
-                self._notify(f'`{snail["name"]}` joined mission')
+                logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+                self._notify(f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission")
             elif r.get('status') == 1 and snail['id'] in boosted:
                 logger.warning('requires transaction')
                 print(
@@ -145,7 +145,7 @@ class CLI:
                         r['signature'],
                     )
                 )
-                self._notify(f'`{snail["name"]}` joined mission LAST SPOT')
+                self._notify(f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT")
             else:
                 logger.error(r)
                 self._notify(f'`{snail["name"]}` FAILED to join mission')

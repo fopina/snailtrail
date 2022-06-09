@@ -107,7 +107,7 @@ class Client(requests.Session):
                         id
                         }
                         stats {
-                            experience {level, remaining}
+                            experience {level, xp, remaining}
                             mission_tickets
                         }
                     }
@@ -174,11 +174,11 @@ class Client(requests.Session):
                     snails {
                         id
                         adaptations
-                        image_headshot
                         name
                         queueable_at
                         stats {
                         mission_tickets
+                        experience {level, xp, remaining}
                         __typename
                         }
                         __typename
