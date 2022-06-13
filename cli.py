@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import logging
 import os
@@ -216,6 +218,39 @@ class CLI:
     def cmd_rename(self):
         self.rename_snail()
 
+    def cmd_races(self):
+        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+            snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
+            logger.info(f"Snails for {league}: {[s['name'] for s in snails]}")
+            if not snails:
+                continue
+            # sort with more adaptations first - for matching with races
+            snails.sort(key=lambda x: len(x['adaptations']), reverse=True)
+            for x in self.client.iterate_onboarding_races(filters={'owner': self.owner, 'league': league}):
+                x['athletes'] = len(x['athletes'])
+                if x['participation']:
+                    color = Fore.BLACK
+                else:
+                    color = Fore.GREEN
+                if self.args.verbose:
+                    for k in ('__typename', 'starts_at', 'league'):
+                        del x[k]
+                    x_str = str(x)
+                else:
+                    x_str = f"{x['track']} (#{x['id']}): {x['distance']}m for {x['race_type']} entry"
+                candidates = []
+                conditions = set(x['conditions'])
+                for s in snails:
+                    score = len(conditions.intersection(s['adaptations']))
+                    if score:
+                        candidates.append((score, s))
+                if candidates:
+                    candidates.sort(key=lambda x: x[0], reverse=True)
+                    c = f' - candidates: {[(s[1]["name"]+"*"*s[0]) for s in candidates]}'
+                else:
+                    c = ''
+                print(f'{color}{x_str}{Fore.RESET}{c}')
+
     def run(self):
         getattr(self, f'cmd_{self.args.cmd}')()
 
@@ -244,15 +279,17 @@ def build_parser():
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
-    ps = subparsers.add_parser('snails')
-    ps.add_argument('-m', '--mine', action='store_true', help='show owned')
-    ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
+    pm = subparsers.add_parser('snails')
+    pm.add_argument('-m', '--mine', action='store_true', help='show owned')
+    pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
 
-    pr = subparsers.add_parser('rename')
-    pr.add_argument('snail', type=int, help='snail')
-    pr.add_argument('name', type=str, help='new name')
+    pm = subparsers.add_parser('rename')
+    pm.add_argument('snail', type=int, help='snail')
+    pm.add_argument('name', type=str, help='new name')
 
     subparsers.add_parser('balance')
+    pm = subparsers.add_parser('races')
+    pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
     return parser
 
 

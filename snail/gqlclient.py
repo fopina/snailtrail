@@ -97,7 +97,7 @@ class Client(requests.Session):
             },
             """
             query getAllSnail($filters: SnailFilters, $offset: Int) {
-                snails_promise(limit: 10, offset: $offset, order: 1, filters: $filters) {
+                snails_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
                     ... on Snails {
                     snails {
                         id
@@ -107,6 +107,7 @@ class Client(requests.Session):
                         id
                         }
                         stats {
+                            elo
                             experience {level, xp, remaining}
                             mission_tickets
                         }
@@ -151,6 +152,60 @@ class Client(requests.Session):
             """,
         )['mission_races_promise']
 
+    def get_onboarding_races(self, offset=0, filters={}):
+        return self.query(
+            "getOnboardingRaces",
+            {
+                "filters": filters,
+                "limit": 20,
+                "offset": offset,
+            },
+            """
+            query getOnboardingRaces($limit: Int, $offset: Int, $filters: RaceFilters) {
+                onboarding_races_promise(limit: $limit, offset: $offset, filters: $filters) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on Races {
+                    all {
+                        id
+                        conditions
+                        distance
+                        league
+                        status
+                        race_type
+                        starts_at
+                        athletes
+                        prize_pool
+                        track
+                        athletes
+                        participation
+                        __typename
+                    }
+                    own {
+                        id
+                        conditions
+                        distance
+                        league
+                        status
+                        race_type
+                        starts_at
+                        athletes
+                        prize_pool
+                        track
+                        athletes
+                        participation
+                        __typename
+                    }
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+        )['onboarding_races_promise']
+
     def get_my_snails_for_missions(
         self,
         owner,
@@ -191,6 +246,54 @@ class Client(requests.Session):
             }
             """,
         )['my_snails_mission_promise']
+
+    def get_my_snails_for_ranked(
+        self,
+        owner,
+        league,
+        offset=0,
+    ):
+        return self.query(
+            "getMySnailsForRanked",
+            {
+                "owner": owner,
+                "limit": 20,
+                "offset": offset,
+                "league": league,
+            },
+            """
+            query getMySnailsForRanked(
+                $limit: Int
+                $offset: Int
+                $owner: String!
+                $league: Int!
+            ) {
+                my_snails_ranked_promise(
+                    limit: $limit
+                    offset: $offset
+                    owner: $owner
+                    league: $league
+                ) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on Snails {
+                    snails {
+                        id
+                        adaptations
+                        name
+                        queueable_at
+                        __typename
+                    }
+                    count
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+        )['my_snails_ranked_promise']
 
     def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str):
         return self.query(

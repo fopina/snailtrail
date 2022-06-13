@@ -1,5 +1,8 @@
 from . import gqlclient, web3client
 
+LEAGUE_GOLD = 5
+LEAGUE_PLATINUM = 6
+
 
 class Client:
     def __init__(
@@ -32,8 +35,6 @@ class Client:
                 break
             yield from snails["snails"]
             c += len(snails["snails"])
-            print(snails['count'])
-            print(c)
 
     def iterate_mission_races(self, filters={}):
         c = 0
@@ -44,10 +45,28 @@ class Client:
             yield from snails["all"]
             c += len(snails["all"])
 
+    def iterate_onboarding_races(self, filters={}):
+        c = 0
+        while True:
+            snails = self.gql.get_onboarding_races(offset=c, filters=filters)
+            if not snails["all"]:
+                break
+            yield from snails["all"]
+            c += len(snails["all"])
+
     def iterate_my_snails_for_missions(self, owner):
         c = 0
         while True:
             snails = self.gql.get_my_snails_for_missions(owner, offset=c)
+            if not snails["snails"]:
+                break
+            yield from snails["snails"]
+            c += len(snails["snails"])
+
+    def iterate_my_snails_for_ranked(self, owner, league):
+        c = 0
+        while True:
+            snails = self.gql.get_my_snails_for_ranked(owner, league, offset=c)
             if not snails["snails"]:
                 break
             yield from snails["snails"]
