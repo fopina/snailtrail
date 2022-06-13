@@ -104,6 +104,11 @@ class CLI:
             return closest
 
         boosted = set(self.args.boost or [])
+        if self.args.fair:
+            # add snails with negative tickets to "boosted" to re-use logic
+            for s in queueable:
+                if s['stats']['mission_tickets'] < 0:
+                    boosted.add(s['id'])
 
         for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
             if race['participation']:
@@ -275,6 +280,12 @@ def build_parser():
         type=int,
         action='append',
         help='If auto, these snail ids should always take last spots (boost)',
+    )
+    pm.add_argument(
+        '-f',
+        '--fair',
+        action='store_true',
+        help='Take last spots when negative mission tickets',
     )
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
