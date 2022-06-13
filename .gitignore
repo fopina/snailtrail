@@ -1,3 +1,4 @@
 *.conf
 *.pyc
 __pycache__
+.vscode

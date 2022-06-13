@@ -1,11 +1,14 @@
+import argparse
 import logging
 import os
-import argparse
 import time
-from colorama import Fore
 from datetime import datetime, timezone
+import requests
+
+from colorama import Fore
 from requests.exceptions import HTTPError
-from snail import proxy, client
+
+from snail import client, proxy
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
@@ -20,9 +23,16 @@ class CLI:
     def __init__(self, proxy_url, args):
         self.args = args
         self._read_conf()
-        self.client = client.Client(proxy=proxy_url, private_key=self.wallet_key, web3_provider=self.web3provider)
-        if self.args.owner:
-            self.owner = self.args.owner
+        self.client = client.Client(
+            proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
+        )
+
+    def _notify(self, message, format='Markdown'):
+        if self.args.notify:
+            print(requests.post(
+                f'https://tgbots.skmobi.com/pushit/{self.args.notify}',
+                json={'msg': message, 'format': format},
+            ))
 
     def find_female_snails(self):
         all_snails = []
@@ -31,6 +41,9 @@ class CLI:
                 break
             all_snails.append(snail)
 
+        for x in self.client.iterate_all_snails(filters={'id': [x['id'] for x in all_snails][:22]}):
+            print(x)
+        return
         cycle_end = []
         for snail in all_snails:
             if snail['gender']['id'] == 1:
@@ -39,11 +52,15 @@ class CLI:
                 else:
                     cycle_end.append(snail)
 
-        cycle_end.sort(key=lambda snail:snail['breeding']['breed_status']['cycle_end'])
+        cycle_end.sort(key=lambda snail: snail['breeding']['breed_status']['cycle_end'])
 
         for snail in cycle_end:
-            print(f'https://www.snailtrail.art/snails/{snail["id"]}/snail', snail['market']['price'], snail['breeding']['breed_status']['cycle_end'])
-    
+            print(
+                f'https://www.snailtrail.art/snails/{snail["id"]}/snail',
+                snail['market']['price'],
+                snail['breeding']['breed_status']['cycle_end'],
+            )
+
     def list_owned_snails(self):
         for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
             print(snail)
@@ -65,88 +82,177 @@ class CLI:
         now = datetime.now(tz=timezone.utc)
         queueable = []
 
+        closest = None
         for x in self.client.iterate_my_snails_for_missions(self.owner):
-            if x['id'] in (8315, 6081):
-                # save these for later
+            if self.args.exclude and x['id'] in self.args.exclude:
                 continue
             to_queue = datetime.strptime(x['queueable_at'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
             if to_queue < now:
                 queueable.append(x)
-                logger.info(f"{Fore.GREEN}{x['id']} : {x['name']} : {x['adaptations']}{Fore.RESET}")
+                logger.info(f"{Fore.GREEN}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {x['adaptations']}{Fore.RESET}")
             else:
-                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} : {to_queue - now}{Fore.RESET}")
-        
+                tleft = to_queue - now
+                if closest is None or tleft < closest:
+                    closest = tleft
+                logger.info(f"{Fore.YELLOW}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {tleft}{Fore.RESET}")
+        if closest:
+            closest = int(closest.total_seconds())
+
         if not queueable:
-            return
+            return closest
+
+        boosted = set(self.args.boost or [])
 
         for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
             if race['participation']:
                 # already joined
                 continue
-            if len(race['athletes']) == 9:
-                # cannot afford
-                continue
             for snail in queueable:
                 # FIXME: update for multiple adaptations
-                if snail['adaptations'][0] in race['conditions']:
-                    break
+                if len(race['athletes']) == 9:
+                    # don't queue non-boosted!
+                    if snail['id'] in boosted and (
+                        (snail['adaptations'][0] in race['conditions']) or self.args.no_adapt
+                    ):
+                        break
+                else:
+                    # don't queue boosted here, so they wait for a last spot
+                    if snail['id'] not in boosted and (snail['adaptations'][0] in race['conditions']):
+                        break
             else:
                 # no snail for this track
                 continue
-            logger.info(f'{Fore.CYAN}Joining {race["id"]} ({race["conditions"]}) with {snail["name"]} ({snail["adaptations"]}){Fore.RESET}')
-            logger.info(self.client.join_mission_races(snail['id'], race['id'], self.owner))
+            logger.info(
+                f'{Fore.CYAN}Joining {race["id"]} ({race["conditions"]}) with {snail["name"]} ({snail["adaptations"]}){Fore.RESET}'
+            )
+            r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
+            if r.get('status') == 0:
+                logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+                self._notify(f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission")
+            elif r.get('status') == 1 and snail['id'] in boosted:
+                logger.warning('requires transaction')
+                print(
+                    self.client.web3.join_daily_mission(
+                        (
+                            r['payload']['race_id'],
+                            r['payload']['token_id'],
+                            r['payload']['address'],
+                        ),
+                        r['payload']['size'],
+                        [(x['race_id'], x['owners']) for x in r['payload']['completed_races']],
+                        r['payload']['timeout'],
+                        r['payload']['salt'],
+                        r['signature'],
+                    )
+                )
+                self._notify(f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT")
+            else:
+                logger.error(r)
+                self._notify(f'`{snail["name"]}` FAILED to join mission')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
+        if queueable:
+            logger.info(f'{len(queueable)} without matching race')
+            return
+        return closest
+
     def _read_conf(self):
-        with open('owner.conf') as f:
-            self.owner = f.read().strip()
         try:
-            with open('web3provider.conf') as f:
+            with open(self.args.owner_file) as f:
+                self.owner = f.read().strip()
+        except FileNotFoundError:
+            """ignore, optional config"""
+        try:
+            with open(self.args.web3_file) as f:
                 self.web3provider = f.read().strip()
         except FileNotFoundError:
             """ignore, optional config"""
         try:
-            with open('pkey.conf') as f:
+            with open(self.args.web3_wallet_key) as f:
                 self.wallet_key = f.read().strip()
         except FileNotFoundError:
             """ignore, optional config"""
 
-    def run(self):
-        if self.args.cmd == 'missions':
-            if self.args.auto:
-                while True:
-                    try:
-                        self.join_missions()
-                        time.sleep(30)
-                    except HTTPError as e:
-                        if e.response.status_code == 502:
-                            logger.error('site 502... waiting')
-                        else:
-                            logger.exception('crash, waiting 2min')
-                        time.sleep(120)
-                    except Exception:
+    def rename_snail(self):
+        r = self.client.gql.name_change(self.args.name)
+        if not r.get('status'):
+            raise Exception(r)
+        print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
+
+    def cmd_balance(self):
+        print(f'Unclaimed SLIME: {self.client.web3.claimable_rewards()}')
+        print(f'SLIME: {self.client.web3.balance_of_slime()}')
+        print(f'SNAILS: {self.client.web3.balance_of_snails()}')
+        print(f'AVAX: {self.client.web3.get_balance()}')
+
+    def cmd_missions(self):
+        if self.args.auto:
+            while True:
+                try:
+                    w = self.join_missions()
+                    if w is None or w <= 0:
+                        w = self.args.wait
+                    logger.info('waiting %d seconds', w)
+                    time.sleep(w)
+                except HTTPError as e:
+                    if e.response.status_code == 502:
+                        logger.error('site 502... waiting')
+                    else:
                         logger.exception('crash, waiting 2min')
-                        time.sleep(120)
-            else:
-                self.list_missions()
-        elif self.args.cmd == 'snails':
-            if self.args.females:
-                self.find_female_snails()
-            elif self.args.mine:
-                self.list_owned_snails()
+                    time.sleep(120)
+                except Exception:
+                    logger.exception('crash, waiting 2min')
+                    time.sleep(120)
+        else:
+            self.list_missions()
+
+    def cmd_snails(self):
+        if self.args.females:
+            self.find_female_snails()
+        elif self.args.mine:
+            self.list_owned_snails()
+
+    def cmd_rename(self):
+        self.rename_snail()
+
+    def run(self):
+        getattr(self, f'cmd_{self.args.cmd}')()
 
 
 def build_parser():
     parser = argparse.ArgumentParser(prog=__name__)
-    parser.add_argument('--owner', type=str, help='owner wallet (used for some filters/queries)')
+    parser.add_argument(
+        '--owner-file', type=str, default='owner.conf', help='owner wallet (used for some filters/queries)'
+    )
+    parser.add_argument('--web3-file', type=str, default='web3provider.conf', help='file with web3 http endpoint')
+    parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
+    parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
+
     pm = subparsers.add_parser('missions')
     pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
+    pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
+    pm.add_argument(
+        '-b',
+        '--boost',
+        type=int,
+        action='append',
+        help='If auto, these snail ids should always take last spots (boost)',
+    )
+    pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
+    pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
+
     ps = subparsers.add_parser('snails')
     ps.add_argument('-m', '--mine', action='store_true', help='show owned')
     ps.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
+
+    pr = subparsers.add_parser('rename')
+    pr.add_argument('snail', type=int, help='snail')
+    pr.add_argument('name', type=str, help='new name')
+
+    subparsers.add_parser('balance')
     return parser
 
 
