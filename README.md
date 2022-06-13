@@ -17,11 +17,11 @@ $ cat pkey.conf
 badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0
 ```
 
-Create `web3provider.conf` with your provider HTTP address - tested with [infura](https://infura.io/)
+Create `web3provider.conf` with your provider HTTP address - use default AVAX RPC endpoint or something else like [infura](https://infura.io/)
 
 ```
 $ cat web3provider.conf
-https://mainnet.infura.io/v3/bedbedbedbedbedbedbedbedbedbed00
+https://api.avax.network/ext/bc/C/rpc
 ```
 
 ## Quickstart
