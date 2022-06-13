@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class CLI:
-    client = None
     owner = None
 
     def __init__(self, proxy_url, args):
@@ -28,6 +27,7 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
+        self._notified_races = set()
 
     def _notify(self, message, format='Markdown'):
         if self.args.notify:
@@ -211,6 +211,20 @@ class CLI:
                     if w is None or w <= 0:
                         w = self.args.wait
                     logger.info('waiting %d seconds', w)
+                    if self.args.races:
+                        # FIXME: refactor this "bot" mode...
+                        # FIXME: loop all leagues, but save requests for now :)
+                        _, races = self.find_races(client.LEAGUE_GOLD)
+                        for race in races:
+                            if race['id'] in self._notified_races:
+                                # notify only once...
+                                continue
+                            if race['candidates'] and race['candidates'][0][0] > 1:
+                                cands = [cand for cand in race['candidates'] if cand[0] > 1]
+                                msg = f"Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] for cand in cands)}"
+                                logger.info(msg)
+                                self._notify(msg)
+                                self._notified_races.add(race['id'])
                     time.sleep(w)
                 except HTTPError as e:
                     if e.response.status_code == 502:
@@ -233,18 +247,34 @@ class CLI:
     def cmd_rename(self):
         self.rename_snail()
 
+    def find_races(self, league):
+        snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
+        if not snails:
+            return [], []
+        # sort with more adaptations first - for matching with races
+        snails.sort(key=lambda x: len(x['adaptations']), reverse=True)
+        races = []
+        for x in self.client.iterate_onboarding_races(filters={'owner': self.owner, 'league': league}):
+            candidates = []
+            conditions = set(x['conditions'])
+            for s in snails:
+                score = len(conditions.intersection(s['adaptations']))
+                if score:
+                    candidates.append((score, s))
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            x['candidates'] = candidates
+            races.append(x)
+        return snails, races
+
     def cmd_races(self):
         for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
-            snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
+            snails, races = self.find_races(league)
             logger.info(f"Snails for {league}: {[s['name'] for s in snails]}")
             if not snails:
                 continue
-            # sort with more adaptations first - for matching with races
-            snails.sort(key=lambda x: len(x['adaptations']), reverse=True)
-            for x in self.client.iterate_onboarding_races(filters={'owner': self.owner, 'league': league}):
-                x['athletes'] = len(x['athletes'])
+            for x in races:
                 if x['participation']:
-                    color = Fore.BLACK
+                    color = Fore.LIGHTBLACK_EX
                 else:
                     color = Fore.GREEN
                 if self.args.verbose:
@@ -253,14 +283,9 @@ class CLI:
                     x_str = str(x)
                 else:
                     x_str = f"{x['track']} (#{x['id']}): {x['distance']}m for {x['race_type']} entry"
-                candidates = []
-                conditions = set(x['conditions'])
-                for s in snails:
-                    score = len(conditions.intersection(s['adaptations']))
-                    if score:
-                        candidates.append((score, s))
+
+                candidates = x['candidates']
                 if candidates:
-                    candidates.sort(key=lambda x: x[0], reverse=True)
                     c = f' - candidates: {[(s[1]["name"]+"*"*s[0]) for s in candidates]}'
                 else:
                     c = ''
@@ -297,6 +322,7 @@ def build_parser():
         action='store_true',
         help='Take last spots when negative mission tickets',
     )
+    pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
