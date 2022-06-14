@@ -120,9 +120,13 @@ class CLI:
             if race['participation']:
                 # already joined
                 continue
+            athletes = len(race['athletes'])
+            if athletes == 10:
+                # race full
+                continue
             for snail in queueable:
                 # FIXME: update for multiple adaptations
-                if len(race['athletes']) == 9:
+                if athletes == 9:
                     # don't queue non-boosted!
                     if snail['id'] in boosted and (
                         (snail['adaptations'][0] in race['conditions']) or self.args.no_adapt
@@ -203,40 +207,43 @@ class CLI:
         print(f'SNAILS: {self.client.web3.balance_of_snails()}')
         print(f'AVAX: {self.client.web3.get_balance()}')
 
-    def cmd_missions(self):
-        if self.args.auto:
-            while True:
-                try:
-                    w = self.join_missions()
-                    if w is None or w <= 0:
-                        w = self.args.wait
-                    logger.info('waiting %d seconds', w)
-                    if self.args.races:
-                        # FIXME: refactor this "bot" mode...
-                        # FIXME: loop all leagues, but save requests for now :)
-                        _, races = self.find_races(client.LEAGUE_GOLD)
-                        for race in races:
-                            if race['id'] in self._notified_races:
-                                # notify only once...
-                                continue
-                            if race['candidates'] and race['candidates'][0][0] > 1:
-                                cands = [cand for cand in race['candidates'] if cand[0] > 1]
-                                msg = f"Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] for cand in cands)}"
-                                logger.info(msg)
-                                self._notify(msg)
-                                self._notified_races.add(race['id'])
-                    time.sleep(w)
-                except HTTPError as e:
-                    if e.response.status_code == 502:
-                        logger.error('site 502... waiting')
-                    else:
-                        logger.exception('crash, waiting 2min')
-                    time.sleep(120)
-                except Exception:
+    def cmd_bot(self):
+        if not (self.args.missions or self.args.races):
+            logger.error('choose something...')
+            return
+        while True:
+            try:
+                w = self.join_missions()
+                if w is None or w <= 0:
+                    w = self.args.wait
+                logger.info('waiting %d seconds', w)
+                if self.args.races:
+                    # FIXME: refactor this "bot" mode...
+                    # FIXME: loop all leagues, but save requests for now :)
+                    _, races = self.find_races(client.LEAGUE_GOLD)
+                    for race in races:
+                        if race['id'] in self._notified_races:
+                            # notify only once...
+                            continue
+                        if race['candidates'] and race['candidates'][0][0] > 1:
+                            cands = [cand for cand in race['candidates'] if cand[0] > 1]
+                            msg = f"Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] for cand in cands)}"
+                            logger.info(msg)
+                            self._notify(msg)
+                            self._notified_races.add(race['id'])
+                time.sleep(w)
+            except HTTPError as e:
+                if e.response.status_code == 502:
+                    logger.error('site 502... waiting')
+                else:
                     logger.exception('crash, waiting 2min')
-                    time.sleep(120)
-        else:
-            self.list_missions()
+                time.sleep(120)
+            except Exception:
+                logger.exception('crash, waiting 2min')
+                time.sleep(120)
+
+    def cmd_missions(self):
+        self.list_missions()
 
     def cmd_snails(self):
         if self.args.females:
@@ -307,14 +314,16 @@ def build_parser():
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
-    pm.add_argument('-a', '--auto', action='store_true', help='Auto join daily missions (non-last/free)')
+
+    pm = subparsers.add_parser('bot')
+    pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
     pm.add_argument(
         '-b',
         '--boost',
         type=int,
         action='append',
-        help='If auto, these snail ids should always take last spots (boost)',
+        help='If auto, these snail ids should always take last spots for missions (boost)',
     )
     pm.add_argument(
         '-f',
