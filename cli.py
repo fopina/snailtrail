@@ -98,13 +98,11 @@ class CLI:
                 )
             else:
                 tleft = to_queue - now
-                if closest is None or tleft < closest:
-                    closest = tleft
+                if closest is None or to_queue < closest:
+                    closest = to_queue
                 logger.info(
                     f"{Fore.YELLOW}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {tleft}{Fore.RESET}"
                 )
-        if closest:
-            closest = int(closest.total_seconds())
 
         if not queueable:
             return closest
@@ -211,12 +209,18 @@ class CLI:
         if not (self.args.missions or self.args.races):
             logger.error('choose something...')
             return
+        next_mission = None
         while True:
             try:
-                w = self.join_missions()
-                if w is None or w <= 0:
-                    w = self.args.wait
-                logger.info('waiting %d seconds', w)
+                if self.args.missions:
+                    now = datetime.now(tz=timezone.utc)
+                    if next_mission is None or next_mission < now:
+                        next_mission = self.join_missions()
+                    if next_mission is not None:
+                        w = (next_mission - now).total_seconds()
+                    if w is None or w <= 0:
+                        w = self.args.wait
+
                 if self.args.races:
                     # FIXME: refactor this "bot" mode...
                     # FIXME: loop all leagues, but save requests for now :)
@@ -231,6 +235,8 @@ class CLI:
                             logger.info(msg)
                             self._notify(msg)
                             self._notified_races.add(race['id'])
+                    w = self.args.wait
+                logger.info('waiting %d seconds', w)
                 time.sleep(w)
             except HTTPError as e:
                 if e.response.status_code == 502:
