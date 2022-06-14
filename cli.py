@@ -217,9 +217,9 @@ class CLI:
                     now = datetime.now(tz=timezone.utc)
                     if next_mission is None or next_mission < now:
                         next_mission = self.join_missions()
+                        logger.info('next mission in at %s', next_mission)
                     if next_mission is not None:
                         w = (next_mission - now).total_seconds()
-                        logger.info('next mission in %d seconds', w)
 
                 if self.args.races:
                     # FIXME: refactor this "bot" mode...
