@@ -15,6 +15,7 @@ from snail import client, proxy
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
 logging.addLevelName(logging.ERROR, f'{Fore.RED}{logging.getLevelName(logging.ERROR)}{Fore.RESET}')
+logging.addLevelName(logging.DEBUG, f'{Fore.LIGHTRED_EX}{logging.getLevelName(logging.DEBUG)}{Fore.RESET}')
 logger = logging.getLogger(__name__)
 
 
@@ -218,8 +219,7 @@ class CLI:
                         next_mission = self.join_missions()
                     if next_mission is not None:
                         w = (next_mission - now).total_seconds()
-                    if w is None or w <= 0:
-                        w = self.args.wait
+                        logger.info('next mission in %d seconds', w)
 
                 if self.args.races:
                     # FIXME: refactor this "bot" mode...
@@ -235,8 +235,12 @@ class CLI:
                             logger.info(msg)
                             self._notify(msg)
                             self._notified_races.add(race['id'])
+                    # override mission waiting
+                    w = None
+
+                if w is None or w <= 0:
                     w = self.args.wait
-                logger.info('waiting %d seconds', w)
+                logger.debug('waiting %d seconds', w)
                 time.sleep(w)
             except HTTPError as e:
                 if e.response.status_code == 502:
@@ -305,7 +309,8 @@ class CLI:
                 print(f'{color}{x_str}{Fore.RESET}{c}')
 
     def run(self):
-        getattr(self, f'cmd_{self.args.cmd}')()
+        if self.args.cmd:
+            getattr(self, f'cmd_{self.args.cmd}')()
 
 
 def build_parser():
@@ -317,6 +322,8 @@ def build_parser():
     parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
     parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
+    parser.add_argument('--debug', action='store_true', help='Debug verbosity')
+
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
@@ -357,6 +364,8 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     if args.proxy:
         proxy_url = args.proxy
     else:
