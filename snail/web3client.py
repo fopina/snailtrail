@@ -55,9 +55,7 @@ class Client:
         return self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
     def set_snail_name(self, snail_id: int, new_name: str):
-        return self._bss(
-            self.preferences_contract.functions.setSnailName(snail_id, new_name)
-        )
+        return self._bss(self.preferences_contract.functions.setSnailName(snail_id, new_name))
 
     def join_daily_mission(
         self,
