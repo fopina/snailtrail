@@ -157,7 +157,7 @@ class CLI:
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
                 self._notify(
-                    f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission"
+                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission"
                 )
             elif r.get('status') == 1 and snail['id'] in boosted:
                 logger.warning('requires transaction')
@@ -176,11 +176,11 @@ class CLI:
                     )
                 )
                 self._notify(
-                    f"`{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT"
+                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT"
                 )
             else:
                 logger.error(r)
-                self._notify(f'`{snail["name"]}` FAILED to join mission')
+                self._notify(f'⛔ `{snail["name"]}` FAILED to join mission')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -242,8 +242,12 @@ class CLI:
                             # notify only once...
                             continue
                         if race['candidates'] and race['candidates'][0][0] > 1:
-                            cands = [cand for cand in race['candidates'] if cand[0] > 1]
-                            msg = f"Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] for cand in cands)}"
+                            # report on just 1 match, but use only snails with 2 adaptations (stronger)
+                            cands = [
+                                cand for cand in race['candidates']
+                                if len(cand[1]['adaptations']) > 1
+                            ]
+                            msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
                             logger.info(msg)
                             self._notify(msg)
                             self._notified_races.add(race['id'])
