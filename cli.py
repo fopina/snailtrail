@@ -241,12 +241,14 @@ class CLI:
                         if race['id'] in self._notified_races:
                             # notify only once...
                             continue
-                        if race['candidates'] and race['candidates'][0][0] > 1:
+                        if race['candidates']:
                             # report on just 1 match, but use only snails with 2 adaptations (stronger)
                             cands = [
                                 cand for cand in race['candidates']
                                 if len(cand[1]['adaptations']) > 1
                             ]
+                            if not cands:
+                                continue
                             msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
                             logger.info(msg)
                             self._notify(msg)
