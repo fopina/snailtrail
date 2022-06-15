@@ -69,11 +69,9 @@ class Client(requests.Session):
                         __typename
                         }
                         breeding {
-                        breed_status {
-                            cycle_total
-                            cycle_remaining
+                        breed_detail {
                             cycle_end
-                            __typename
+                            monthly_breed_available
                         }
                         __typename
                         }
@@ -105,6 +103,17 @@ class Client(requests.Session):
                         name
                         gender {
                         id
+                        }
+                        new_born
+                        genome
+                        klass
+                        family
+                        purity
+                        breeding {
+                        breed_detail {
+                            cycle_end
+                            monthly_breed_available
+                        }
                         }
                         stats {
                             elo

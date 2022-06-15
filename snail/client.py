@@ -33,8 +33,11 @@ class Client:
             snails = self.gql.get_all_snails(offset=c, filters=filters)
             if not snails["snails"]:
                 break
+            total = snails['count']
             yield from snails["snails"]
             c += len(snails["snails"])
+            if c >= total:
+                break
 
     def iterate_mission_races(self, filters={}):
         c = 0

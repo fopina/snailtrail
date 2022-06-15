@@ -39,31 +39,44 @@ class CLI:
                 )
             )
 
-    def find_female_snails(self):
-        all_snails = []
-        for snail in self.client.iterate_all_snails_marketplace():
-            if snail['market']['price'] > 2:
-                break
-            all_snails.append(snail)
+    @staticmethod
+    def _parse_datetime(date_str):
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
 
-        for x in self.client.iterate_all_snails(filters={'id': [x['id'] for x in all_snails][:22]}):
-            print(x)
-        return
-        cycle_end = []
-        for snail in all_snails:
-            if snail['gender']['id'] == 1:
-                if snail['breeding']['breed_status'] and snail['breeding']['breed_status']['cycle_remaining'] > 0:
-                    print(f'https://www.snailtrail.art/snails/{snail["id"]}/snail', snail['market']['price'])
-                else:
-                    cycle_end.append(snail)
+    @staticmethod
+    def _parse_datetime_micro(date_str):
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
-        cycle_end.sort(key=lambda snail: snail['breeding']['breed_status']['cycle_end'])
+    @staticmethod
+    def _now():
+        return datetime.now(tz=timezone.utc)
 
-        for snail in cycle_end:
-            print(
-                f'https://www.snailtrail.art/snails/{snail["id"]}/snail',
-                snail['market']['price'],
-                snail['breeding']['breed_status']['cycle_end'],
+    def find_female_snails(self, price_filter=2):
+        all_snails = {}
+        # FIXME: include gender 0 as well - cycle end will be none if reset!
+        for gender in (0, 1):
+            for snail in self.client.iterate_all_snails_marketplace(filters={'gender': gender}):
+                if snail['market']['price'] > price_filter:
+                    break
+                all_snails[snail['id']] = snail
+        logger.debug('Fetching details for %d snails', len(all_snails))
+        keys = list(all_snails.keys())
+        for i in range(0, len(keys), 20):
+            for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
+                all_snails[x['id']]['_details'] = x
+
+        for snail_id, snail in all_snails.items():
+            if snail['breeding']['breed_detail']['monthly_breed_available'] > 0:
+                br = f"{Fore.GREEN}BREEDER{Fore.RESET}"
+            elif snail['gender']['id'] == 0 and snail['breeding']['breed_detail']['cycle_end'] is None:
+                br = f"{Fore.GREEN}NEW BREEDER{Fore.RESET}"
+            else:
+                # cannot use `days_remaining` because new borns will have it as 0, but they do have cycle_end :shrug:
+                to_queue = self._parse_datetime(snail['breeding']['breed_detail']['cycle_end'])
+                days_to_breed = (to_queue - self._now()).total_seconds() / (60 * 60 * 24)
+                br = f"{Fore.YELLOW}breed in {days_to_breed:.2f}{Fore.RESET}"
+            logger.info(
+                f"{snail['name']} [https://www.snailtrail.art/snails/{snail_id}/about] for {snail['market']['price']} - {br} - {snail['_details']['family']} {snail['_details']['klass']} {snail['_details']['purity']} {''.join(snail['_details']['genome'])}"
             )
 
     def list_owned_snails(self):
@@ -84,21 +97,20 @@ class CLI:
             print(f'{color}{x}{Fore.RESET}')
 
     def join_missions(self):
-        now = datetime.now(tz=timezone.utc)
         queueable = []
 
         closest = None
         for x in self.client.iterate_my_snails_for_missions(self.owner):
             if self.args.exclude and x['id'] in self.args.exclude:
                 continue
-            to_queue = datetime.strptime(x['queueable_at'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
-            if to_queue < now:
+            to_queue = self._parse_datetime_micro(x['queueable_at'])
+            tleft = to_queue - self._now()
+            if tleft.total_seconds() <= 0:
                 queueable.append(x)
                 logger.info(
                     f"{Fore.GREEN}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {x['adaptations']}{Fore.RESET}"
                 )
             else:
-                tleft = to_queue - now
                 if closest is None or to_queue < closest:
                     closest = to_queue
                 logger.info(
@@ -256,10 +268,11 @@ class CLI:
         self.list_missions()
 
     def cmd_snails(self):
+        self.list_owned_snails()
+
+    def cmd_market(self):
         if self.args.females:
-            self.find_female_snails()
-        elif self.args.mine:
-            self.list_owned_snails()
+            self.find_female_snails(price_filter=self.args.price)
 
     def cmd_rename(self):
         self.rename_snail()
@@ -348,9 +361,11 @@ def build_parser():
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
-    pm = subparsers.add_parser('snails')
-    pm.add_argument('-m', '--mine', action='store_true', help='show owned')
+    subparsers.add_parser('snails')
+
+    pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
+    pm.add_argument('-p', '--price', type=float, default=1.5, help='price limit for search')
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
