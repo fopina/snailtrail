@@ -231,7 +231,11 @@ class CLI:
                             continue
                         if race['candidates']:
                             # report on just 1 match, but use only snails with 2 adaptations (stronger)
-                            cands = [cand for cand in race['candidates'] if len(cand[1]['adaptations']) > 1]
+                            cands = [
+                                cand
+                                for cand in race['candidates']
+                                if cand[0] >= self.args.race_matches and len(cand[1]['adaptations']) > 1
+                            ]
                             if not cands:
                                 continue
                             msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
@@ -350,6 +354,7 @@ def build_parser():
         help='Take last spots when negative mission tickets',
     )
     pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
+    pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
