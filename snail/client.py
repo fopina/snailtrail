@@ -1,4 +1,5 @@
-from . import gqlclient, web3client
+from typing import Iterable
+from . import gqlclient, web3client, gqltypes
 
 LEAGUE_GOLD = 5
 LEAGUE_PLATINUM = 6
@@ -24,17 +25,17 @@ class Client:
             snails = self.gql.get_all_snails_marketplace(offset=c, filters=filters)
             if not snails["snails"]:
                 break
-            yield from snails["snails"]
+            yield from map(gqltypes.Snail, snails["snails"])
             c += len(snails["snails"])
 
-    def iterate_all_snails(self, filters={}):
+    def iterate_all_snails(self, filters={}) -> Iterable[gqltypes.Snail]:
         c = 0
         while True:
             snails = self.gql.get_all_snails(offset=c, filters=filters)
             if not snails["snails"]:
                 break
             total = snails['count']
-            yield from snails["snails"]
+            yield from map(gqltypes.Snail, snails["snails"])
             c += len(snails["snails"])
             if c >= total:
                 break
@@ -42,20 +43,20 @@ class Client:
     def iterate_mission_races(self, filters={}):
         c = 0
         while True:
-            snails = self.gql.get_mission_races(offset=c, filters=filters)
-            if not snails["all"]:
+            o = self.gql.get_mission_races(offset=c, filters=filters)
+            if not o["all"]:
                 break
-            yield from snails["all"]
-            c += len(snails["all"])
+            yield from o["all"]
+            c += len(o["all"])
 
     def iterate_onboarding_races(self, filters={}):
         c = 0
         while True:
-            snails = self.gql.get_onboarding_races(offset=c, filters=filters)
-            if not snails["all"]:
+            o = self.gql.get_onboarding_races(offset=c, filters=filters)
+            if not o["all"]:
                 break
-            yield from snails["all"]
-            c += len(snails["all"])
+            yield from o["all"]
+            c += len(o["all"])
 
     def iterate_my_snails_for_missions(self, owner):
         c = 0
@@ -63,7 +64,7 @@ class Client:
             snails = self.gql.get_my_snails_for_missions(owner, offset=c)
             if not snails["snails"]:
                 break
-            yield from snails["snails"]
+            yield from map(gqltypes.Snail, snails["snails"])
             c += len(snails["snails"])
 
     def iterate_my_snails_for_ranked(self, owner, league):
@@ -72,7 +73,7 @@ class Client:
             snails = self.gql.get_my_snails_for_ranked(owner, league, offset=c)
             if not snails["snails"]:
                 break
-            yield from snails["snails"]
+            yield from map(gqltypes.Snail, snails["snails"])
             c += len(snails["snails"])
 
     def join_mission_races(self, snail_id: int, race_id: int, address: str):

@@ -7,3 +7,6 @@ pub:
 				  -t fopina/random:snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ') \
 				  -t fopina/random:snailtrail \
 				  --push .
+
+test:
+	pytest --doctest-modules

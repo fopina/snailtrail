@@ -86,7 +86,7 @@ class Client(requests.Session):
             """,
         )['marketplace_promise']
 
-    def get_all_snails(self, offset=0, filters={}):
+    def get_all_snails(self, offset: int = 0, filters={}):
         return self.query(
             "getAllSnail",
             {

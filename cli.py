@@ -40,48 +40,36 @@ class CLI:
             )
 
     @staticmethod
-    def _parse_datetime(date_str):
-        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-
-    @staticmethod
-    def _parse_datetime_micro(date_str):
-        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
-
-    @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
 
     def find_female_snails(self, price_filter=2):
         all_snails = {}
-        # FIXME: include gender 0 as well - cycle end will be none if reset!
+        # include gender 0 as well - cycle end will be none if reset!
         for gender in (0, 1):
             for snail in self.client.iterate_all_snails_marketplace(filters={'gender': gender}):
-                if snail['market']['price'] > price_filter:
+                if snail.market_price > price_filter:
                     break
-                all_snails[snail['id']] = snail
+                all_snails[snail.id] = snail
         logger.debug('Fetching details for %d snails', len(all_snails))
         keys = list(all_snails.keys())
         for i in range(0, len(keys), 20):
             for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
-                all_snails[x['id']]['_details'] = x
+                all_snails[x.id]['_details'] = x
 
         for snail_id, snail in all_snails.items():
-            if snail['breeding']['breed_detail']['monthly_breed_available'] > 0:
+            if snail.monthly_breed_available > 0:
                 br = f"{Fore.GREEN}BREEDER{Fore.RESET}"
-            elif snail['gender']['id'] == 0 and snail['breeding']['breed_detail']['cycle_end'] is None:
+            elif snail['gender']['id'] == 0 and snail.breed_cycle_end is None:
                 br = f"{Fore.GREEN}NEW BREEDER{Fore.RESET}"
             else:
                 # cannot use `days_remaining` because new borns will have it as 0, but they do have cycle_end :shrug:
-                to_queue = self._parse_datetime(snail['breeding']['breed_detail']['cycle_end'])
-                days_to_breed = (to_queue - self._now()).total_seconds() / (60 * 60 * 24)
+                print(f'https://www.snailtrail.art/snails/{snail_id}/about')
+                days_to_breed = (snail.breed_cycle_end - self._now()).total_seconds() / (60 * 60 * 24)
                 br = f"{Fore.YELLOW}breed in {days_to_breed:.2f}{Fore.RESET}"
             logger.info(
-                f"{snail['name']} [https://www.snailtrail.art/snails/{snail_id}/about] for {snail['market']['price']} - {br} - {snail['_details']['family']} {snail['_details']['klass']} {snail['_details']['purity']} {''.join(snail['_details']['genome'])}"
+                f"{snail.name} [https://www.snailtrail.art/snails/{snail_id}/about] for {snail.market_price} - {br} - {snail['_details'].family} {snail['_details'].klass} {snail['_details'].purity} {''.join(snail['_details'].genome)}"
             )
-
-    def list_owned_snails(self):
-        for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
-            print(snail)
 
     def list_missions(self):
         for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
@@ -103,7 +91,7 @@ class CLI:
         for x in self.client.iterate_my_snails_for_missions(self.owner):
             if self.args.exclude and x['id'] in self.args.exclude:
                 continue
-            to_queue = self._parse_datetime_micro(x['queueable_at'])
+            to_queue = x.queueable_at
             tleft = to_queue - self._now()
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
@@ -243,10 +231,7 @@ class CLI:
                             continue
                         if race['candidates']:
                             # report on just 1 match, but use only snails with 2 adaptations (stronger)
-                            cands = [
-                                cand for cand in race['candidates']
-                                if len(cand[1]['adaptations']) > 1
-                            ]
+                            cands = [cand for cand in race['candidates'] if len(cand[1]['adaptations']) > 1]
                             if not cands:
                                 continue
                             msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
@@ -274,7 +259,8 @@ class CLI:
         self.list_missions()
 
     def cmd_snails(self):
-        self.list_owned_snails()
+        for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
+            print(snail.name, snail.klass, snail.gender)
 
     def cmd_market(self):
         if self.args.females:
@@ -401,6 +387,8 @@ def main(argv=None):
         proxy_url = p.url()
     try:
         CLI(proxy_url, args).run()
+    except KeyboardInterrupt:
+        logger.info('Stopping...')
     finally:
         if not args.proxy:
             p.stop()
