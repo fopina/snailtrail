@@ -46,7 +46,7 @@ class Snail(AttrDict):
     
     @property
     def queueable_at(self):
-        return _parse_datetime_micro(x['queueable_at'])
+        return _parse_datetime_micro(self['queueable_at'])
 
 
 def _parse_datetime(date_str):
