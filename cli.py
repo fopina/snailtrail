@@ -43,10 +43,23 @@ class CLI:
     def _now():
         return datetime.now(tz=timezone.utc)
 
-    def find_female_snails(self, price_filter=2):
+    def _breed_status_str(self, status):
+        if status >= 0:
+            return f"{Fore.YELLOW}breed in {status:.2f}{Fore.RESET}"
+        elif status == -1:
+            return f"{Fore.GREEN}BREEDER{Fore.RESET}"
+        elif status == -2:
+            return f"{Fore.GREEN}NEW BREEDER{Fore.RESET}"
+        else:
+            return f"{Fore.RED}NO BREED?{Fore.RESET}"
+
+    def find_market_snails(self, only_females=False, price_filter=2):
         all_snails = {}
         # include gender 0 as well - cycle end will be none if reset!
-        for gender in (0, 1):
+        genders = [0, 1]
+        if not only_females:
+            genders.append(2)
+        for gender in genders:
             for snail in self.client.iterate_all_snails_marketplace(filters={'gender': gender}):
                 if snail.market_price > price_filter:
                     break
@@ -55,20 +68,11 @@ class CLI:
         keys = list(all_snails.keys())
         for i in range(0, len(keys), 20):
             for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
-                all_snails[x.id]['_details'] = x
+                all_snails[x.id].update(x)
 
         for snail_id, snail in all_snails.items():
-            if snail.monthly_breed_available > 0:
-                br = f"{Fore.GREEN}BREEDER{Fore.RESET}"
-            elif snail['gender']['id'] == 0 and snail.breed_cycle_end is None:
-                br = f"{Fore.GREEN}NEW BREEDER{Fore.RESET}"
-            else:
-                # cannot use `days_remaining` because new borns will have it as 0, but they do have cycle_end :shrug:
-                print(f'https://www.snailtrail.art/snails/{snail_id}/about')
-                days_to_breed = (snail.breed_cycle_end - self._now()).total_seconds() / (60 * 60 * 24)
-                br = f"{Fore.YELLOW}breed in {days_to_breed:.2f}{Fore.RESET}"
             logger.info(
-                f"{snail.name} [https://www.snailtrail.art/snails/{snail_id}/about] for {snail.market_price} - {br} - {snail['_details'].family} {snail['_details'].klass} {snail['_details'].purity} {''.join(snail['_details'].genome)}"
+                f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.market_price}{Fore.RESET}"
             )
 
     def list_missions(self):
@@ -264,11 +268,10 @@ class CLI:
 
     def cmd_snails(self):
         for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
-            print(snail.name, snail.klass, snail.gender)
+            print(snail, self._breed_status_str(snail.breed_status))
 
     def cmd_market(self):
-        if self.args.females:
-            self.find_female_snails(price_filter=self.args.price)
+        self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
 
     def cmd_rename(self):
         self.rename_snail()

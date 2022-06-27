@@ -10,7 +10,11 @@ class Gender(Enum):
 
 
 class AttrDict(dict):
+    _DICT_METHODS = set(dir(dict))
+
     def __getattribute__(self, __name: str) -> Any:
+        if __name in AttrDict._DICT_METHODS:
+            return super().__getattribute__(__name)
         if __name in Snail.__dict__.keys():
             return super().__getattribute__(__name)
         return self[__name]
@@ -32,7 +36,25 @@ class Snail(AttrDict):
     @property
     def monthly_breed_available(self):
         return self['breeding']['breed_detail']['monthly_breed_available']
-    
+
+    @property
+    def genome_str(self):
+        return ''.join(self.genome)
+
+    @property
+    def breed_status(self):
+        """
+        return < 0 if breeding available: -1 for normal ones, -2 if it's the first breed (ex-newborn)
+        otherwise returns number of days left to be able to breed
+        """
+        if self.monthly_breed_available > 0:
+            return -1
+        elif self.gender == Gender.UNDEFINED and self.breed_cycle_end is None:
+            return -2
+        else:
+            # cannot use `days_remaining` because new borns will have it as 0, but they do have cycle_end :shrug:
+            return (self.breed_cycle_end - datetime.now(tz=timezone.utc)).total_seconds() / (60 * 60 * 24)
+
     @property
     def breed_cycle_end(self):
         x = self['breeding']['breed_detail']['cycle_end']
@@ -47,6 +69,10 @@ class Snail(AttrDict):
     @property
     def queueable_at(self):
         return _parse_datetime_micro(self['queueable_at'])
+
+    def __str__(self) -> str:
+        # {'id': 8940, 'adaptations': ['Glacier'], 'name': 'Snail #8940', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}}
+        return f"{self.name} #{self.id} {self.family} {self.klass} {self.purity} {self.genome_str}"
 
 
 def _parse_datetime(date_str):
