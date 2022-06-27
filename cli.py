@@ -267,7 +267,14 @@ class CLI:
         self.list_missions()
 
     def cmd_snails(self):
-        for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
+        it = self.client.iterate_all_snails(filters={'owner': self.owner})
+        if self.args.sort:
+            it = list(it)
+            if self.args.sort == 'breed':
+                it.sort(key=lambda x: x.breed_status)
+            elif self.args.sort == 'lvl':
+                it.sort(key=lambda x: x.level)
+        for snail in it:
             print(snail, self._breed_status_str(snail.breed_status))
 
     def cmd_market(self):
@@ -361,7 +368,8 @@ def build_parser():
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
-    subparsers.add_parser('snails')
+    pm = subparsers.add_parser('snails')
+    pm.add_argument('-s', '--sort', type=str, choices=['breed', 'lvl'], help='Sort snails by')
 
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')

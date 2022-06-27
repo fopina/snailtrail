@@ -8,6 +8,9 @@ class Gender(Enum):
     FEMALE = 1
     MALE = 2
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class AttrDict(dict):
     _DICT_METHODS = set(dir(dict))
@@ -42,6 +45,10 @@ class Snail(AttrDict):
         return ''.join(self.genome)
 
     @property
+    def level(self):
+        return self.stats['experience']['level']
+
+    @property
     def breed_status(self):
         """
         return < 0 if breeding available: -1 for normal ones, -2 if it's the first breed (ex-newborn)
@@ -65,14 +72,14 @@ class Snail(AttrDict):
     @property
     def market_price(self):
         return self.market['price']
-    
+
     @property
     def queueable_at(self):
         return _parse_datetime_micro(self['queueable_at'])
 
     def __str__(self) -> str:
         # {'id': 8940, 'adaptations': ['Glacier'], 'name': 'Snail #8940', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}}
-        return f"{self.name} #{self.id} {self.family} {self.klass} {self.purity} {self.genome_str}"
+        return f"{self.name} #{self.id} {self.family} {self.gender} {self.klass} {self.purity} {self.genome_str}"
 
 
 def _parse_datetime(date_str):
