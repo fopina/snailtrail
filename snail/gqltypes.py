@@ -78,7 +78,13 @@ class Snail(AttrDict):
         return _parse_datetime_micro(self['queueable_at'])
 
     def __str__(self) -> str:
-        # {'id': 8940, 'adaptations': ['Glacier'], 'name': 'Snail #8940', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}}
+        """
+        >>> s = Snail({'id': 8940, 'adaptations': ['Glacier'], 'name': 'Snail #8940', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}})
+        >>> s.name
+        'Snail #8940'
+        >>> str(s)
+        'Snail #8940 #8940 Helix FEMALE Expert 11 HHGAHAAGMHMHHGHHXHHH'
+        """
         return f"{self.name} #{self.id} {self.family} {self.gender} {self.klass} {self.purity} {self.genome_str}"
 
 
