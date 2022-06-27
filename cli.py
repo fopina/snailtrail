@@ -5,12 +5,10 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
-import requests
 
 from colorama import Fore
-from requests.exceptions import HTTPError
 
-from snail import client, proxy
+from snail import client, proxy, notifier
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
@@ -28,16 +26,8 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
+        self.notifier = notifier.Notifier(self.args.notify)
         self._notified_races = set()
-
-    def _notify(self, message, format='Markdown'):
-        if self.args.notify:
-            print(
-                requests.post(
-                    f'https://tgbots.skmobi.com/pushit/{self.args.notify}',
-                    json={'msg': message, 'format': format},
-                )
-            )
 
     @staticmethod
     def _now():
@@ -148,7 +138,7 @@ class CLI:
             r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
-                self._notify(
+                self.notifier.notify(
                     f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission"
                 )
             elif r.get('status') == 1 and snail['id'] in boosted:
@@ -167,12 +157,12 @@ class CLI:
                         r['signature'],
                     )
                 )
-                self._notify(
+                self.notifier.notify(
                     f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT"
                 )
             else:
                 logger.error(r)
-                self._notify(f'⛔ `{snail["name"]}` FAILED to join mission')
+                self.notifier.notify(f'⛔ `{snail["name"]}` FAILED to join mission')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -244,7 +234,7 @@ class CLI:
                                 continue
                             msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
                             logger.info(msg)
-                            self._notify(msg)
+                            self.notifier.notify(msg)
                             self._notified_races.add(race['id'])
                     # override mission waiting
                     w = None
@@ -253,7 +243,7 @@ class CLI:
                     w = self.args.wait
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
-            except HTTPError as e:
+            except client.requests.exceptions.HTTPError as e:
                 if e.response.status_code == 502:
                     logger.error('site 502... waiting')
                 else:
