@@ -199,11 +199,16 @@ class CLI:
             raise Exception(r)
         print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
+    def _balance(self):
+        return f'''\
+Unclaimed SLIME: {self.client.web3.claimable_rewards()}
+SLIME: {self.client.web3.balance_of_slime()}
+SNAILS: {self.client.web3.balance_of_snails()}
+AVAX: {self.client.web3.get_balance()}
+        '''
+
     def cmd_balance(self):
-        print(f'Unclaimed SLIME: {self.client.web3.claimable_rewards()}')
-        print(f'SLIME: {self.client.web3.balance_of_slime()}')
-        print(f'SNAILS: {self.client.web3.balance_of_snails()}')
-        print(f'AVAX: {self.client.web3.get_balance()}')
+        print(self._balance())
 
     def cmd_bot(self):
         if not (self.args.missions or self.args.races):
@@ -397,8 +402,9 @@ def main(argv=None):
         p.start()
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
+
+    c = CLI(proxy_url, args)
     try:
-        c = CLI(proxy_url, args)
         c.run()
     except KeyboardInterrupt:
         logger.info('Stopping...')

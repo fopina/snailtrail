@@ -26,7 +26,7 @@ def bot_auth(func):
         except Exception:
             logger.exception('error caught')
             update.message.reply_text('error occurred, check logs')
-
+    wrapper_func.__doc__ = func.__doc__
     return wrapper_func
 
 
@@ -42,11 +42,15 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
             dispatcher.add_handler(CommandHandler("help", self.cmd_help))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
+            dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
         else:
             self.__updater = None
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
+        """
+        Start
+        """
         user = update.effective_user
         update.message.reply_markdown_v2(
             fr'Hi {user.mention_markdown_v2()}\!',
@@ -54,10 +58,16 @@ class Notifier:
 
     @bot_auth
     def cmd_help(self, update: Update, context: CallbackContext) -> None:
+        """
+        Help
+        """
         update.message.reply_text('Help!')
 
     @bot_auth
     def cmd_stats(self, update: Update, context: CallbackContext) -> None:
+        """
+        My snails stats
+        """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         it = self.__cli.client.iterate_all_snails(filters={'owner': self.__cli.owner})
         it = list(it)
@@ -71,7 +81,7 @@ class Notifier:
                 '🐌  %s %s 🍆  *%s* 🏁 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
-                    escmv2(f"{snail.family} {snail.gender} {snail.klass} {snail.purity}"),
+                    escmv2(f"lv {snail.level} - {snail.family} {snail.gender} {snail.klass} {snail.purity}"),
                     self._breed_status_markdown(snail.breed_status),
                     escmv2(self._queueable_at(snail)),
                 )
@@ -79,12 +89,27 @@ class Notifier:
             )
         )
 
+    @bot_auth
+    def cmd_balance(self, update: Update, context: CallbackContext) -> None:
+        """
+        Current balance (snail count, avax, slime)
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        update.message.reply_text(self.__cli._balance())
+
     def idle(self):
         if self.__updater:
             self.__updater.idle()
 
     def start_polling(self):
         if self.__updater:
+            commands = [
+                (v1.command[0], v1.callback.__doc__.strip())
+                for v in self.__updater.dispatcher.handlers.values()
+                for v1 in v
+                if isinstance(v1, CommandHandler)
+            ]
+            self.__updater.bot.set_my_commands(commands)
             self.__updater.start_polling()
 
     def stop_polling(self):
