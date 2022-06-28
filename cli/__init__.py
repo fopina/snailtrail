@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from colorama import Fore
 
 from snail import client, proxy
-from . import telegram
+from . import tgbot
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
@@ -27,7 +27,9 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
-        self.notifier = telegram.Notifier(self.args.notify)
+        self.notifier = tgbot.Notifier(self.args.notify, self.args.bot_owner, self)
+        if self.args.bot_owner:
+            self.notifier.start_polling()
         self._notified_races = set()
 
     @staticmethod
@@ -140,7 +142,8 @@ class CLI:
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
                 self.notifier.notify(
-                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission"
+                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission",
+                    silent=True,
                 )
             elif r.get('status') == 1 and snail['id'] in boosted:
                 logger.warning('requires transaction')
@@ -159,7 +162,8 @@ class CLI:
                     )
                 )
                 self.notifier.notify(
-                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT"
+                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT",
+                    silent=True,
                 )
             else:
                 logger.error(r)
@@ -244,7 +248,7 @@ class CLI:
                     w = self.args.wait
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
-            except client.requests.exceptions.HTTPError as e:
+            except client.gqlclient.requests.exceptions.HTTPError as e:
                 if e.response.status_code == 502:
                     logger.error('site 502... waiting')
                 else:
@@ -332,6 +336,7 @@ def build_parser():
     parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
     parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
+    parser.add_argument('--bot-owner', type=int, metavar='CHAT_ID', help='Telegram Chat IDs to send notifications (and allowed to control the bot)')
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
@@ -393,10 +398,12 @@ def main(argv=None):
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
     try:
-        CLI(proxy_url, args).run()
+        c = CLI(proxy_url, args)
+        c.run()
     except KeyboardInterrupt:
         logger.info('Stopping...')
     finally:
+        c.notifier.stop_polling()
         if not args.proxy:
             p.stop()
 

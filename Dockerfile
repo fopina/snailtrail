@@ -11,6 +11,7 @@ RUN pip install -r requirements.txt
 
 WORKDIR /app
 ADD snail /app/snail
-ADD cli.py /app/
+ADD cli /app/cli
+ADD main.py /app/
 
-ENTRYPOINT [ "python", "-u", "/app/cli.py" ]
+ENTRYPOINT [ "python", "-u", "/app/main.py" ]
