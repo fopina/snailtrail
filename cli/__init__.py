@@ -226,26 +226,7 @@ AVAX: {self.client.web3.get_balance()}
                         w = (next_mission - now).total_seconds()
 
                 if self.args.races:
-                    # FIXME: refactor this "bot" mode...
-                    # FIXME: loop all leagues, but save requests for now :)
-                    _, races = self.find_races(client.LEAGUE_GOLD)
-                    for race in races:
-                        if race['id'] in self._notified_races:
-                            # notify only once...
-                            continue
-                        if race['candidates']:
-                            # report on just 1 match, but use only snails with 2 adaptations (stronger)
-                            cands = [
-                                cand
-                                for cand in race['candidates']
-                                if cand[0] >= self.args.race_matches and len(cand[1]['adaptations']) > 1
-                            ]
-                            if not cands:
-                                continue
-                            msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
-                            logger.info(msg)
-                            self.notifier.notify(msg)
-                            self._notified_races.add(race['id'])
+                    self.find_races()
                     # override mission waiting
                     w = None
 
@@ -283,7 +264,7 @@ AVAX: {self.client.web3.get_balance()}
     def cmd_rename(self):
         self.rename_snail()
 
-    def find_races(self, league):
+    def find_races_in_league(self, league):
         snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
         if not snails:
             return [], []
@@ -301,6 +282,30 @@ AVAX: {self.client.web3.get_balance()}
             x['candidates'] = candidates
             races.append(x)
         return snails, races
+
+    def find_races(self):
+        # FIXME: loop all leagues, but save requests for now :)
+        _, races = self.find_races_in_league(client.LEAGUE_GOLD)
+        for race in races:
+            if race['id'] in self._notified_races:
+                # notify only once...
+                continue
+            if self.args.race_price and self.args.race_price < race['race_type']:
+                # too expensive! :D
+                continue
+            if race['candidates']:
+                # report on just 1 match, but use only snails with 2 adaptations (stronger)
+                cands = [
+                    cand
+                    for cand in race['candidates']
+                    if cand[0] >= self.args.race_matches and len(cand[1]['adaptations']) > 1
+                ]
+                if not cands:
+                    continue
+                msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
+                logger.info(msg)
+                self.notifier.notify(msg)
+                self._notified_races.add(race['id'])
 
     def cmd_races(self):
         for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
@@ -366,6 +371,7 @@ def build_parser():
     )
     pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
+    pm.add_argument('--race-price', type=int, help='Maximum price for race')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
