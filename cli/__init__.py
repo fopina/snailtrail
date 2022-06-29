@@ -254,11 +254,12 @@ AVAX: {self.client.web3.get_balance()}
                 if e.response.status_code == 502:
                     logger.error('site 502... waiting')
                 else:
-                    logger.exception('crash, waiting 2min')
-                self.notifier.notify('bot gql error, check logs')
+                    logger.exception('crash, waiting 2min: %s', e)
+                # too noisy
+                # self.notifier.notify('bot gql error, check logs')
                 time.sleep(120)
-            except Exception:
-                logger.exception('crash, waiting 2min')
+            except Exception as e:
+                logger.exception('crash, waiting 2min: %s', e)
                 self.notifier.notify('bot unknown error, check logs')
                 time.sleep(120)
 
