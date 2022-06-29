@@ -31,6 +31,7 @@ class CLI:
         if self.args.bot_owner:
             self.notifier.start_polling()
         self._notified_races = set()
+        self._notify_mission_data = None
 
     @staticmethod
     def _now():
@@ -81,7 +82,21 @@ class CLI:
                 del x[k]
             print(f'{color}{x}{Fore.RESET}')
 
-    def join_missions(self):
+    def notify_mission(self, message):
+        if self._notify_mission_data:
+            passed = self._now() - self._notify_mission_data['start']
+
+        # 3.5h = 12600 seconds, create new mission message after that
+        if not self._notify_mission_data or passed.total_seconds() > 12600:
+            msg = self.notifier.notify(message, silent=True)
+            self._notify_mission_data = {'msg': msg, 'text': message, 'start': self._now()}
+            return
+
+        # `passed` is always defined here, due to first+second conditions being exclusive
+        self._notify_mission_data['text'] += f'\n{message} `[+{str(passed).rsplit(".")[0]}]`'
+        self.notifier.notify(self._notify_mission_data['text'], edit=self._notify_mission_data['msg'])
+
+    def mission_queueable_snails(self):
         queueable = []
 
         closest = None
@@ -101,7 +116,10 @@ class CLI:
                 logger.info(
                     f"{Fore.YELLOW}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {tleft}{Fore.RESET}"
                 )
+        return queueable, closest
 
+    def join_missions(self):
+        queueable, closest = self.mission_queueable_snails()
         if not queueable:
             return closest
 
@@ -141,9 +159,8 @@ class CLI:
             r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
             if r.get('status') == 0:
                 logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
-                self.notifier.notify(
+                self.notify_mission(
                     f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission",
-                    silent=True,
                 )
             elif r.get('status') == 1 and snail['id'] in boosted:
                 logger.warning('requires transaction')
@@ -161,9 +178,8 @@ class CLI:
                         r['signature'],
                     )
                 )
-                self.notifier.notify(
+                self.notify_mission(
                     f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT",
-                    silent=True,
                 )
             else:
                 logger.error(r)
@@ -239,9 +255,11 @@ AVAX: {self.client.web3.get_balance()}
                     logger.error('site 502... waiting')
                 else:
                     logger.exception('crash, waiting 2min')
+                self.notifier.notify('bot gql error, check logs')
                 time.sleep(120)
             except Exception:
                 logger.exception('crash, waiting 2min')
+                self.notifier.notify('bot unknown error, check logs')
                 time.sleep(120)
 
     def cmd_missions(self):

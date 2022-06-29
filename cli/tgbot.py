@@ -37,14 +37,14 @@ class Notifier:
         self.__cli = cli_obj
 
         if token:
-            self.__updater = Updater(self.__token)
-            dispatcher = self.__updater.dispatcher
+            self.updater = Updater(self.__token)
+            dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
             dispatcher.add_handler(CommandHandler("help", self.cmd_help))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
         else:
-            self.__updater = None
+            self.updater = None
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -98,23 +98,24 @@ class Notifier:
         update.message.reply_text(self.__cli._balance())
 
     def idle(self):
-        if self.__updater:
-            self.__updater.idle()
+        if self.updater:
+            self.updater.idle()
 
     def start_polling(self):
-        if self.__updater:
+        if self.updater:
             commands = [
                 (v1.command[0], v1.callback.__doc__.strip())
-                for v in self.__updater.dispatcher.handlers.values()
+                for v in self.updater.dispatcher.handlers.values()
                 for v1 in v
                 if isinstance(v1, CommandHandler)
             ]
-            self.__updater.bot.set_my_commands(commands)
-            self.__updater.start_polling()
+            self.updater.bot.set_my_commands(commands)
+            self.updater.start_polling()
 
     def stop_polling(self):
-        if self.__updater:
-            self.__updater.stop()
+        if self.updater:
+            self.updater.stop()
+            self.updater.bot.edit_message_text
 
     def _breed_status_markdown(self, status):
         if status >= 0:
@@ -132,6 +133,28 @@ class Notifier:
             return '✅'
         return f'⏲️  {str(tleft).rsplit(":", 1)[0]}'
 
-    def notify(self, message, format='Markdown', silent=False):
-        if self.__updater and self.owner_id:
-            self.__updater.bot.send_message(self.owner_id, message, parse_mode=format, disable_notification=silent)
+    def notify(self, message: str, format: str = 'Markdown', silent: bool = False, edit: dict[str] = None):
+        """Use this method to send text messages
+
+        Args:
+            message (:obj:`str`): Text of the message to be sent. Max 4096 characters after entities
+                parsing.
+            format (:obj:`str`): Send Markdown or HTML, if you want Telegram apps to show bold,
+                italic, fixed-width text or inline URLs in your bot's message.
+            silent (:obj:`bool`, optional): Sends the message silently. Users will
+                receive a notification with no sound.
+            edit (:obj:`dict[str]`, optional): If not None, it should be the old `telegram.Message`
+                which will then be edited.
+
+        Returns:
+            :class:`telegram.Message`: On success, the sent message is returned.
+
+        Raises:
+            :class:`telegram.error.TelegramError`
+
+        """
+        if self.updater and self.owner_id:
+            if edit is None:
+                return self.updater.bot.send_message(self.owner_id, message, parse_mode=format, disable_notification=silent)
+            else:
+                return self.updater.bot.edit_message_text(message, edit['chat']['id'], edit['message_id'], parse_mode=format)
