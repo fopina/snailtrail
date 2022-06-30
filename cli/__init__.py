@@ -32,6 +32,7 @@ class CLI:
             self.notifier.start_polling()
         self._notified_races = set()
         self._notify_mission_data = None
+        self._next_mission = None
 
     @staticmethod
     def _now():
@@ -230,16 +231,16 @@ AVAX: {self.client.web3.get_balance()}
         if not (self.args.missions or self.args.races):
             logger.error('choose something...')
             return
-        next_mission = None
+        self._next_mission = None
         while True:
             try:
                 if self.args.missions:
                     now = datetime.now(tz=timezone.utc)
-                    if next_mission is None or next_mission < now:
-                        next_mission = self.join_missions()
-                        logger.info('next mission in at %s', next_mission)
-                    if next_mission is not None:
-                        w = (next_mission - now).total_seconds()
+                    if self._next_mission is None or self._next_mission < now:
+                        self._next_mission = self.join_missions()
+                        logger.info('next mission in at %s', self._next_mission)
+                    if self._next_mission is not None:
+                        w = (self._next_mission - now).total_seconds()
 
                 if self.args.races:
                     self.find_races()

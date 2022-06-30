@@ -1,6 +1,6 @@
 from telegram import Update, constants
 from telegram.utils.helpers import escape_markdown
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, CallbackContext
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,8 +40,8 @@ class Notifier:
             self.updater = Updater(self.__token)
             dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
-            dispatcher.add_handler(CommandHandler("help", self.cmd_help))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
+            dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
         else:
             self.updater = None
@@ -97,6 +97,16 @@ class Notifier:
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         update.message.reply_text(self.__cli._balance())
 
+    @bot_auth
+    def cmd_nextmission(self, update: Update, context: CallbackContext) -> None:
+        """
+        Show time to next daily mission
+        """
+        if self.__cli._next_mission is None:
+            update.message.reply_markdown('next mission is *unknown*')
+        else:
+            update.message.reply_markdown(f'next mission in `{str(self.__cli._next_mission - self.__cli._now()).split(".")[0]}`')
+
     def idle(self):
         if self.updater:
             self.updater.idle()
@@ -107,7 +117,7 @@ class Notifier:
                 (v1.command[0], v1.callback.__doc__.strip())
                 for v in self.updater.dispatcher.handlers.values()
                 for v1 in v
-                if isinstance(v1, CommandHandler)
+                if isinstance(v1, CommandHandler) and v1.command[0] != 'start'
             ]
             self.updater.bot.set_my_commands(commands)
             self.updater.start_polling()
