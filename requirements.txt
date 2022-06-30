@@ -5,3 +5,4 @@ mitmproxy==8.1.0
 # for CLI
 colorama==0.4.4
 python-telegram-bot==13.12
+ConfigArgParse==1.5.3

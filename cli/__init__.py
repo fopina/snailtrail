@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import argparse
+import configargparse
 import logging
 import os
 import time
@@ -358,7 +358,12 @@ AVAX: {self.client.web3.get_balance()}
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog=__name__)
+    parser = configargparse.ArgParser(
+        prog=__name__,
+        auto_env_var_prefix='snailbot_',
+        default_config_files=['./main.conf', '~/.snailbot.conf'],
+        args_for_setting_config_path=['-c', '--config'],
+    )
     parser.add_argument(
         '--owner-file', type=str, default='owner.conf', help='owner wallet (used for some filters/queries)'
     )
@@ -366,14 +371,19 @@ def build_parser():
     parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
     parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
-    parser.add_argument('--bot-owner', type=int, metavar='CHAT_ID', help='Telegram Chat IDs to send notifications (and allowed to control the bot)')
+    parser.add_argument(
+        '--bot-owner',
+        type=int,
+        metavar='CHAT_ID',
+        help='Telegram Chat IDs to send notifications (and allowed to control the bot)',
+    )
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
 
-    pm = subparsers.add_parser('bot')
+    pm = subparsers.add_parser('bot', auto_env_var_prefix='snailbot_')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
     pm.add_argument(
@@ -416,6 +426,7 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
     if args.debug:
         logger.setLevel(logging.DEBUG)
+        logger.debug('debug enabled')
     if args.proxy:
         proxy_url = args.proxy
     else:
