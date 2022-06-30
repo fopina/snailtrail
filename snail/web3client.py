@@ -11,6 +11,7 @@ CONTRACT_PREFERENCES = '0xfDC483EE4ff24d3a8580504a5D04128451972e1e'
 CONTRACT_RACE = '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0'
 CONTRACT_SLIME = '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8'
 CONTRACT_SNAILNFT = '0xec675B7C5471c67E9B203c6D1C604df28A89FB7f'
+CONTRACT_INCUBATOR = '0x09457e0181dA074610530212A6378605382764b8'
 
 
 class Client:
@@ -45,7 +46,11 @@ class Client:
 
     @cached_property
     def snailnft_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SNAILNFT), abi=abi.ACCOUNT)
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SNAILNFT), abi=abi.SNAILNFT)
+
+    @cached_property
+    def incubator_contract(self):
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_INCUBATOR), abi=abi.INCUBATOR)
 
     def _bss(self, function_call):
         """build tx, sign it and send it"""
@@ -88,6 +93,9 @@ class Client:
 
     def get_balance(self):
         return self.web3.eth.get_balance(self.wallet) / 1000000000000000000
+
+    def get_current_coefficent(self):
+        return self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
 
     def sign_daily_mission(self, owner: str, snail_id: int, race_id: int):
         """Generate and sign payload to join a daily mission

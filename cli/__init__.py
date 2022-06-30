@@ -352,6 +352,10 @@ AVAX: {self.client.web3.get_balance()}
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
 
+    def cmd_incubate(self):
+        # TODO: everything, just showing coefficient for now
+        print(self.client.web3.get_current_coefficent())
+
     def run(self):
         if self.args.cmd:
             getattr(self, f'cmd_{self.args.cmd}')()
@@ -411,6 +415,8 @@ def build_parser():
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
     pm.add_argument('-p', '--price', type=float, default=1.5, help='price limit for search')
+
+    pm = subparsers.add_parser('incubate')
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
