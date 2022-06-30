@@ -256,6 +256,48 @@ class Client(requests.Session):
             """ % ('own' if own else 'all'),
         )['finished_races_promise']
 
+    def get_race_history(self, offset=0, filters={}):
+        return self.query(
+            "getRaceHistory",
+            {
+                "filters": filters,
+                "limit": 20,
+                "offset": offset,
+            },
+            """
+            query getRaceHistory($limit: Int, $offset: Int, $filters: RaceHistoryFilters) {
+            race_history_promise(limit: $limit, offset: $offset, filters: $filters) {
+                ... on Problem {
+                problem
+                __typename
+                }
+                ... on RaceHistory {
+                races {
+                    id
+                    conditions
+                    distance
+                    league
+                    status
+                    athletes
+                    results {
+                    token_id
+                    time
+                    __typename
+                    }
+                    track
+                    prize_pool
+                    starts_at
+                    __typename
+                }
+                count
+                __typename
+                }
+                __typename
+            }
+            }
+            """
+        )['race_history_promise']
+
     def get_my_snails_for_missions(
         self,
         owner,

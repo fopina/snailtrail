@@ -387,9 +387,39 @@ AVAX: {self.client.web3.get_balance()}
                 print(f"{c}{snail.name} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
         print(f'\nTOTAL CR: {total_cr}')
 
+    def _history_races(self, snail_id):
+        total_cr = 0
+        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league}):
+                for p, i in enumerate(race['results']):
+                    if i['token_id'] == snail_id:
+                        break
+                else:
+                    logger.error('no snail found, NOT POSSIBLE')
+                    continue
+                p += 1
+                fee = int(race.prize_pool) / 9
+                if p == 1:
+                    c = Fore.GREEN
+                    cr = fee * 4
+                elif p == 2:
+                    c = Fore.YELLOW
+                    cr = fee * 1.5
+                elif p == 3:
+                    c = Fore.LIGHTRED_EX
+                    cr = fee * 0.5
+                else:
+                    c = Fore.RED
+                    cr = 0 - fee
+                total_cr += cr
+                print(f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+        print(f'\nTOTAL CR: {total_cr}')
+
     def cmd_races(self):
         if self.args.finished:
             return self._finished_races()
+        if self.args.history:
+            return self._history_races(self.args.history)
         return self._open_races()
 
     def cmd_incubate(self):
@@ -463,9 +493,11 @@ def build_parser():
     pm.add_argument('name', type=str, help='new name')
 
     subparsers.add_parser('balance')
+
     pm = subparsers.add_parser('races')
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
+    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
     return parser
 
 
