@@ -977,7 +977,6 @@ RACE = [
     {"stateMutability": "payable", "type": "receive"},
 ]
 
-
 ACCOUNT = [
     {
         'inputs': [

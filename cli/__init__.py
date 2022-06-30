@@ -327,9 +327,9 @@ AVAX: {self.client.web3.get_balance()}
                 self.notifier.notify(msg)
                 self._notified_races.add(race['id'])
 
-    def cmd_races(self):
+    def _open_races(self):
         for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
-            snails, races = self.find_races(league)
+            snails, races = self.find_races_in_league(league)
             logger.info(f"Snails for {league}: {[s['name'] for s in snails]}")
             if not snails:
                 continue
@@ -351,6 +351,46 @@ AVAX: {self.client.web3.get_balance()}
                 else:
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
+
+    def _finished_races(self):
+        snails = {
+            x.id: x
+            for x in self.client.iterate_all_snails(filters={'owner': self.owner})
+        }
+        if not snails:
+            return
+        total_cr = 0
+        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+            for race in self.client.iterate_finished_races(filters={'owner': self.owner, 'league': league}, own=True):
+                for p, i in enumerate(race['results']):
+                    if i['token_id'] in snails:
+                        break
+                else:
+                    logger.error('no snail found, NOT POSSIBLE')
+                    continue
+                snail = snails[i['token_id']]
+                p += 1
+                fee = int(race.prize_pool) / 9
+                if p == 1:
+                    c = Fore.GREEN
+                    cr = fee * 4
+                elif p == 2:
+                    c = Fore.YELLOW
+                    cr = fee * 1.5
+                elif p == 3:
+                    c = Fore.LIGHTRED_EX
+                    cr = fee * 0.5
+                else:
+                    c = Fore.RED
+                    cr = 0 - fee
+                total_cr += cr
+                print(f"{c}{snail.name} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+        print(f'\nTOTAL CR: {total_cr}')
+
+    def cmd_races(self):
+        if self.args.finished:
+            return self._finished_races()
+        return self._open_races()
 
     def cmd_incubate(self):
         # TODO: everything, just showing coefficient for now
@@ -425,6 +465,7 @@ def build_parser():
     subparsers.add_parser('balance')
     pm = subparsers.add_parser('races')
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
+    pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     return parser
 
 

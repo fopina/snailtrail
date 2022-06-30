@@ -88,6 +88,10 @@ class Snail(AttrDict):
         return f"{self.name} #{self.id} {self.family} {self.gender} {self.klass} {self.purity} {self.genome_str}"
 
 
+class Race(AttrDict):
+    pass
+
+
 def _parse_datetime(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
 

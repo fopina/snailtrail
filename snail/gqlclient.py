@@ -215,6 +215,47 @@ class Client(requests.Session):
             """,
         )['onboarding_races_promise']
 
+    def get_finished_races(self, offset=0, filters={}, own=False):
+        return self.query(
+            "getFinishedRaces",
+            {
+                "filters": filters,
+                "limit": 20,
+                "offset": offset,
+            },
+            """
+            query getFinishedRaces($filters: RaceFilters, $limit: Int, $offset: Int) {
+                finished_races_promise(limit: $limit, offset: $offset, filters: $filters) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on Races {
+                    %s {
+                        id
+                        conditions
+                        distance
+                        league
+                        status
+                        athletes
+                        results {
+                        token_id
+                        time
+                        __typename
+                        }
+                        track
+                        starts_at
+                        prize_pool
+                        __typename
+                    }
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """ % ('own' if own else 'all'),
+        )['finished_races_promise']
+
     def get_my_snails_for_missions(
         self,
         owner,
