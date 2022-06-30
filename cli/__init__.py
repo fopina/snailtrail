@@ -310,7 +310,7 @@ AVAX: {self.client.web3.get_balance()}
             if race['id'] in self._notified_races:
                 # notify only once...
                 continue
-            if self.args.race_price and self.args.race_price <= int(race['race_type']):
+            if self.args.race_price and int(race['race_type']) > self.args.race_price:
                 # too expensive! :D
                 continue
             if race['candidates']:
