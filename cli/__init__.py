@@ -235,6 +235,7 @@ AVAX: {self.client.web3.get_balance()}
         self._next_mission = None
         while True:
             try:
+                w = None
                 if self.args.missions:
                     now = datetime.now(tz=timezone.utc)
                     if self._next_mission is None or self._next_mission < now:
@@ -464,6 +465,7 @@ def build_parser():
     )
     parser.add_argument(
         '--notify-target',
+        type=int,
         help='Telegram CHAT_ID to send notifications to',
     )
     parser.add_argument(
