@@ -89,7 +89,9 @@ class Snail(AttrDict):
 
 
 class Race(AttrDict):
-    pass
+    @property
+    def is_mission(self):
+        return race.distance == 'Treasury Run'
 
 
 def _parse_datetime(date_str):
