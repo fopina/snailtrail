@@ -18,7 +18,7 @@ class AttrDict(dict):
     def __getattribute__(self, __name: str) -> Any:
         if __name in AttrDict._DICT_METHODS:
             return super().__getattribute__(__name)
-        if __name in Snail.__dict__.keys():
+        if __name in self.__class__.__dict__.keys():
             return super().__getattribute__(__name)
         return self[__name]
 
@@ -91,6 +91,14 @@ class Snail(AttrDict):
 class Race(AttrDict):
     @property
     def is_mission(self):
+        """
+        >>> s = Race({'distance': 57})
+        >>> s.is_mission
+        False
+        >>> s = Race({'distance': 'Treasury Run'})
+        >>> s.is_mission
+        True
+        """
         return self.distance == 'Treasury Run'
 
 
