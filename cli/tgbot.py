@@ -43,6 +43,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
+            dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
         else:
             self.updater = None
 
@@ -106,6 +107,13 @@ class Notifier:
             update.message.reply_markdown('next mission is *unknown*')
         else:
             update.message.reply_markdown(f'next mission in `{str(self.__cli._next_mission - self.__cli._now()).split(".")[0]}`')
+
+    @bot_auth
+    def cmd_incubate(self, update: Update, context: CallbackContext) -> None:
+        """
+        Show current incubation coefficent
+        """
+        update.message.reply_markdown(f'current coefficient is `{self.__cli.client.web3.get_current_coefficent()}`')
 
     def idle(self):
         if self.updater:
