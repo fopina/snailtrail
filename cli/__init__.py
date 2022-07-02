@@ -360,59 +360,72 @@ AVAX: {self.client.web3.get_balance()}
         if not snails:
             return
         total_cr = 0
-        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
-            for race in self.client.iterate_finished_races(filters={'owner': self.owner, 'league': league}, own=True):
-                for p, i in enumerate(race['results']):
-                    if i['token_id'] in snails:
-                        break
-                else:
-                    logger.error('no snail found, NOT POSSIBLE')
-                    continue
-                snail = snails[i['token_id']]
-                p += 1
-                fee = int(race.prize_pool) / 9
-                if p == 1:
-                    c = Fore.GREEN
-                    cr = fee * 4
-                elif p == 2:
-                    c = Fore.YELLOW
-                    cr = fee * 1.5
-                elif p == 3:
-                    c = Fore.LIGHTRED_EX
-                    cr = fee * 0.5
-                else:
-                    c = Fore.RED
-                    cr = 0 - fee
-                total_cr += cr
-                print(f"{c}{snail.name} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+        total = 0
+        for race in (
+            race
+            for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM)
+            for race in self.client.iterate_finished_races(filters={'owner': self.owner, 'league': league}, own=True)
+        ):
+            for p, i in enumerate(race['results']):
+                if i['token_id'] in snails:
+                    break
+            else:
+                logger.error('no snail found, NOT POSSIBLE')
+                continue
+            snail = snails[i['token_id']]
+            p += 1
+            fee = int(race.prize_pool) / 9
+            if p == 1:
+                c = Fore.GREEN
+                cr = fee * 4
+            elif p == 2:
+                c = Fore.YELLOW
+                cr = fee * 1.5
+            elif p == 3:
+                c = Fore.LIGHTRED_EX
+                cr = fee * 0.5
+            else:
+                c = Fore.RED
+                cr = 0 - fee
+            total_cr += cr
+            print(f"{c}{snail.name} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+            total += 1
+            if self.args.limit and total >= self.args.limit:
+                break
         print(f'\nTOTAL CR: {total_cr}')
 
     def _history_races(self, snail_id):
         total_cr = 0
-        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
-            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league}):
-                for p, i in enumerate(race['results']):
-                    if i['token_id'] == snail_id:
-                        break
-                else:
-                    logger.error('no snail found, NOT POSSIBLE')
-                    continue
-                p += 1
-                fee = int(race.prize_pool) / 9
-                if p == 1:
-                    c = Fore.GREEN
-                    cr = fee * 4
-                elif p == 2:
-                    c = Fore.YELLOW
-                    cr = fee * 1.5
-                elif p == 3:
-                    c = Fore.LIGHTRED_EX
-                    cr = fee * 0.5
-                else:
-                    c = Fore.RED
-                    cr = 0 - fee
-                total_cr += cr
-                print(f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+        total = 0
+        for race in (
+            self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
+            for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM)
+        ):
+            for p, i in enumerate(race['results']):
+                if i['token_id'] == snail_id:
+                    break
+            else:
+                logger.error('no snail found, NOT POSSIBLE')
+                continue
+            p += 1
+            fee = int(race.prize_pool) / 9
+            if p == 1:
+                c = Fore.GREEN
+                cr = fee * 4
+            elif p == 2:
+                c = Fore.YELLOW
+                cr = fee * 1.5
+            elif p == 3:
+                c = Fore.LIGHTRED_EX
+                cr = fee * 0.5
+            else:
+                c = Fore.RED
+                cr = 0 - fee
+            total_cr += cr
+            print(f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+            total += 1
+            if self.args.limit and total >= self.args.limit:
+                break
         print(f'\nTOTAL CR: {total_cr}')
 
     def cmd_races(self):
@@ -497,6 +510,7 @@ def build_parser():
     pm = subparsers.add_parser('races')
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
+    pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
     return parser
 
