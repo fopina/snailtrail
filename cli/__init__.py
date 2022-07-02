@@ -5,6 +5,7 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
+import collections
 
 from colorama import Fore
 
@@ -27,8 +28,8 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
-        self.notifier = tgbot.Notifier(self.args.notify, self.args.bot_owner, self)
-        if self.args.bot_owner:
+        self.notifier = tgbot.Notifier(self.args.notify_token, self.args.notify_target, self)
+        if self.args.tg_bot:
             self.notifier.start_polling()
         self._notified_races = set()
         self._notify_mission_data = None
@@ -353,10 +354,7 @@ AVAX: {self.client.web3.get_balance()}
                 print(f'{color}{x_str}{Fore.RESET}{c}')
 
     def _finished_races(self):
-        snails = {
-            x.id: x
-            for x in self.client.iterate_all_snails(filters={'owner': self.owner})
-        }
+        snails = {x.id: x for x in self.client.iterate_all_snails(filters={'owner': self.owner})}
         if not snails:
             return
         total_cr = 0
@@ -450,6 +448,7 @@ def build_parser():
         auto_env_var_prefix='snailbot_',
         default_config_files=['./main.conf', '~/.snailbot.conf'],
         args_for_setting_config_path=['-c', '--config'],
+        args_for_writing_out_config_file=['--output-config'],
     )
     parser.add_argument(
         '--owner-file', type=str, default='owner.conf', help='owner wallet (used for some filters/queries)'
@@ -457,20 +456,27 @@ def build_parser():
     parser.add_argument('--web3-file', type=str, default='web3provider.conf', help='file with web3 http endpoint')
     parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
     parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
-    parser.add_argument('--notify', type=str, metavar='token', help='Enable notifications')
-    parser.add_argument(
-        '--bot-owner',
-        type=int,
-        metavar='CHAT_ID',
-        help='Telegram Chat IDs to send notifications (and allowed to control the bot)',
-    )
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
+    # FIXME: configargparse gets messed up with nargs > 1 and subcommands - it changes order of the args when calling argparse at the end... PR?!
+    parser.add_argument(
+        '--notify-token',
+        help='Telegram bot token to use for notifications',
+    )
+    parser.add_argument(
+        '--notify-target',
+        help='Telegram CHAT_ID to send notifications to',
+    )
+    parser.add_argument(
+        '--tg-bot',
+        action='store_true',
+        help='Poll Telegram Bot API for incoming messages/commands',
+    )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
 
-    pm = subparsers.add_parser('bot', auto_env_var_prefix='snailbot_')
+    pm = subparsers.add_parser('bot')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
     pm.add_argument(
