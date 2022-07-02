@@ -19,10 +19,11 @@ class Client:
         if wallet and private_key and web3_provider:
             self.web3 = web3client.Client(wallet, private_key, web3_provider, web3_provider_class=web3_provider_class)
 
-    def _iterate_pages(self, method, key, klass=None, args=None, kwargs=None):
+    def _iterate_pages(self, method, key, klass=None, args=None, kwargs=None, max_calls=None):
         args = args or []
         kwargs = kwargs or {}
         c = 0
+        calls = 0
         while True:
             kwargs['offset'] = c
             objs = method(*args, **kwargs)
@@ -33,6 +34,9 @@ class Client:
             yield from _r
             c += len(objs[key])
             if total is not None and c >= total:
+                break
+            calls += 1
+            if max_calls and calls >= max_calls:
                 break
 
     def iterate_all_snails_marketplace(self, filters={}):
@@ -65,10 +69,10 @@ class Client:
             self.gql.get_onboarding_races, 'all', klass=gqltypes.Race, kwargs={'filters': filters}
         )
 
-    def iterate_finished_races(self, filters={}, own=False):
+    def iterate_finished_races(self, filters={}, own=False, max_calls=None):
         k = 'own' if own else 'all'
         yield from self._iterate_pages(
-            self.gql.get_finished_races, k, klass=gqltypes.Race, kwargs={'filters': filters, 'own': own}
+            self.gql.get_finished_races, k, klass=gqltypes.Race, kwargs={'filters': filters, 'own': own}, max_calls=max_calls
         )
 
     def iterate_race_history(self, filters={}):

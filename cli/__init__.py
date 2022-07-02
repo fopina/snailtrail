@@ -32,6 +32,7 @@ class CLI:
         if self.args.tg_bot:
             self.notifier.start_polling()
         self._notified_races = set()
+        self._notified_races_over = set()
         self._notify_mission_data = None
         self._next_mission = None
 
@@ -229,28 +230,30 @@ AVAX: {self.client.web3.get_balance()}
         print(self._balance())
 
     def cmd_bot(self):
-        if not (self.args.missions or self.args.races):
+        if not (self.args.missions or self.args.races or self.args.races_over):
             logger.error('choose something...')
             return
         self._next_mission = None
         while True:
             try:
-                w = None
+                w = self.args.wait
                 if self.args.missions:
                     now = datetime.now(tz=timezone.utc)
                     if self._next_mission is None or self._next_mission < now:
                         self._next_mission = self.join_missions()
                         logger.info('next mission in at %s', self._next_mission)
                     if self._next_mission is not None:
-                        w = (self._next_mission - now).total_seconds()
+                        # if wait for next mission is lower than wait argument, use it
+                        _w = (self._next_mission - now).total_seconds()
+                        if 0 < _w < w:
+                            w = _w
 
                 if self.args.races:
                     self.find_races()
-                    # override mission waiting
-                    w = None
 
-                if w is None or w <= 0:
-                    w = self.args.wait
+                if self.args.races_over:
+                    self.find_races_over()
+
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
             except client.gqlclient.requests.exceptions.HTTPError as e:
@@ -328,6 +331,33 @@ AVAX: {self.client.web3.get_balance()}
                 logger.info(msg)
                 self.notifier.notify(msg)
                 self._notified_races.add(race['id'])
+
+    def find_races_over(self):
+        snails = None
+        for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
+            if race['id'] in self._notified_races_over:
+                # notify only once...
+                continue
+            self._notified_races_over.add(race['id'])
+            if snails is None:
+                snails = {x.id: x for x in self.client.iterate_all_snails(filters={'owner': self.owner})}
+            for p, i in enumerate(race['results']):
+                if i['token_id'] in snails:
+                    break
+            else:
+                logger.error('no snail found, NOT POSSIBLE')
+                continue
+            p += 1
+            if p > 3:
+                e = '💩'
+                if race.distance == 'Treasury Run':
+                    continue
+            else:
+                e = '🥇🥈🥉'[p-1]
+            snail = snails[i['token_id']]
+            msg = f"{e} {snail.name} number {p} in {race.track}, for {race.distance}"
+            logger.info(msg)
+            self.notifier.notify(msg, silent=True)
 
     def _open_races(self):
         for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
@@ -497,6 +527,7 @@ def build_parser():
     pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
     pm.add_argument('--race-price', type=int, help='Maximum price for race')
+    pm.add_argument('-o', '--races-over', action='store_true', help='Monitor finished races with participation: notify on every competitive and on dailies in top3')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
