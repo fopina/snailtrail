@@ -34,6 +34,7 @@ class CLI:
         self._notified_races = set()
         self._notified_races_over = set()
         self._notify_mission_data = None
+        self._notify_marketplace = {}
         self._next_mission = None
 
     @staticmethod
@@ -229,8 +230,21 @@ AVAX: {self.client.web3.get_balance()}
     def cmd_balance(self):
         print(self._balance())
 
+    def _bot_marketplace(self):
+        d = self.client.marketplace_stats()
+        n = False
+        for k, v in d['prices'].items():
+            if self._notify_marketplace.get(k, [99999])[0] > v[0]:
+                n = True
+        self._notify_marketplace = d['prices']
+        if n:
+            txt = ['📉  Floors decreased']
+            for k, v in d['prices'].items():
+                txt.append(f"*{k}*: {' / '.join(map(str, v))}")
+            self.notifier.notify('\n'.join(txt))
+
     def cmd_bot(self):
-        if not (self.args.missions or self.args.races or self.args.races_over or self.args.missions_over):
+        if not (self.args.missions or self.args.races or self.args.races_over or self.args.missions_over or self.args.market):
             logger.error('choose something...')
             return
         self._next_mission = None
@@ -253,6 +267,9 @@ AVAX: {self.client.web3.get_balance()}
 
                 if self.args.races_over or self.args.missions_over:
                     self.find_races_over()
+
+                if self.args.market:
+                    self._bot_marketplace()
 
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
@@ -542,6 +559,7 @@ def build_parser():
     pm.add_argument('--race-price', type=int, help='Maximum price for race')
     pm.add_argument('-o', '--races-over', action='store_true', help='Monitor finished competitive races with participation and notify on position')
     pm.add_argument('--missions-over', action='store_true', help='Monitor finished missions with participation and notify on position (when top3)')
+    pm.add_argument('--market', action='store_true', help='Monitor marketplace stats')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
