@@ -44,6 +44,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
+            dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
         else:
             self.updater = None
 
@@ -114,6 +115,17 @@ class Notifier:
         Show current incubation coefficent
         """
         update.message.reply_markdown(f'current coefficient is `{self.__cli.client.web3.get_current_coefficent()}`')
+
+    @bot_auth
+    def cmd_marketplace_stats(self, update: Update, context: CallbackContext) -> None:
+        """
+        Show marketplace stats - volume, floors and highs
+        """
+        d = self.__cli.client.marketplace_stats()
+        txt = [f"*Volume*: {d['volume']}"]
+        for k, v in d['prices'].items():
+            txt.append(f"*{k}*: {' / '.join(map(str, v))}")
+        update.message.reply_markdown('\n'.join(txt))
 
     def idle(self):
         if self.updater:

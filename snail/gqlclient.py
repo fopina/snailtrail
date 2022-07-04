@@ -459,3 +459,40 @@ class Client(requests.Session):
             }
             """,
         )['name_status_promise']
+
+    def marketplace_stats(
+        self,
+        market=1,
+    ):
+        return self.query(
+            "marketplaceStats",
+            {
+                "market": market,
+            },
+            """
+            query marketplaceStats($market: Int) {
+            marketplace_stats_promise(market: $market) {
+                ... on Problem {
+                problem
+                __typename
+                }
+                ... on MarketplaceStats {
+                volume
+                highs {
+                    id
+                    name
+                    value
+                }
+                floors {
+                    id
+                    name
+                    value
+                    __typename
+                }
+                __typename
+                }
+                __typename
+            }
+            }
+            """,
+        )['marketplace_stats_promise']

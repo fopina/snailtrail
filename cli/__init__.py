@@ -284,7 +284,13 @@ AVAX: {self.client.web3.get_balance()}
             print(snail, self._breed_status_str(snail.breed_status))
 
     def cmd_market(self):
-        self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
+        if self.args.stats:
+            d = self.client.marketplace_stats()
+            print(f"Volume: {d['volume']}")
+            for k, v in d['prices'].items():
+                print(f"{k}: {v}")
+        else:
+            self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
 
     def cmd_rename(self):
         self.rename_snail()
@@ -545,6 +551,7 @@ def build_parser():
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
     pm.add_argument('-p', '--price', type=float, default=1.5, help='price limit for search')
+    pm.add_argument('--stats', action='store_true', help='marketplace stats')
 
     pm = subparsers.add_parser('incubate')
 
