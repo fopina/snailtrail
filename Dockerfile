@@ -14,4 +14,7 @@ ADD snail /app/snail
 ADD cli /app/cli
 ADD main.py /app/
 
+ARG VERSION dev
+ENV SNAILBOT_VERSION=${VERSION}
+
 ENTRYPOINT [ "python", "-u", "/app/main.py" ]

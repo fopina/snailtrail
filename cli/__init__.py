@@ -5,11 +5,10 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
-import collections
 
 from colorama import Fore
 
-from snail import client, proxy
+from snail import client, proxy, VERSION
 from . import tgbot
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -252,6 +251,7 @@ AVAX: {self.client.web3.get_balance()}
             logger.error('choose something...')
             return
         self._next_mission = None
+        self.notifier.notify(f'👋  Running v*{VERSION}*')
         while True:
             try:
                 w = self.args.wait
@@ -287,7 +287,7 @@ AVAX: {self.client.web3.get_balance()}
                 time.sleep(120)
             except Exception as e:
                 logger.exception('crash, waiting 2min: %s', e)
-                self.notifier.notify('bot unknown error, check logs')
+                self.notifier.notify(f'bot unknown error, check logs ({e})')
                 time.sleep(120)
 
     def cmd_missions(self):
