@@ -484,15 +484,18 @@ AVAX: {self.client.web3.get_balance()}
         total_cr = 0
         total = 0
         for race in (
-            self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
+            race
             for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM)
+            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
         ):
-            for p, i in enumerate(race['results']):
+            for p, i in enumerate(race.results):
                 if i['token_id'] == snail_id:
                     break
             else:
                 logger.error('no snail found, NOT POSSIBLE')
                 continue
+            time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
+            time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
             p += 1
             fee = int(race.prize_pool) / 9
             if p == 1:
@@ -508,7 +511,9 @@ AVAX: {self.client.web3.get_balance()}
                 c = Fore.RED
                 cr = 0 - fee
             total_cr += cr
-            print(f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+            print(
+                f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m (on 1st: {time_on_first:0.2f}%, on 3rd: {time_on_third:0.2f}%) - {cr}{Fore.RESET}"
+            )
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
