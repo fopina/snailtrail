@@ -112,15 +112,11 @@ class CLI:
             base_msg = f"{x.id} : {x.name} ({x.level} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
-                logger.info(
-                    f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}"
-                )
+                logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
             else:
                 if closest is None or to_queue < closest:
                     closest = to_queue
-                logger.info(
-                    f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}"
-                )
+                logger.info(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
         return queueable, closest
 
     def join_missions(self):
@@ -147,9 +143,7 @@ class CLI:
                 # FIXME: update for multiple adaptations
                 if athletes == 9:
                     # don't queue non-boosted!
-                    if snail.id in boosted and (
-                        (snail.adaptations[0] in race.conditions) or self.args.no_adapt
-                    ):
+                    if snail.id in boosted and ((snail.adaptations[0] in race.conditions) or self.args.no_adapt):
                         break
                 else:
                     # don't queue boosted here, so they wait for a last spot
@@ -162,7 +156,9 @@ class CLI:
                 f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name} ({snail.adaptations}){Fore.RESET}'
             )
             try:
-                r, _ = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted))
+                r, _ = self.client.join_mission_races(
+                    snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
+                )
                 msg = f"🐌 `{snail.name}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
                     logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
