@@ -35,7 +35,7 @@ class CLI:
                 x
                 for x in build_parser()._subparsers._actions[-1].choices['bot']._actions
                 if isinstance(x, configargparse.argparse._StoreTrueAction)
-            ]
+            ],
         )
         if self.args.tg_bot:
             self.notifier.start_polling()
@@ -329,13 +329,13 @@ AVAX: {self.client.web3.get_balance()}
         if not snails:
             return [], []
         # sort with more adaptations first - for matching with races
-        snails.sort(key=lambda x: len(x['adaptations']), reverse=True)
+        snails.sort(key=lambda x: len(x.adaptations), reverse=True)
         races = []
         for x in self.client.iterate_onboarding_races(filters={'owner': self.owner, 'league': league}):
             candidates = []
-            conditions = set(x['conditions'])
+            conditions = set(x.conditions)
             for s in snails:
-                score = len(conditions.intersection(s['adaptations']))
+                score = len(conditions.intersection(s.adaptations))
                 if score:
                     candidates.append((score, s))
             candidates.sort(key=lambda x: x[0], reverse=True)
@@ -344,33 +344,42 @@ AVAX: {self.client.web3.get_balance()}
         return snails, races
 
     def find_races(self):
-        # FIXME: loop all leagues, but save requests for now :)
-        _, races = self.find_races_in_league(client.LEAGUE_GOLD)
-        for race in races:
-            if race['id'] in self._notified_races:
-                # notify only once...
-                continue
-            if self.args.race_price and int(race['race_type']) > self.args.race_price:
-                # too expensive! :D
-                continue
-            if race['candidates']:
-                # report on just 1 match, but use only snails with 2 adaptations (stronger)
-                cands = [
-                    cand
-                    for cand in race['candidates']
-                    if cand[0] >= self.args.race_matches and len(cand[1]['adaptations']) > 1
-                ]
-                if not cands:
+        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+            _, races = self.find_races_in_league(league)
+            for race in races:
+                if race.id in self._notified_races:
+                    # notify only once...
                     continue
-                msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
-                logger.info(msg)
-                join_actions = [
-                    (f'Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}') for cand in cands
-                ] + [
-                    ('Skip', 'joinrace'),
-                ]
-                self.notifier.notify(msg, actions=join_actions)
-                self._notified_races.add(race['id'])
+                if self.args.race_price and int(race.race_type) > self.args.race_price:
+                    # too expensive! :D
+                    continue
+                if race['candidates']:
+                    # report on just 1 match, but use only snails with 2 adaptations (stronger)
+                    cands = [
+                        cand
+                        for cand in race['candidates']
+                        if cand[0] >= self.args.race_matches and len(cand[1].adaptations) > 1
+                    ]
+                    if not cands:
+                        continue
+                    msg = f"🏎️  Race {race.track} ({race.id}) found for {','.join(cand[1].name + (cand[0] * '⭐') for cand in cands)}: {race.race_type} 🪙  {race.distance}m"
+                    if self.args.races_join:
+                        join_actions = None
+                        try:
+                            self.client.join_competitive_races(cands[0][1].id, race.id, self.owner)
+                            msg += '\nJOINED ✅'
+                        except Exception:
+                            logger.exception('failed to join race')
+                            msg += '\nFAILED to join ❌'
+                    else:
+                        join_actions = [
+                            (f'Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}') for cand in cands
+                        ] + [
+                            ('Skip', 'joinrace'),
+                        ]
+                    logger.info(msg)
+                    self.notifier.notify(msg, actions=join_actions)
+                    self._notified_races.add(race['id'])
 
     def find_races_over(self):
         snails = None
@@ -581,6 +590,11 @@ def build_parser():
         help='Take last spots when negative mission tickets',
     )
     pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
+    pm.add_argument(
+        '--races-join',
+        action='store_true',
+        help='Auto-join every matched race - use race-matches and race-price to restrict them!',
+    )
     pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
     pm.add_argument('--race-price', type=int, help='Maximum price for race')
     pm.add_argument(
