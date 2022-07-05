@@ -55,7 +55,7 @@ class Notifier:
         """Parses the CallbackQuery and updates the message text."""
         query = update.callback_query
         query.answer()
-        cmd, opts = query.data.split(' ', 1)
+        cmd, *opts = query.data.split(' ', 1)
         if cmd == 'toggle':
             return self.handle_buttons_toggle(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
@@ -63,12 +63,17 @@ class Notifier:
     def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process settings toggle"""
         query = update.callback_query
+        if not opts:
+            query.edit_message_text(text="Did *nothing*, my favorite action", parse_mode='Markdown')
+            return
+
         if not hasattr(self.__cli.args, opts):
             query.edit_message_text(text=f"Unknown setting: {opts}")
-        else:
-            ov = getattr(self.__cli.args, opts)
-            setattr(self.__cli.args, opts, not ov)
-            query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
+            return
+
+        ov = getattr(self.__cli.args, opts)
+        setattr(self.__cli.args, opts, not ov)
+        query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -164,12 +169,20 @@ class Notifier:
             'races_over',
             'missions_over',
             'market',
+            'coefficent',
             'no_adapt',
         ]
-        keyboard = [
-            [InlineKeyboardButton(f'{setting}: {getattr(self.__cli.args, setting)}', callback_data=f'toggle {setting}')]
-            for setting in SETTINGS
-        ]
+        keyboard = []
+        for i in range(0, len(SETTINGS), 2):
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f'{setting}: {getattr(self.__cli.args, setting)}', callback_data=f'toggle {setting}'
+                    )
+                    for setting in SETTINGS[i : i + 2]
+                ]
+            )
+        keyboard.append([InlineKeyboardButton(f'Niente', callback_data='toggle')])
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
 
     def idle(self):
