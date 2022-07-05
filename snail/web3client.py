@@ -1,4 +1,5 @@
 from functools import cached_property
+from unittest import result
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
@@ -82,6 +83,25 @@ class Client:
             )
         )
 
+    def join_competitive_mission(
+        self,
+        race_info: tuple[int, int, str, int, int],
+        results: tuple[int, list[str]],
+        timeout: int,
+        salt: int,
+        signature: str,
+    ):
+        print(race_info, results, timeout, salt, signature)
+        return self._bss(
+            self.race_contract.functions.joinCompetitiveRace(
+                race_info,
+                results,
+                timeout,
+                salt,
+                signature,
+            )
+        )
+
     def claimable_rewards(self):
         return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
 
@@ -97,10 +117,10 @@ class Client:
     def get_current_coefficent(self):
         return self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
 
-    def sign_daily_mission(self, owner: str, snail_id: int, race_id: int):
+    def sign_race_join(self, owner: str, snail_id: int, race_id: int):
         """Generate and sign payload to join a daily mission
         >>> o = Client(wallet='x', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
-        >>> o.sign_daily_mission('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
+        >>> o.sign_race_join('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
         # TODO: SIGN!!! and join with graphql

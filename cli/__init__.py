@@ -492,11 +492,36 @@ AVAX: {self.client.web3.get_balance()}
                 break
         print(f'\nTOTAL CR: {total_cr}')
 
+    def _join_race(self, join_arg):
+        r = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
+        if r.get('status') == 1:
+            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+            m = [(x['race_id'], x['owners']) for x in r['payload']['completed_races']]
+            print(
+                self.client.web3.join_competitive_mission(
+                    (
+                        r['payload']['race_id'],
+                        r['payload']['token_id'],
+                        r['payload']['address'],
+                        int(r['payload']['entry_fee_wei']),
+                        r['payload']['size'],
+                    ),
+                    m[0],
+                    r['payload']['timeout'],
+                    r['payload']['salt'],
+                    r['signature'],
+                )
+            )
+        else:
+            logger.error('Unexpected reply: %s', r)
+
     def cmd_races(self):
         if self.args.finished:
             return self._finished_races()
         if self.args.history:
             return self._history_races(self.args.history)
+        if self.args.join:
+            return self._join_race(self.args.join)
         return self._open_races()
 
     def cmd_incubate(self):
@@ -598,6 +623,7 @@ def build_parser():
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
+    pm.add_argument('--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join competitive race RACE_ID with SNAIL_ID')
     return parser
 
 

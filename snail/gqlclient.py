@@ -436,6 +436,54 @@ class Client(requests.Session):
             """,
         )['join_mission_promise']
 
+    def join_competitive_races(self, snail_id: int, race_id: int, address: str, signature: str):
+        return self.query(
+            "joinCompetitiveRaces",
+            {
+                "params": {
+                    "token_id": snail_id,
+                    "race_id": race_id,
+                    "signature": signature,
+                    "address": address,
+                }
+            },
+            """
+            mutation joinCompetitiveRaces($params: JoinRaceParams) {
+                join_competitive_promise(params: $params) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on JoinRaceResponse {
+                    status
+                    message
+                    signature
+                    payload {
+                        ... on CompetitivePayload {
+                        race_id
+                        token_id
+                        address
+                        entry_fee_wei
+                        size
+                        timeout
+                        salt
+                        completed_races {
+                            race_id
+                            owners
+                            __typename
+                        }
+                        __typename
+                        }
+                        __typename
+                    }
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+        )['join_competitive_promise']
+
     def name_change(self, name):
         return self.query(
             "nameChange",
