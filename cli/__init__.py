@@ -374,7 +374,10 @@ AVAX: {self.client.web3.get_balance()}
                     continue
                 msg = f"🏎️  Race {race['track']} ({race['id']}) found for {','.join(cand[1]['name'] + (cand[0] * '⭐') for cand in cands)}: {race['race_type']} 🪙  {race['distance']}m"
                 logger.info(msg)
-                self.notifier.notify(msg)
+                join_actions = [
+                    (f'Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}') for cand in cands
+                ]
+                self.notifier.notify(msg, actions=join_actions)
                 self._notified_races.add(race['id'])
 
     def find_races_over(self):
@@ -510,27 +513,11 @@ AVAX: {self.client.web3.get_balance()}
         print(f'\nTOTAL CR: {total_cr}')
 
     def _join_race(self, join_arg):
-        r = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
-        if r.get('status') == 1:
+        try:
+            r, _ = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
             logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
-            m = [(x['race_id'], x['owners']) for x in r['payload']['completed_races']]
-            print(
-                self.client.web3.join_competitive_mission(
-                    (
-                        r['payload']['race_id'],
-                        r['payload']['token_id'],
-                        r['payload']['address'],
-                        int(r['payload']['entry_fee_wei']),
-                        r['payload']['size'],
-                    ),
-                    m[0],
-                    r['payload']['timeout'],
-                    r['payload']['salt'],
-                    r['signature'],
-                )
-            )
-        else:
-            logger.error('Unexpected reply: %s', r)
+        except client.ClientError:
+            logger.exception('unexpected joinRace error')
 
     def cmd_races(self):
         if self.args.finished:

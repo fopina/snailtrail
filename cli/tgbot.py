@@ -1,3 +1,4 @@
+from typing import List, Tuple
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -58,6 +59,8 @@ class Notifier:
         cmd, *opts = query.data.split(' ', 1)
         if cmd == 'toggle':
             return self.handle_buttons_toggle(opts, update, context)
+        elif cmd == 'joinrace':
+            return self.handle_buttons_joinrace(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
 
     def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
@@ -74,6 +77,22 @@ class Notifier:
         ov = getattr(self.__cli.args, opts)
         setattr(self.__cli.args, opts, not ov)
         query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
+
+    def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process join race buttons"""
+        query = update.callback_query
+        if not opts:
+            query.edit_message_text(query.message.text + ' ❌')
+            return
+        race_id, snail_id = map(int, opts[0].split(' '))
+        try:
+            r, _ = self.__cli.client.join_competitive_races(snail_id, race_id, self.__cli.owner)
+            query.edit_message_text(query.message.text + ' ✅')
+            query.message.reply_markdown(text=f'✅ Race joined: {r["message"]}')
+        except Exception:
+            logger.exception('unexpected joinRace error')
+            query.edit_message_text(query.message.text + ' ❌')
+            query.message.reply_markdown(text='❌ Race FAILED to join')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -221,7 +240,14 @@ class Notifier:
             return '✅'
         return f'⏲️  {str(tleft).rsplit(":", 1)[0]}'
 
-    def notify(self, message: str, format: str = 'Markdown', silent: bool = False, edit: dict[str] = None):
+    def notify(
+        self,
+        message: str,
+        format: str = 'Markdown',
+        silent: bool = False,
+        edit: dict[str] = None,
+        actions: List[Tuple[str]] = None,
+    ):
         """Use this method to send text messages
 
         Args:
@@ -243,8 +269,16 @@ class Notifier:
         """
         if self.updater and self.owner_id:
             if edit is None:
+                if actions:
+                    keyboard = [
+                        [InlineKeyboardButton(x[0], callback_data=x[1])]
+                        for x in actions
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+                else:
+                    reply_markup = None
                 return self.updater.bot.send_message(
-                    self.owner_id, message, parse_mode=format, disable_notification=silent
+                    self.owner_id, message, parse_mode=format, disable_notification=silent, reply_markup=reply_markup
                 )
             else:
                 return self.updater.bot.edit_message_text(
