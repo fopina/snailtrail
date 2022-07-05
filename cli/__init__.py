@@ -34,6 +34,7 @@ class CLI:
         self._notified_races_over = set()
         self._notify_mission_data = None
         self._notify_marketplace = {}
+        self._notify_coefficent = 99999
         self._next_mission = None
 
     @staticmethod
@@ -244,19 +245,24 @@ AVAX: {self.client.web3.get_balance()}
         if n:
             self.notifier.notify('\n'.join(txt))
 
+    def _bot_coefficent(self):
+        coef = self.client.web3.get_current_coefficent()
+        if coef < self._notify_coefficent:
+            msg = f'Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
+            self.notifier.notify(msg)
+            logger.info(msg)
+            self._notify_coefficent = coef
+
     def cmd_bot(self):
-        if not (
-            self.args.missions or self.args.races or self.args.races_over or self.args.missions_over or self.args.market
-        ):
-            logger.error('choose something...')
-            return
         self._next_mission = None
         self.notifier.notify(f'👋  Running v*{VERSION}*')
 
+        did_anything = False
         while True:
             try:
                 w = self.args.wait
                 if self.args.missions:
+                    did_anything = True
                     now = datetime.now(tz=timezone.utc)
                     if self._next_mission is None or self._next_mission < now:
                         self._next_mission = self.join_missions()
@@ -268,13 +274,24 @@ AVAX: {self.client.web3.get_balance()}
                             w = _w
 
                 if self.args.races:
+                    did_anything = True
                     self.find_races()
 
                 if self.args.races_over or self.args.missions_over:
+                    did_anything = True
                     self.find_races_over()
 
                 if self.args.market:
+                    did_anything = True
                     self._bot_marketplace()
+
+                if self.args.coefficent:
+                    did_anything = True
+                    self._bot_coefficent()
+
+                if not did_anything:
+                    logger.error('choose something...')
+                    return
 
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
@@ -599,6 +616,7 @@ def build_parser():
         help='Monitor finished missions with participation and notify on position (when top3)',
     )
     pm.add_argument('--market', action='store_true', help='Monitor marketplace stats')
+    pm.add_argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
@@ -623,7 +641,9 @@ def build_parser():
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
-    pm.add_argument('--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join competitive race RACE_ID with SNAIL_ID')
+    pm.add_argument(
+        '--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join competitive race RACE_ID with SNAIL_ID'
+    )
     return parser
 
 
