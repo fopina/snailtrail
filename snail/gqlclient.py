@@ -253,7 +253,8 @@ class Client(requests.Session):
                     __typename
                 }
             }
-            """ % ('own' if own else 'all'),
+            """
+            % ('own' if own else 'all'),
         )['finished_races_promise']
 
     def get_race_history(self, offset=0, filters={}):
@@ -295,7 +296,7 @@ class Client(requests.Session):
                 __typename
             }
             }
-            """
+            """,
         )['race_history_promise']
 
     def get_my_snails_for_missions(

@@ -4,6 +4,7 @@ from . import gqlclient, web3client, gqltypes
 LEAGUE_GOLD = 5
 LEAGUE_PLATINUM = 6
 
+
 class ClientError(Exception):
     """Client raised error"""
 
@@ -75,7 +76,11 @@ class Client:
     def iterate_finished_races(self, filters={}, own=False, max_calls=None):
         k = 'own' if own else 'all'
         yield from self._iterate_pages(
-            self.gql.get_finished_races, k, klass=gqltypes.Race, kwargs={'filters': filters, 'own': own}, max_calls=max_calls
+            self.gql.get_finished_races,
+            k,
+            klass=gqltypes.Race,
+            kwargs={'filters': filters, 'own': own},
+            max_calls=max_calls,
         )
 
     def iterate_race_history(self, filters={}):

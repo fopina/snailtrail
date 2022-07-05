@@ -115,7 +115,9 @@ class Client:
         return self.web3.eth.get_balance(self.wallet) / 1000000000000000000
 
     def get_current_coefficent(self):
-        return self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
+        return (
+            self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
+        )
 
     def sign_race_join(self, owner: str, snail_id: int, race_id: int):
         """Generate and sign payload to join a daily mission

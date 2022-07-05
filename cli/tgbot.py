@@ -187,7 +187,8 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'{setting.dest}: {getattr(self.__cli.args, setting.dest)}', callback_data=f'toggle {setting.dest}'
+                        f'{setting.dest}: {getattr(self.__cli.args, setting.dest)}',
+                        callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]
                 ]
@@ -261,10 +262,7 @@ class Notifier:
         if self.updater and self.owner_id:
             if edit is None:
                 if actions:
-                    keyboard = [
-                        [InlineKeyboardButton(x[0], callback_data=x[1])]
-                        for x in actions
-                    ]
+                    keyboard = [[InlineKeyboardButton(x[0], callback_data=x[1])] for x in actions]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                 else:
                     reply_markup = None
