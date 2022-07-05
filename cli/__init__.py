@@ -109,16 +109,17 @@ class CLI:
                 continue
             to_queue = x.queueable_at
             tleft = to_queue - self._now()
+            base_msg = f"{x.id} : {x.name} ({x.level} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
                 logger.info(
-                    f"{Fore.GREEN}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {x['adaptations']}{Fore.RESET}"
+                    f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}"
                 )
             else:
                 if closest is None or to_queue < closest:
                     closest = to_queue
                 logger.info(
-                    f"{Fore.YELLOW}{x['id']} : {x['name']} ({x['stats']['experience']['level']} - {x['stats']['experience']['remaining']}) : {tleft}{Fore.RESET}"
+                    f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}"
                 )
         return queueable, closest
 
@@ -131,14 +132,14 @@ class CLI:
         if self.args.fair:
             # add snails with negative tickets to "boosted" to re-use logic
             for s in queueable:
-                if s['stats']['mission_tickets'] < 0:
-                    boosted.add(s['id'])
+                if s.stats['mission_tickets'] < 0:
+                    boosted.add(s.id)
 
         for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
-            if race['participation']:
+            if race.participation:
                 # already joined
                 continue
-            athletes = len(race['athletes'])
+            athletes = len(race.athletes)
             if athletes == 10:
                 # race full
                 continue
@@ -146,48 +147,32 @@ class CLI:
                 # FIXME: update for multiple adaptations
                 if athletes == 9:
                     # don't queue non-boosted!
-                    if snail['id'] in boosted and (
-                        (snail['adaptations'][0] in race['conditions']) or self.args.no_adapt
+                    if snail.id in boosted and (
+                        (snail.adaptations[0] in race.conditions) or self.args.no_adapt
                     ):
                         break
                 else:
                     # don't queue boosted here, so they wait for a last spot
-                    if snail['id'] not in boosted and (snail['adaptations'][0] in race['conditions']):
+                    if snail.id not in boosted and (snail.adaptations[0] in race.conditions):
                         break
             else:
                 # no snail for this track
                 continue
             logger.info(
-                f'{Fore.CYAN}Joining {race["id"]} ({race["conditions"]}) with {snail["name"]} ({snail["adaptations"]}){Fore.RESET}'
+                f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name} ({snail.adaptations}){Fore.RESET}'
             )
-            r = self.client.join_mission_races(snail['id'], race['id'], self.owner)
-            if r.get('status') == 0:
-                logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
-                self.notify_mission(
-                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission",
-                )
-            elif r.get('status') == 1 and snail['id'] in boosted:
-                logger.warning('requires transaction')
-                print(
-                    self.client.web3.join_daily_mission(
-                        (
-                            r['payload']['race_id'],
-                            r['payload']['token_id'],
-                            r['payload']['address'],
-                        ),
-                        r['payload']['size'],
-                        [(x['race_id'], x['owners']) for x in r['payload']['completed_races']],
-                        r['payload']['timeout'],
-                        r['payload']['salt'],
-                        r['signature'],
-                    )
-                )
-                self.notify_mission(
-                    f"🐌 `{snail['name']}` ({snail['stats']['experience']['level']} - {snail['stats']['experience']['remaining']}) joined mission LAST SPOT",
-                )
-            else:
-                logger.error(r)
-                self.notifier.notify(f'⛔ `{snail["name"]}` FAILED to join mission')
+            try:
+                r, _ = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted))
+                msg = f"🐌 `{snail.name}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
+                if r.get('status') == 0:
+                    logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+                    self.notify_mission(msg)
+                elif r.get('status') == 1:
+                    logger.warning('requires transaction')
+                    self.notify_mission(f'{msg} LAST SPOT')
+            except client.ClientError:
+                logger.exception('failed to join mission')
+                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
