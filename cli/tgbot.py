@@ -1,6 +1,6 @@
-from telegram import Update, constants
+from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ def bot_auth(func):
         except Exception:
             logger.exception('error caught')
             update.message.reply_text('error occurred, check logs')
+
     wrapper_func.__doc__ = func.__doc__
     return wrapper_func
 
@@ -40,13 +41,34 @@ class Notifier:
             self.updater = Updater(self.__token)
             dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
+            dispatcher.add_handler(CallbackQueryHandler(self.handle_buttons))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
+            dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
         else:
             self.updater = None
+
+    def handle_buttons(self, update: Update, context: CallbackContext) -> None:
+        """Parses the CallbackQuery and updates the message text."""
+        query = update.callback_query
+        query.answer()
+        cmd, opts = query.data.split(' ', 1)
+        if cmd == 'toggle':
+            return self.handle_buttons_toggle(opts, update, context)
+        query.edit_message_text(text=f"Unknown option: {query.data}")
+
+    def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process settings toggle"""
+        query = update.callback_query
+        if not hasattr(self.__cli.args, opts):
+            query.edit_message_text(text=f"Unknown setting: {opts}")
+        else:
+            ov = getattr(self.__cli.args, opts)
+            setattr(self.__cli.args, opts, not ov)
+            query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -107,7 +129,9 @@ class Notifier:
         if self.__cli._next_mission is None:
             update.message.reply_markdown('next mission is *unknown*')
         else:
-            update.message.reply_markdown(f'next mission in `{str(self.__cli._next_mission - self.__cli._now()).split(".")[0]}`')
+            update.message.reply_markdown(
+                f'next mission in `{str(self.__cli._next_mission - self.__cli._now()).split(".")[0]}`'
+            )
 
     @bot_auth
     def cmd_incubate(self, update: Update, context: CallbackContext) -> None:
@@ -126,6 +150,27 @@ class Notifier:
         for k, v in d['prices'].items():
             txt.append(f"*{k}*: {' / '.join(map(str, v))}")
         update.message.reply_markdown('\n'.join(txt))
+
+    @bot_auth
+    def cmd_settings(self, update: Update, context: CallbackContext) -> None:
+        """
+        Toggle bot settings
+        """
+        # FIXME: move somewhere that makes more sense (in cli)
+        SETTINGS = [
+            'missions',
+            'fair',
+            'races',
+            'races_over',
+            'missions_over',
+            'market',
+            'no_adapt',
+        ]
+        keyboard = [
+            [InlineKeyboardButton(f'{setting}: {getattr(self.__cli.args, setting)}', callback_data=f'toggle {setting}')]
+            for setting in SETTINGS
+        ]
+        update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
 
     def idle(self):
         if self.updater:
@@ -185,6 +230,10 @@ class Notifier:
         """
         if self.updater and self.owner_id:
             if edit is None:
-                return self.updater.bot.send_message(self.owner_id, message, parse_mode=format, disable_notification=silent)
+                return self.updater.bot.send_message(
+                    self.owner_id, message, parse_mode=format, disable_notification=silent
+                )
             else:
-                return self.updater.bot.edit_message_text(message, edit['chat']['id'], edit['message_id'], parse_mode=format)
+                return self.updater.bot.edit_message_text(
+                    message, edit['chat']['id'], edit['message_id'], parse_mode=format
+                )

@@ -252,6 +252,7 @@ AVAX: {self.client.web3.get_balance()}
             return
         self._next_mission = None
         self.notifier.notify(f'👋  Running v*{VERSION}*')
+
         while True:
             try:
                 w = self.args.wait
