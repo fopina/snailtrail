@@ -33,10 +33,11 @@ def bot_auth(func):
 
 
 class Notifier:
-    def __init__(self, token, owner_id, cli_obj):
+    def __init__(self, token, owner_id, cli_obj, settings_list=None):
         self.__token = token
         self.owner_id = owner_id
         self.__cli = cli_obj
+        self._settings_list = settings_list
 
         if token:
             self.updater = Updater(self.__token)
@@ -69,6 +70,7 @@ class Notifier:
         if not opts:
             query.edit_message_text(text="Did *nothing*, my favorite action", parse_mode='Markdown')
             return
+        opts = opts[0]
 
         if not hasattr(self.__cli.args, opts):
             query.edit_message_text(text=f"Unknown setting: {opts}")
@@ -82,7 +84,7 @@ class Notifier:
         """Process join race buttons"""
         query = update.callback_query
         if not opts:
-            query.edit_message_text(query.message.text + ' ❌')
+            query.edit_message_reply_markup()
             return
         race_id, snail_id = map(int, opts[0].split(' '))
         try:
@@ -180,25 +182,14 @@ class Notifier:
         """
         Toggle bot settings
         """
-        # FIXME: move somewhere that makes more sense (in cli)
-        SETTINGS = [
-            'missions',
-            'fair',
-            'races',
-            'races_over',
-            'missions_over',
-            'market',
-            'coefficent',
-            'no_adapt',
-        ]
         keyboard = []
-        for i in range(0, len(SETTINGS), 2):
+        for i in range(0, len(self._settings_list), 2):
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'{setting}: {getattr(self.__cli.args, setting)}', callback_data=f'toggle {setting}'
+                        f'{setting.dest}: {getattr(self.__cli.args, setting.dest)}', callback_data=f'toggle {setting.dest}'
                     )
-                    for setting in SETTINGS[i : i + 2]
+                    for setting in self._settings_list[i : i + 2]
                 ]
             )
         keyboard.append([InlineKeyboardButton(f'Niente', callback_data='toggle')])

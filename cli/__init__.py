@@ -27,7 +27,16 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
         )
-        self.notifier = tgbot.Notifier(self.args.notify_token, self.args.notify_target, self)
+        self.notifier = tgbot.Notifier(
+            self.args.notify_token,
+            self.args.notify_target,
+            self,
+            settings_list=[
+                x
+                for x in build_parser()._subparsers._actions[-1].choices['bot']._actions
+                if isinstance(x, configargparse.argparse._StoreTrueAction)
+            ]
+        )
         if self.args.tg_bot:
             self.notifier.start_polling()
         self._notified_races = set()
@@ -357,6 +366,8 @@ AVAX: {self.client.web3.get_balance()}
                 logger.info(msg)
                 join_actions = [
                     (f'Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}') for cand in cands
+                ] + [
+                    ('Skip', 'joinrace'),
                 ]
                 self.notifier.notify(msg, actions=join_actions)
                 self._notified_races.add(race['id'])
