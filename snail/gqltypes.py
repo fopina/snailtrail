@@ -33,6 +33,13 @@ class Snail(AttrDict):
     """
 
     @property
+    def name_id(self):
+        pr = self.name
+        if str(self.id) not in pr:
+            pr = f'{pr} (#{self.id})'
+        return pr
+
+    @property
     def gender(self):
         return list(Gender)[self['gender']['id']]
 
@@ -86,12 +93,9 @@ class Snail(AttrDict):
         'Snail #8940 1 Helix FEMALE Expert 11 HHGAHAAGMHMHHGHHXHHH'
         >>> s = Snail({'id': 8940, 'adaptations': ['Glacier'], 'name': 'Superman', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}})
         >>> str(s)
-        'Superman #8940 1 Helix FEMALE Expert 11 HHGAHAAGMHMHHGHHXHHH'
+        'Superman (#8940) 1 Helix FEMALE Expert 11 HHGAHAAGMHMHHGHHXHHH'
         """
-        pr = self.name
-        if str(self.id) not in pr:
-            pr = f'{pr} #{self.id}'
-        return f"{pr} {self.level} {self.family} {self.gender} {self.klass} {self.purity} {self.genome_str}"
+        return f"{self.name_id} {self.level} {self.family} {self.gender} {self.klass} {self.purity} {self.genome_str}"
 
 
 class Race(AttrDict):

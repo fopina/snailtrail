@@ -436,7 +436,7 @@ AVAX: {self.client.web3.get_balance()}
 
                 candidates = x['candidates']
                 if candidates:
-                    c = f' - candidates: {[(s[1]["name"]+"*"*s[0]) for s in candidates]}'
+                    c = f' - candidates: {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
                 else:
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
@@ -521,8 +521,8 @@ AVAX: {self.client.web3.get_balance()}
 
     def _join_race(self, join_arg):
         try:
-            r, _ = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
-            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+            r, rcpt = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
+            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt["transactionHash"]})')
         except client.ClientError:
             logger.exception('unexpected joinRace error')
 

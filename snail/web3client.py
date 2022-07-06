@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Any, Union
 from unittest import result
 
 from Crypto.Hash import keccak
@@ -53,15 +54,25 @@ class Client:
     def incubator_contract(self):
         return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_INCUBATOR), abi=abi.INCUBATOR)
 
-    def _bss(self, function_call):
+    def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
         tx = function_call.buildTransaction({"nonce": nonce, "from": self.wallet})
         signed_txn = self.web3.eth.account.sign_transaction(tx, private_key=self.__pkey)
-        return self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        if wait_for_transaction_receipt is False:
+            return tx_hash
+        return self.web3.eth.wait_for_transaction_receipt(
+            tx_hash,
+            # if wait_for_transaction_receipt is None, use 120
+            timeout=wait_for_transaction_receipt or 120,
+        )
 
-    def set_snail_name(self, snail_id: int, new_name: str):
-        return self._bss(self.preferences_contract.functions.setSnailName(snail_id, new_name))
+    def set_snail_name(self, snail_id: int, new_name: str, wait_for_transaction_receipt: Union[bool, float] = None):
+        return self._bss(
+            self.preferences_contract.functions.setSnailName(snail_id, new_name),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+        )
 
     def join_daily_mission(
         self,
@@ -71,6 +82,7 @@ class Client:
         timeout: int,
         salt: int,
         signature: str,
+        wait_for_transaction_receipt: Union[bool, float] = None,
     ):
         return self._bss(
             self.race_contract.functions.joinDailyMission(
@@ -80,7 +92,8 @@ class Client:
                 timeout,
                 salt,
                 signature,
-            )
+            ),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
         )
 
     def join_competitive_mission(
@@ -90,8 +103,8 @@ class Client:
         timeout: int,
         salt: int,
         signature: str,
+        wait_for_transaction_receipt: Union[bool, float] = None,
     ):
-        print(race_info, results, timeout, salt, signature)
         return self._bss(
             self.race_contract.functions.joinCompetitiveRace(
                 race_info,
@@ -99,7 +112,8 @@ class Client:
                 timeout,
                 salt,
                 signature,
-            )
+            ),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
         )
 
     def claimable_rewards(self):
