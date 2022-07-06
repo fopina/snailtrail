@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
+from typing import Any, Sequence
 import configargparse
 import logging
 import os
@@ -547,6 +550,22 @@ AVAX: {self.client.web3.get_balance()}
             getattr(self, f'cmd_{self.args.cmd}')()
 
 
+class FileOrString(str):
+    def __new__(cls, content):
+        f = Path(content)
+        if f.exists():
+            return str.__new__(cls, f.read_text().strip())
+        return str.__new__(cls, content)
+
+
+class FileOrInt(int):
+    def __new__(cls, content):
+        f = Path(content)
+        if f.exists():
+            return int.__new__(cls, f.read_text().strip())
+        return int.__new__(cls, content)
+
+
 def build_parser():
     parser = configargparse.ArgParser(
         prog=__name__,
@@ -565,12 +584,13 @@ def build_parser():
     # FIXME: configargparse gets messed up with nargs > 1 and subcommands - it changes order of the args when calling argparse at the end... PR?!
     parser.add_argument(
         '--notify-token',
-        help='Telegram bot token to use for notifications',
+        type=FileOrString,
+        help='Telegram bot token to use for notifications (value or path to file with value)',
     )
     parser.add_argument(
         '--notify-target',
-        type=int,
-        help='Telegram CHAT_ID to send notifications to',
+        type=FileOrInt,
+        help='Telegram CHAT_ID to send notifications to (value or path to file with value)',
     )
     parser.add_argument(
         '--tg-bot',
