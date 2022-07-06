@@ -353,6 +353,9 @@ AVAX: {self.client.web3.get_balance()}
                 if self.args.race_price and int(race.race_type) > self.args.race_price:
                     # too expensive! :D
                     continue
+                if race.participation:
+                    # already joined
+                    continue
                 if race['candidates']:
                     # report on just 1 match, but use only snails with 2 adaptations (stronger)
                     cands = [
@@ -423,7 +426,7 @@ AVAX: {self.client.web3.get_balance()}
             if not snails:
                 continue
             for x in races:
-                if x['participation']:
+                if x.participation:
                     color = Fore.LIGHTBLACK_EX
                 else:
                     color = Fore.GREEN
