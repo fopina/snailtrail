@@ -1,6 +1,10 @@
 import requests
 
 
+class APIError(Exception):
+    """API expected errors"""
+
+
 class Client(requests.Session):
     URL = "https://api.snailtrail.art/graphql/"
 
@@ -39,6 +43,8 @@ class Client(requests.Session):
         r = r.json()
         if r.get('data') is None:
             raise Exception(r)
+        if 'problem' in r['data']:
+            raise APIError(r['data']['problem'])
         return r["data"]
 
     def get_all_snails_marketplace(self, offset=0, filters={}):

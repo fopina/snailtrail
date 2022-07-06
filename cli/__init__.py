@@ -286,13 +286,13 @@ AVAX: {self.client.web3.get_balance()}
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
             except client.gqlclient.requests.exceptions.HTTPError as e:
-                if e.response.status_code == 502:
-                    logger.error('site 502... waiting')
+                if e.response.status_code in (502, 504):
+                    # log stacktrace to check if specific calls cause this more frequently
+                    logger.exception('site %d... waiting', e.response.status_code)
+                    time.sleep(20)
                 else:
                     logger.exception('crash, waiting 2min: %s', e)
-                # too noisy
-                # self.notifier.notify('bot gql error, check logs')
-                time.sleep(120)
+                    time.sleep(120)
             except Exception as e:
                 logger.exception('crash, waiting 2min: %s', e)
                 self.notifier.notify(f'bot unknown error, check logs ({e})')
