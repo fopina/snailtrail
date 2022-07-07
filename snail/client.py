@@ -1,8 +1,11 @@
 from typing import Iterable
+from enum import Enum
 from . import gqlclient, web3client, gqltypes
 
-LEAGUE_GOLD = 5
-LEAGUE_PLATINUM = 6
+
+class League(int, Enum):
+    GOLD = 5
+    PLATINUM = 6
 
 
 class ClientError(Exception):

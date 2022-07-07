@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Any, Sequence
 import configargparse
 import logging
 import os
@@ -378,7 +376,7 @@ AVAX: {self.client.web3.get_balance()}
         return snails, races
 
     def find_races(self):
-        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+        for league in (client.League.GOLD, client.League.PLATINUM):
             _, races = self.find_races_in_league(league)
             for race in races:
                 if race.id in self._notified_races:
@@ -454,9 +452,9 @@ AVAX: {self.client.web3.get_balance()}
             self.notifier.notify(msg, silent=True)
 
     def _open_races(self):
-        for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM):
+        for league in (client.League.GOLD, client.League.PLATINUM):
             snails, races = self.find_races_in_league(league)
-            logger.info(f"Snails for {league}: {[s['name'] for s in snails]}")
+            logger.info(f"Snails for {league}: {', '.join([s['name'] for s in snails])}")
             if not snails:
                 continue
             for x in races:
@@ -486,7 +484,7 @@ AVAX: {self.client.web3.get_balance()}
         total = 0
         for race in (
             race
-            for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM)
+            for league in (client.League.GOLD, client.League.PLATINUM)
             for race in self.client.iterate_finished_races(filters={'owner': self.owner, 'league': league}, own=True)
         ):
             for p, i in enumerate(race['results']):
@@ -522,7 +520,7 @@ AVAX: {self.client.web3.get_balance()}
         total = 0
         for race in (
             race
-            for league in (client.LEAGUE_GOLD, client.LEAGUE_PLATINUM)
+            for league in (client.League.GOLD, client.League.PLATINUM)
             for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
         ):
             for p, i in enumerate(race.results):
@@ -559,6 +557,7 @@ AVAX: {self.client.web3.get_balance()}
     def _join_race(self, join_arg):
         try:
             r, rcpt = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
+            # FIXME: effectiveGasPrice * gasUsed = WEI used (AVAX 10^-18) - also print hexstring, not bytes...
             logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt["transactionHash"]})')
         except client.ClientError:
             logger.exception('unexpected joinRace error')
