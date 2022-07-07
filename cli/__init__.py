@@ -280,6 +280,15 @@ AVAX: {self.client.web3.get_balance()}
                     # log stacktrace to check if specific calls cause this more frequently
                     logger.exception('site %d... waiting', e.response.status_code)
                     time.sleep(20)
+                elif e.response.status_code == 429:
+                    # FIXME: handle retry-after header after checking it out
+                    logger.exception(
+                        'site %d... waiting: %s - %s',
+                        e.response.status_code,
+                        e.response.headers,
+                        type(e.response.headers.get('retry-after')),
+                    )
+                    time.sleep(120)
                 else:
                     logger.exception('crash, waiting 2min: %s', e)
                     time.sleep(120)
@@ -300,8 +309,11 @@ AVAX: {self.client.web3.get_balance()}
                     logger.info(c)
                 else:
                     logger.info(f'{c} - LASTSPOT (tx: {rcpt["transactionHash"]})')
-            except client.ClientError:
-                logger.exception('unexpected joinMission error')
+            except client.ClientError as e:
+                if e.args[0] == 'requires_transaction':
+                    logger.error('only last spot available, use --last-spot')
+                else:
+                    logger.exception('unexpected joinMission error')
         else:
             # list missions
             snails = list(self.client.iterate_my_snails_for_missions(self.owner))
