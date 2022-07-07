@@ -242,6 +242,7 @@ class Client(requests.Session):
                         conditions
                         distance
                         league
+                        race_type
                         status
                         athletes
                         results {
@@ -286,6 +287,7 @@ class Client(requests.Session):
                     league
                     status
                     athletes
+                    race_type
                     results {
                     token_id
                     time
