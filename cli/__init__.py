@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from dataclasses import dataclass
 from pathlib import Path
 import configargparse
 import logging
@@ -17,6 +18,52 @@ logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(loggi
 logging.addLevelName(logging.ERROR, f'{Fore.RED}{logging.getLevelName(logging.ERROR)}{Fore.RESET}')
 logging.addLevelName(logging.DEBUG, f'{Fore.LIGHTRED_EX}{logging.getLevelName(logging.DEBUG)}{Fore.RESET}')
 logger = logging.getLogger(__name__)
+
+
+class FileOrString(str):
+    def __new__(cls, content):
+        f = Path(content)
+        if f.exists():
+            return str.__new__(cls, f.read_text().strip())
+        return str.__new__(cls, content)
+
+
+class FileOrInt(int):
+    def __new__(cls, content):
+        f = Path(content)
+        if f.exists():
+            return int.__new__(cls, f.read_text().strip())
+        return int.__new__(cls, content)
+
+
+@dataclass
+class RaceJoin:
+    snail_id: int
+    race_id: int
+
+
+class StoreRaceJoin(configargparse.argparse.Action):
+    def __init__(
+        self,
+        option_strings,
+        dest,
+        nargs=2,
+        const=None,
+        default=None,
+        type=int,
+        choices=None,
+        required=False,
+        help=None,
+        metavar=('SNAIL_ID', 'RACE_ID'),
+    ):
+        if type != int:
+            raise ValueError('type must always be int (default)')
+        if nargs != 2:
+            raise ValueError('nargs must always be 2 (default)')
+        super().__init__(option_strings, dest, nargs, const, default, type, choices, required, help, metavar)
+
+    def __call__(self, parser, namespace, values, option_string):
+        setattr(namespace, self.dest, RaceJoin(*values))
 
 
 class CLI:
@@ -300,7 +347,7 @@ AVAX: {self.client.web3.get_balance()}
             # join mission
             try:
                 r, rcpt = self.client.join_mission_races(
-                    self.args.join[0], self.args.join[1], self.owner, allow_last_spot=self.args.last_spot
+                    self.args.join.snail_id, self.args.join.race_id, self.owner, allow_last_spot=self.args.last_spot
                 )
                 c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
                 if rcpt is None:
@@ -554,9 +601,9 @@ AVAX: {self.client.web3.get_balance()}
                 break
         print(f'\nTOTAL CR: {total_cr}')
 
-    def _join_race(self, join_arg):
+    def _join_race(self, join_arg: RaceJoin):
         try:
-            r, rcpt = self.client.join_competitive_races(join_arg[0], join_arg[1], self.owner)
+            r, rcpt = self.client.join_competitive_races(join_arg.snail_id, join_arg.race_id, self.owner)
             # FIXME: effectiveGasPrice * gasUsed = WEI used (AVAX 10^-18) - also print hexstring, not bytes...
             logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt["transactionHash"]})')
         except client.ClientError:
@@ -580,22 +627,6 @@ AVAX: {self.client.web3.get_balance()}
             getattr(self, f'cmd_{self.args.cmd}')()
 
 
-class FileOrString(str):
-    def __new__(cls, content):
-        f = Path(content)
-        if f.exists():
-            return str.__new__(cls, f.read_text().strip())
-        return str.__new__(cls, content)
-
-
-class FileOrInt(int):
-    def __new__(cls, content):
-        f = Path(content)
-        if f.exists():
-            return int.__new__(cls, f.read_text().strip())
-        return int.__new__(cls, content)
-
-
 def build_parser():
     parser = configargparse.ArgParser(
         prog=__name__,
@@ -605,11 +636,11 @@ def build_parser():
         args_for_writing_out_config_file=['--output-config'],
     )
     parser.add_argument(
-        '--owner-file', type=str, default='owner.conf', help='owner wallet (used for some filters/queries)'
+        '--owner-file', type=Path, default='owner.conf', help='owner wallet (used for some filters/queries)'
     )
-    parser.add_argument('--web3-file', type=str, default='web3provider.conf', help='file with web3 http endpoint')
-    parser.add_argument('--web3-wallet-key', type=str, default='pkey.conf', help='file with wallet private key')
-    parser.add_argument('--proxy', type=str, help='Use this mitmproxy instead of starting one')
+    parser.add_argument('--web3-file', type=Path, default='web3provider.conf', help='file with web3 http endpoint')
+    parser.add_argument('--web3-wallet-key', type=Path, default='pkey.conf', help='file with wallet private key')
+    parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
     # FIXME: configargparse gets messed up with nargs > 1 and subcommands - it changes order of the args when calling argparse at the end... PR?!
     parser.add_argument(
@@ -631,9 +662,7 @@ def build_parser():
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
-    pm.add_argument(
-        '--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join mission RACE_ID with SNAIL_ID'
-    )
+    pm.add_argument('--join', action=StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
     pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
 
     pm = subparsers.add_parser('bot')
@@ -677,7 +706,7 @@ def build_parser():
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
 
     pm = subparsers.add_parser('snails')
-    pm.add_argument('-s', '--sort', type=str, choices=['breed', 'lvl'], help='Sort snails by')
+    pm.add_argument('-s', '--sort', choices=['breed', 'lvl'], help='Sort snails by')
 
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
@@ -688,7 +717,7 @@ def build_parser():
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
-    pm.add_argument('name', type=str, help='new name')
+    pm.add_argument('name', help='new name')
 
     subparsers.add_parser('balance')
 
@@ -697,9 +726,7 @@ def build_parser():
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
-    pm.add_argument(
-        '--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join competitive race RACE_ID with SNAIL_ID'
-    )
+    pm.add_argument('--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
     return parser
 
 
