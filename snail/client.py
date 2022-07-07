@@ -63,9 +63,13 @@ class Client:
             self.gql.get_my_snails_for_ranked, 'snails', klass=gqltypes.Snail, args=[owner, league]
         )
 
-    def iterate_mission_races(self, filters={}):
+    def iterate_mission_races(self, filters={}, max_calls=None):
         yield from self._iterate_pages(
-            self.gql.get_mission_races, 'all', klass=gqltypes.Race, kwargs={'filters': filters}
+            self.gql.get_mission_races,
+            'all',
+            klass=gqltypes.Race,
+            kwargs={'filters': filters},
+            max_calls=max_calls,
         )
 
     def iterate_onboarding_races(self, filters={}):

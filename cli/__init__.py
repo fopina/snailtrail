@@ -85,19 +85,6 @@ class CLI:
                 f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.market_price}{Fore.RESET}"
             )
 
-    def list_missions(self):
-        for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
-            x['athletes'] = len(x['athletes'])
-            if x['participation']:
-                color = Fore.BLACK
-            elif x['athletes'] == 9:
-                color = Fore.RED
-            else:
-                color = Fore.GREEN
-            for k in ('__typename', 'distance', 'participation'):
-                del x[k]
-            print(f'{color}{x}{Fore.RESET}')
-
     def notify_mission(self, message):
         if self._notify_mission_data:
             passed = self._now() - self._notify_mission_data['start']
@@ -302,7 +289,35 @@ AVAX: {self.client.web3.get_balance()}
                 time.sleep(120)
 
     def cmd_missions(self):
-        self.list_missions()
+        if self.args.join:
+            # join mission
+            try:
+                r, rcpt = self.client.join_mission_races(
+                    self.args.join[0], self.args.join[1], self.owner, allow_last_spot=self.args.last_spot
+                )
+                c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
+                if rcpt is None:
+                    logger.info(c)
+                else:
+                    logger.info(f'{c} - LASTSPOT (tx: {rcpt["transactionHash"]})')
+            except client.ClientError:
+                logger.exception('unexpected joinMission error')
+        else:
+            # list missions
+            snails = list(self.client.iterate_my_snails_for_missions(self.owner))
+            for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
+                athletes = len(x.athletes)
+                if x.participation:
+                    color = Fore.LIGHTBLACK_EX
+                elif athletes == 9:
+                    color = Fore.RED
+                else:
+                    color = Fore.GREEN
+                c = f'{color}{x} - {athletes}{Fore.RESET}'
+                candidates = self.find_candidates(x, snails)
+                if candidates:
+                    c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+                print(c)
 
     def cmd_snails(self):
         it = self.client.iterate_all_snails(filters={'owner': self.owner})
@@ -327,6 +342,16 @@ AVAX: {self.client.web3.get_balance()}
     def cmd_rename(self):
         self.rename_snail()
 
+    def find_candidates(self, race, snails):
+        candidates = []
+        conditions = set(race.conditions)
+        for s in snails:
+            score = len(conditions.intersection(s.adaptations))
+            if score:
+                candidates.append((score, s))
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return candidates
+
     def find_races_in_league(self, league):
         snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
         if not snails:
@@ -335,13 +360,7 @@ AVAX: {self.client.web3.get_balance()}
         snails.sort(key=lambda x: len(x.adaptations), reverse=True)
         races = []
         for x in self.client.iterate_onboarding_races(filters={'owner': self.owner, 'league': league}):
-            candidates = []
-            conditions = set(x.conditions)
-            for s in snails:
-                score = len(conditions.intersection(s.adaptations))
-                if score:
-                    candidates.append((score, s))
-            candidates.sort(key=lambda x: x[0], reverse=True)
+            candidates = self.find_candidates(x, snails)
             x['candidates'] = candidates
             races.append(x)
         return snails, races
@@ -601,6 +620,10 @@ def build_parser():
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
     pm = subparsers.add_parser('missions')
+    pm.add_argument(
+        '--join', type=int, nargs=2, metavar=('SNAIL_ID', 'RACE_ID'), help='Join mission RACE_ID with SNAIL_ID'
+    )
+    pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
 
     pm = subparsers.add_parser('bot')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')

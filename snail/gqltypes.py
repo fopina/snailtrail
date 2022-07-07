@@ -20,7 +20,7 @@ class AttrDict(dict):
             return super().__getattribute__(__name)
         if __name in self.__class__.__dict__.keys():
             return super().__getattribute__(__name)
-        return self[__name]
+        return self.get(__name)
 
 
 class Snail(AttrDict):
@@ -41,7 +41,8 @@ class Snail(AttrDict):
 
     @property
     def gender(self):
-        return list(Gender)[self['gender']['id']]
+        if 'gender' in self:
+            return list(Gender)[self['gender']['id']]
 
     @property
     def monthly_breed_available(self):
@@ -49,7 +50,8 @@ class Snail(AttrDict):
 
     @property
     def genome_str(self):
-        return ''.join(self.genome)
+        if self.genome:
+            return ''.join(self.genome)
 
     @property
     def level(self):
@@ -110,6 +112,11 @@ class Race(AttrDict):
         True
         """
         return self.distance == 'Treasury Run'
+
+    def __str__(self):
+        if self.is_mission:
+            return f"{self.track} (#{self.id}): {self.distance}"
+        return f"{self.track} (#{self.id}): {self.distance}m for {self.race_type} entry"
 
 
 def _parse_datetime(date_str):
