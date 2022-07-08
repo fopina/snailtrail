@@ -53,11 +53,18 @@ class Notifier:
         else:
             self.updater = None
 
+    def _slow_query(self, query):
+        return query.edit_message_reply_markup(
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('🚧 Loading...', callback_data='ignore')]])
+        )
+
     def handle_buttons(self, update: Update, context: CallbackContext) -> None:
         """Parses the CallbackQuery and updates the message text."""
         query = update.callback_query
         query.answer()
         cmd, *opts = query.data.split(' ', 1)
+        if cmd == 'ignore':
+            return
         if cmd == 'toggle':
             return self.handle_buttons_toggle(opts, update, context)
         elif cmd == 'joinrace':
@@ -83,18 +90,17 @@ class Notifier:
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process join race buttons"""
         query = update.callback_query
+        self._slow_query(query)
         if not opts:
             query.edit_message_reply_markup()
             return
         race_id, snail_id = map(int, opts[0].split(' '))
         try:
             r, _ = self.__cli.client.join_competitive_races(snail_id, race_id, self.__cli.owner)
-            query.edit_message_text(query.message.text + ' ✅')
-            query.message.reply_markdown(text=f'✅ Race joined: {r["message"]}')
-        except Exception:
+            query.edit_message_text(query.message.text + f'\n✅  Race joined: {r["message"]}')
+        except Exception as e:
             logger.exception('unexpected joinRace error')
-            query.edit_message_text(query.message.text + ' ❌')
-            query.message.reply_markdown(text='❌ Race FAILED to join')
+            query.edit_message_text(query.message.text + f'\n❌ Race FAILED to join ({e})')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -187,13 +193,13 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'{setting.dest}: {getattr(self.__cli.args, setting.dest)}',
+                        f'🔧 {setting.dest}: {getattr(self.__cli.args, setting.dest)}',
                         callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]
                 ]
             )
-        keyboard.append([InlineKeyboardButton(f'Niente', callback_data='toggle')])
+        keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
 
     def idle(self):

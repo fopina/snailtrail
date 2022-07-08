@@ -455,10 +455,10 @@ AVAX: {self.client.web3.get_balance()}
                             msg += '\nFAILED to join ❌'
                     else:
                         join_actions = [
-                            (f'Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}')
+                            (f'✅ Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}')
                             for cand in cands
                         ] + [
-                            ('Skip', 'joinrace'),
+                            ('🏳️ Skip', 'joinrace'),
                         ]
                     logger.info(msg)
                     self.notifier.notify(msg, actions=join_actions)
