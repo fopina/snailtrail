@@ -210,7 +210,7 @@ class CLI:
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     logger.warning('requires transaction')
-                    self.notify_mission(f'{msg} **LAST SPOT**')
+                    self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError:
                 logger.exception('failed to join mission')
                 self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission')
