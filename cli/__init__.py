@@ -216,9 +216,9 @@ class CLI:
                 elif r.get('status') == 1:
                     logger.warning('requires transaction')
                     self.notify_mission(f'{msg} *LAST SPOT*')
-            except client.ClientError:
+            except client.ClientError as e:
                 logger.exception('failed to join mission')
-                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission')
+                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission: {e}')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
