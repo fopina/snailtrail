@@ -21,8 +21,9 @@ class Client:
         private_key=None,
         web3_provider=None,
         web3_provider_class=None,
+        rate_limiter=None,
     ):
-        self.gql = gqlclient.Client(http_token=http_token, proxy=proxy)
+        self.gql = gqlclient.Client(http_token=http_token, proxy=proxy, rate_limiter=rate_limiter)
         if wallet and private_key and web3_provider:
             self.web3 = web3client.Client(wallet, private_key, web3_provider, web3_provider_class=web3_provider_class)
 

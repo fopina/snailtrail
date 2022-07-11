@@ -73,7 +73,11 @@ class CLI:
         self.args = args
         self._read_conf()
         self.client = client.Client(
-            proxy=proxy_url, wallet=self.owner, private_key=self.wallet_key, web3_provider=self.web3provider
+            proxy=proxy_url,
+            wallet=self.owner,
+            private_key=self.wallet_key,
+            web3_provider=self.web3provider,
+            rate_limiter=args.rate_limit,
         )
         self.notifier = tgbot.Notifier(
             self.args.notify_token,
@@ -664,6 +668,12 @@ def build_parser():
         '--tg-bot',
         action='store_true',
         help='Poll Telegram Bot API for incoming messages/commands',
+    )
+    parser.add_argument(
+        '--rate-limit',
+        type=int,
+        metavar='SECONDS',
+        help='Limit GraphQL to one per SECONDS, to avoid getting blocked',
     )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')

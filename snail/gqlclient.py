@@ -1,4 +1,5 @@
 import requests
+import time
 
 
 class APIError(Exception):
@@ -12,6 +13,7 @@ class Client(requests.Session):
         self,
         http_token=None,
         proxy=None,
+        rate_limiter=None,
     ):
         super().__init__()
         self.headers.update(
@@ -29,8 +31,15 @@ class Client(requests.Session):
             }
             # TODO: fetch mitmproxy CA and use it
             self.verify = False
+        self.rate_limiter = rate_limiter
+        self._last_query = 0
 
     def query(self, operation, variables, query):
+        if self.rate_limiter is not None:
+            delta = time.time() - self._last_query - self.rate_limiter
+            if delta < 0:
+                time.sleep(self.rate_limiter)
+
         r = self.post(
             self.URL,
             json={
@@ -39,6 +48,7 @@ class Client(requests.Session):
                 'query': query,
             },
         )
+        self._last_query = time.time()
         r.raise_for_status()
         r = r.json()
         if r.get('data') is None:

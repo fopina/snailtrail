@@ -97,10 +97,10 @@ class Notifier:
         race_id, snail_id = map(int, opts[0].split(' '))
         try:
             r, _ = self.__cli.client.join_competitive_races(snail_id, race_id, self.__cli.owner)
-            query.edit_message_text(query.message.text + f'\n✅  Race joined: {r["message"]}')
+            query.edit_message_text(query.message.text + '\n✅  Race joined')
         except Exception as e:
             logger.exception('unexpected joinRace error')
-            query.edit_message_text(query.message.text + f'\n❌ Race FAILED to join ({e})')
+            query.edit_message_text(query.message.text + f'\n❌ Race FAILED to join: {e}')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
