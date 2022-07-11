@@ -1,4 +1,6 @@
 import requests
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 import time
 
 
@@ -14,7 +16,12 @@ class Client(requests.Session):
         http_token=None,
         proxy=None,
         rate_limiter=None,
+        retry=None,
     ):
+        """
+        >>> Client(retry=3).rate_limiter
+        >>>
+        """
         super().__init__()
         self.headers.update(
             {
@@ -24,6 +31,12 @@ class Client(requests.Session):
         self.trust_env = False
         if http_token:
             self.headers.update({"authorization": f"Basic {http_token}"})
+        if retry:
+            retry_adapter = HTTPAdapter(
+                max_retries=Retry(total=retry, backoff_factor=1, status_forcelist=[502, 504], allowed_methods=['POST'])
+            )
+            self.mount('http://', retry_adapter)
+            self.mount('https://', retry_adapter)
         if proxy:
             self.proxies = {
                 "http": proxy,

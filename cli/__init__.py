@@ -78,6 +78,7 @@ class CLI:
             private_key=self.wallet_key,
             web3_provider=self.web3provider,
             rate_limiter=args.rate_limit,
+            gql_retry=args.retry,
         )
         self.notifier = tgbot.Notifier(
             self.args.notify_token,
@@ -674,6 +675,12 @@ def build_parser():
         type=int,
         metavar='SECONDS',
         help='Limit GraphQL to one per SECONDS, to avoid getting blocked',
+    )
+    parser.add_argument(
+        '--retry',
+        type=int,
+        metavar='SECONDS',
+        help='Retry GraphQL queries that result in 429, 502 and 504 (exponential backoff)',
     )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
