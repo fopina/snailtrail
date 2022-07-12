@@ -6,6 +6,16 @@ import time
 
 class APIError(Exception):
     """API expected errors"""
+    def __str__(self) -> str:
+        """
+        >>> str(APIError([['a']]))
+        'a'
+        >>> str(APIError([['a', 'b']]))
+        'a|b'
+        >>> str(APIError([['a', 'b'], ['c']]))
+        'a|b\\nc'
+        """
+        return '\n'.join('|'.join(y) for x in self.args for y in x)
 
 
 class Client(requests.Session):
@@ -66,8 +76,13 @@ class Client(requests.Session):
         r = r.json()
         if r.get('data') is None:
             raise Exception(r)
-        if 'problem' in r['data']:
-            raise APIError(r['data']['problem'])
+        problems = [
+            v['problem']
+            for v in r['data'].values()
+            if 'problem' in v
+        ]
+        if problems:
+            raise APIError(problems)
         return r["data"]
 
     def get_all_snails_marketplace(self, offset=0, filters={}):
