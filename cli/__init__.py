@@ -7,6 +7,7 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
+from .decorators import cached_property_with_ttl
 
 from colorama import Fore
 
@@ -102,6 +103,10 @@ class CLI:
     @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
+
+    @cached_property_with_ttl(600)
+    def my_snails(self):
+        return {snail.id: snail for snail in self.client.iterate_all_snails(filters={'owner': self.owner})}
 
     def _breed_status_str(self, status):
         if status >= 0:
@@ -286,7 +291,10 @@ AVAX: {self.client.web3.get_balance()}
 
     def cmd_bot(self):
         self._next_mission = None
-        self.notifier.notify(f'👋  Running v*{VERSION}*')
+        msg = f'👋  Running *v{VERSION}*'
+        if not self.args.tg_bot:
+            msg += ' `(non-interactive)`'
+        self.notifier.notify(msg)
 
         did_anything = False
         while True:
@@ -383,9 +391,8 @@ AVAX: {self.client.web3.get_balance()}
                 print(c)
 
     def cmd_snails(self):
-        it = self.client.iterate_all_snails(filters={'owner': self.owner})
+        it = list(self.my_snails.values())
         if self.args.sort:
-            it = list(it)
             if self.args.sort == 'breed':
                 it.sort(key=lambda x: x.breed_status)
             elif self.args.sort == 'lvl':
@@ -471,7 +478,6 @@ AVAX: {self.client.web3.get_balance()}
                     self._notified_races.add(race['id'])
 
     def find_races_over(self):
-        snails = None
         for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
             if race['id'] in self._notified_races_over:
                 # notify only once...
@@ -483,10 +489,8 @@ AVAX: {self.client.web3.get_balance()}
             if not race.is_mission and not self.args.races_over:
                 continue
 
-            if snails is None:
-                snails = {x.id: x for x in self.client.iterate_all_snails(filters={'owner': self.owner})}
             for p, i in enumerate(race['results']):
-                if i['token_id'] in snails:
+                if i['token_id'] in self.my_snails:
                     break
             else:
                 logger.error('no snail found, NOT POSSIBLE')
@@ -499,7 +503,7 @@ AVAX: {self.client.web3.get_balance()}
             else:
                 e = '🥇🥈🥉'[p - 1]
 
-            snail = snails[i['token_id']]
+            snail = self.my_snails[i['token_id']]
             msg = f"{e} {snail.name} number {p} in {race.track}, for {race.distance}"
             logger.info(msg)
             self.notifier.notify(msg, silent=True)
@@ -532,9 +536,6 @@ AVAX: {self.client.web3.get_balance()}
                 print(f'{color}{x_str}{Fore.RESET}{c}')
 
     def _finished_races(self):
-        snails = {x.id: x for x in self.client.iterate_all_snails(filters={'owner': self.owner})}
-        if not snails:
-            return
         total_cr = 0
         total = 0
         for race in (
@@ -545,12 +546,12 @@ AVAX: {self.client.web3.get_balance()}
             if self.args.price and int(race.race_type) > self.args.price:
                 continue
             for p, i in enumerate(race['results']):
-                if i['token_id'] in snails:
+                if i['token_id'] in self.my_snails:
                     break
             else:
                 logger.error('no snail found, NOT POSSIBLE')
                 continue
-            snail = snails[i['token_id']]
+            snail = self.my_snails[i['token_id']]
             p += 1
             fee = int(race.prize_pool) / 9
             if p == 1:
@@ -570,7 +571,8 @@ AVAX: {self.client.web3.get_balance()}
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
-        print(f'\nTOTAL CR: {total_cr}')
+        print(f'\nRaces #: {total}')
+        print(f'TOTAL CR: {total_cr}')
 
     def _history_races(self, snail_id):
         total_cr = 0

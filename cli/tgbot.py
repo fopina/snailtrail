@@ -49,6 +49,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
+            dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
         else:
             self.updater = None
@@ -125,8 +126,7 @@ class Notifier:
         My snails stats
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        it = self.__cli.client.iterate_all_snails(filters={'owner': self.__cli.owner})
-        it = list(it)
+        it = list(self.__cli.my_snails.values())
         it.sort(key=lambda x: x.breed_status)
         # queuable times
         queues = {s.id: s for s in self.__cli.client.iterate_my_snails_for_missions(self.__cli.owner)}
@@ -182,6 +182,14 @@ class Notifier:
         for k, v in d['prices'].items():
             txt.append(f"*{k}*: {' / '.join(map(str, v))}")
         update.message.reply_markdown('\n'.join(txt))
+
+    @bot_auth
+    def cmd_reload_snails(self, update: Update, context: CallbackContext) -> None:
+        """
+        Reset snails cache
+        """
+        self.__cli.reset_cache_my_snails()
+        update.message.reply_text('✅')
 
     @bot_auth
     def cmd_settings(self, update: Update, context: CallbackContext) -> None:
