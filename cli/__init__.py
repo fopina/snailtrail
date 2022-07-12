@@ -218,7 +218,7 @@ class CLI:
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
-                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission: {e}')
+                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission: {tgbot.escape_markdown(e)}')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -345,7 +345,7 @@ AVAX: {self.client.web3.get_balance()}
                     time.sleep(120)
             except Exception as e:
                 logger.exception('crash, waiting 2min: %s', e)
-                self.notifier.notify(f'bot unknown error, check logs ({e})')
+                self.notifier.notify(f'bot unknown error, check logs ({tgbot.escape_markdown(e)})')
                 time.sleep(120)
 
     def cmd_missions(self):
