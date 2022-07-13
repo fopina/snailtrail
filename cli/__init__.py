@@ -72,14 +72,14 @@ class CLI:
 
     def __init__(self, proxy_url, args):
         self.args = args
-        self._read_conf()
+        self.owner = args.owner
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
-            private_key=self.wallet_key,
-            web3_provider=self.web3provider,
+            private_key=args.web3_wallet_key,
+            web3_provider=args.web3_rpc,
             rate_limiter=args.rate_limit,
-            gql_retry=args.retry,
+            gql_retry=args.retry if args.retry > 0 else None,
         )
         self.notifier = tgbot.Notifier(
             self.args.notify_token,
@@ -231,23 +231,6 @@ class CLI:
             logger.info(f'{len(queueable)} without matching race')
             return
         return closest
-
-    def _read_conf(self):
-        try:
-            with open(self.args.owner_file) as f:
-                self.owner = f.read().strip()
-        except FileNotFoundError:
-            """ignore, optional config"""
-        try:
-            with open(self.args.web3_file) as f:
-                self.web3provider = f.read().strip()
-        except FileNotFoundError:
-            """ignore, optional config"""
-        try:
-            with open(self.args.web3_wallet_key) as f:
-                self.wallet_key = f.read().strip()
-        except FileNotFoundError:
-            """ignore, optional config"""
 
     def rename_snail(self):
         r = self.client.gql.name_change(self.args.name)
@@ -650,10 +633,20 @@ def build_parser():
         args_for_writing_out_config_file=['--output-config'],
     )
     parser.add_argument(
-        '--owner-file', type=Path, default='owner.conf', help='owner wallet (used for some filters/queries)'
+        '--owner', type=FileOrString, default='owner.conf', help='owner wallet (value or path to file with value)'
     )
-    parser.add_argument('--web3-file', type=Path, default='web3provider.conf', help='file with web3 http endpoint')
-    parser.add_argument('--web3-wallet-key', type=Path, default='pkey.conf', help='file with wallet private key')
+    parser.add_argument(
+        '--web3-rpc',
+        type=FileOrString,
+        default='https://api.avax.network/ext/bc/C/rpc',
+        help='web3 http endpoint (value or path to file with value)',
+    )
+    parser.add_argument(
+        '--web3-wallet-key',
+        type=FileOrString,
+        default='pkey.conf',
+        help='wallet private key (value or path to file with value)',
+    )
     parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
     # FIXME: configargparse gets messed up with nargs > 1 and subcommands - it changes order of the args when calling argparse at the end... PR?!
@@ -681,8 +674,9 @@ def build_parser():
     parser.add_argument(
         '--retry',
         type=int,
-        metavar='SECONDS',
-        help='Retry GraphQL queries that result in 429, 502 and 504 (exponential backoff)',
+        metavar='TRIES',
+        default=3,
+        help='Retry GraphQL queries that result in 429, 502 and 504 (exponential backoff) - 0 to disable',
     )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
