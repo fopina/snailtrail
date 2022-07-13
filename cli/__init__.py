@@ -7,6 +7,8 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
+
+from snail.gqltypes import Snail
 from .decorators import cached_property_with_ttl
 
 from colorama import Fore
@@ -474,10 +476,10 @@ AVAX: {self.client.web3.get_balance()}
 
             for p, i in enumerate(race['results']):
                 if i['token_id'] in self.my_snails:
+                    snail = self.my_snails[i['token_id']]
                     break
             else:
-                logger.error('no snail found, NOT POSSIBLE')
-                continue
+                snail = Snail({'name': 'UNKNOWN SNAIL'})
             p += 1
             if p > 3:
                 e = '💩'
@@ -486,7 +488,6 @@ AVAX: {self.client.web3.get_balance()}
             else:
                 e = '🥇🥈🥉'[p - 1]
 
-            snail = self.my_snails[i['token_id']]
             msg = f"{e} {snail.name} number {p} in {race.track}, for {race.distance}"
             logger.info(msg)
             self.notifier.notify(msg, silent=True)
@@ -530,11 +531,10 @@ AVAX: {self.client.web3.get_balance()}
                 continue
             for p, i in enumerate(race['results']):
                 if i['token_id'] in self.my_snails:
+                    snail = self.my_snails[i['token_id']]
                     break
             else:
-                logger.error('no snail found, NOT POSSIBLE')
-                continue
-            snail = self.my_snails[i['token_id']]
+                snail = Snail({'name': 'UNKNOWN SNAIL'})
             p += 1
             fee = int(race.prize_pool) / 9
             if p == 1:
@@ -571,7 +571,7 @@ AVAX: {self.client.web3.get_balance()}
                 if i['token_id'] == snail_id:
                     break
             else:
-                logger.error('no snail found, NOT POSSIBLE')
+                logger.error('snail not found, NOT POSSIBLE')
                 continue
             time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
             time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
