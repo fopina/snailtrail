@@ -1,13 +1,26 @@
-FROM python:3.9-slim
+FROM python:3.9-slim as builder
 
-# FIXME use wheels and multistage to reduce size
 RUN apt update \
  && apt install --no-install-recommends -y \
     build-essential \
  && rm -rf /var/lib/apt/lists/*
 
 ADD requirements.txt /
-RUN pip install -r requirements.txt
+
+RUN --mount=type=cache,target=/wheels \
+    cp /requirements.txt /wheels \
+ && pip wheel -r /requirements.txt --wheel-dir=/wheels \
+ && rm -fr /root/.cache/pip/
+
+
+FROM python:3.9-slim
+
+# crazy noop to force buildkit to build previous stage
+COPY --from=builder /etc/passwd /etc/passwd
+
+RUN --mount=type=cache,target=/wheels \
+    pip install --find-links=/wheels -r /wheels/requirements.txt \
+ && rm -fr /root/.cache/pip/
 
 WORKDIR /app
 ADD snail /app/snail
