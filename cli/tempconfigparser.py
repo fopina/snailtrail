@@ -89,10 +89,7 @@ class ArgumentParser(configargparse.ArgumentParser):
             env_var_args += self.convert_item_to_command_line_arg(
                 action, key, value)
 
-        if nargs:
-            args = args + env_var_args
-        else:
-            args = env_var_args + args
+        args = env_var_args + args
 
         if env_var_args:
             self._source_to_settings[configargparse._ENV_VAR_SOURCE_KEY] = OrderedDict(
@@ -155,10 +152,7 @@ class ArgumentParser(configargparse.ArgumentParser):
                         isinstance(action, argparse._AppendAction)):
                         nargs = True
 
-            if nargs:
-                args = args + config_args
-            else:
-                args = config_args + args
+            args = config_args + args
 
         # save default settings for use by print_values()
         default_settings = OrderedDict()
@@ -191,6 +185,3 @@ class ArgumentParser(configargparse.ArgumentParser):
         output_file_paths = [a for a in output_file_paths if a is not None]
         self.write_config_file(namespace, output_file_paths, exit_after=True)
         return namespace, unknown_args
-
-
-configargparse.ArgParser = ArgumentParser
