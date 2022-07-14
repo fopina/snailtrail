@@ -476,6 +476,15 @@ AVAX: {self.client.web3.get_balance()}
         return snails, races
 
     def find_races(self):
+        if self.args.race_stats:
+            _x = lambda snail, race: (
+                '`'
+                + '.'.join(map(str, self.cached_snail_history(snail.id, int(race.race_type))[1][race.distance]))
+                + '`'
+            )
+        else:
+            _x = lambda x, y: ''
+
         for league in client.League:
             _, races = self.find_races_in_league(league)
             for race in races:
@@ -498,9 +507,7 @@ AVAX: {self.client.web3.get_balance()}
                     if not cands:
                         continue
                     candidate_list = ','.join(
-                        f"{cand[1].name_id}{(cand[0] * '⭐')}"
-                        f"`{'.'.join(map(str, self.cached_snail_history(cand[1].id, int(race.race_type))[1][race.distance]))}`"
-                        for cand in cands
+                        f"{cand[1].name_id}{(cand[0] * '⭐')}{_x(cand[1], race)}" for cand in cands
                     )
                     msg = f"🏎️  Race {race} matched {candidate_list}"
                     if self.args.races_join:
@@ -762,6 +769,11 @@ def build_parser():
         '--races-join',
         action='store_true',
         help='Auto-join every matched race - use race-matches and race-price to restrict them!',
+    )
+    pm.add_argument(
+        '--race-stats',
+        action='store_true',
+        help='Include similar race stats for the snail when notifying about a new race (will generate extra queries)',
     )
     pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
     pm.add_argument('--race-price', type=int, help='Maximum price for race')
