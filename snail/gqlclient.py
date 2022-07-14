@@ -6,6 +6,7 @@ import time
 
 class APIError(Exception):
     """API expected errors"""
+
     def __str__(self) -> str:
         """
         >>> str(APIError([['a']]))
@@ -19,14 +20,13 @@ class APIError(Exception):
 
 
 class Client(requests.Session):
-    URL = "https://api.snailtrail.art/graphql/"
-
     def __init__(
         self,
         http_token=None,
         proxy=None,
         rate_limiter=None,
         retry=None,
+        url='https://api.snailtrail.art/graphql/',
     ):
         """
         >>> Client(retry=3).rate_limiter
@@ -43,7 +43,13 @@ class Client(requests.Session):
             self.headers.update({"authorization": f"Basic {http_token}"})
         if retry:
             retry_adapter = HTTPAdapter(
-                max_retries=Retry(total=retry, backoff_factor=1, status_forcelist=[502, 504], allowed_methods=['POST'])
+                max_retries=Retry(
+                    total=retry,
+                    backoff_factor=1,
+                    status_forcelist=[502, 504],
+                    allowed_methods=['POST'],
+                    raise_on_status=False,
+                )
             )
             self.mount('http://', retry_adapter)
             self.mount('https://', retry_adapter)
@@ -56,6 +62,7 @@ class Client(requests.Session):
             self.verify = False
         self.rate_limiter = rate_limiter
         self._last_query = 0
+        self.url = url
 
     def query(self, operation, variables, query):
         if self.rate_limiter is not None:
@@ -64,7 +71,7 @@ class Client(requests.Session):
                 time.sleep(self.rate_limiter)
 
         r = self.post(
-            self.URL,
+            self.url,
             json={
                 'operationName': operation,
                 'variables': variables,
@@ -76,11 +83,7 @@ class Client(requests.Session):
         r = r.json()
         if r.get('data') is None:
             raise Exception(r)
-        problems = [
-            v['problem']
-            for v in r['data'].values()
-            if 'problem' in v
-        ]
+        problems = [v['problem'] for v in r['data'].values() if 'problem' in v]
         if problems:
             raise APIError(problems)
         return r["data"]
