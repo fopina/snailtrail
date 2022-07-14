@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from email.policy import default
 from pathlib import Path
 import configargparse
 import logging
@@ -107,6 +106,53 @@ class CLI:
     @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
+
+    def cached_snail_history(self, snail_id, price=None, limit=None):
+        """
+        Return snail race history plus a stats summary
+        """
+        # FIXME: make this prettier with a TTLed lru_cache
+        if not hasattr(self, '_cached_snail_history'):
+            setattr(self, '_cached_snail_history', {})
+
+        key = (snail_id, price, limit)
+        data, last_update = self._cached_snail_history.get(key, (None, 0))
+        _now = time.time()
+        # re-fetch only once per 30min
+        # TODO: make configurable? update only once and use race notifications to keep it up to date?
+        if _now - last_update < 1800:
+            return data
+
+        stats = defaultdict(lambda: [0, 0, 0, 0])
+        races = []
+        total = 0
+        for race in (
+            race
+            for league in client.League
+            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
+        ):
+            if price and int(race.race_type) > price:
+                continue
+            for p, i in enumerate(race.results):
+                if i['token_id'] == snail_id:
+                    break
+            else:
+                logger.error('snail not found, NOT POSSIBLE')
+                continue
+            time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
+            time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
+            p += 1
+            if p < 4:
+                stats[race.distance][p-1] += 1
+            stats[race.distance][3] += 1
+            races.append((race, p, time_on_first, time_on_third))
+            total += 1
+            if limit and total >= limit:
+                break
+        
+        data = (races, stats)
+        self._cached_snail_history[key] = (data, _now)
+        return data
 
     @cached_property_with_ttl(600)
     def my_snails(self):
@@ -562,46 +608,23 @@ AVAX: {self.client.web3.get_balance()}
     def _history_races(self, snail):
         total_cr = 0
         total = 0
-        stats = defaultdict(lambda: [0, 0, 0, 0])
-        for race in (
-            race
-            for league in client.League
-            for race in self.client.iterate_race_history(filters={'token_id': snail.id, 'league': league})
-        ):
-            if self.args.price and int(race.race_type) > self.args.price:
-                continue
-            for p, i in enumerate(race.results):
-                if i['token_id'] == snail.id:
-                    break
-            else:
-                logger.error('snail not found, NOT POSSIBLE')
-                continue
-            time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
-            time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
-            p += 1
+        races, stats = self.cached_snail_history(snail.id, self.args.price, self.args.limit)
+        for race_data in races:
+            race, p, time_on_first, time_on_third = race_data
             fee = int(race.prize_pool) / 9
-            if p == 1:
-                c = Fore.GREEN
-                cr = fee * 4
-            elif p == 2:
-                c = Fore.YELLOW
-                cr = fee * 1.5
-            elif p == 3:
-                c = Fore.LIGHTRED_EX
-                cr = fee * 0.5
+            if p < 4:
+                c = [Fore.GREEN, Fore.YELLOW, Fore.LIGHTRED_EX][p-1]
+                m = [4, 1.5, 0.5][p-1]
+                cr = fee * m
             else:
                 c = Fore.RED
                 cr = 0 - fee
             total_cr += cr
-            if p < 4:
-                stats[race.distance][p-1] += 1
-            stats[race.distance][3] += 1
+
             print(
                 f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m (on 1st: {time_on_first:0.2f}%, on 3rd: {time_on_third:0.2f}%) - {cr}{Fore.RESET}"
             )
             total += 1
-            if self.args.limit and total >= self.args.limit:
-                break
         if total:
             print(f'\nRaces #: {total}')
             print(f'TOTAL CR: {total_cr}')
