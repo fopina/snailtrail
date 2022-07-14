@@ -134,12 +134,13 @@ class Notifier:
             s['queueable_at'] = queues.get(s.id).get('queueable_at')
         update.message.reply_markdown_v2(
             '\n'.join(
-                '🐌  %s %s 🍆  *%s* 🏁 %s'
+                '🐌  %s %s 🍆  *%s* 🏁 %s 🎫 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
                     escmv2(f"lv {snail.level} - {snail.family} {snail.gender} {snail.klass} {snail.purity}"),
                     self._breed_status_markdown(snail.breed_status),
                     escmv2(self._queueable_at(snail)),
+                    escmv2(str(snail.stats['mission_tickets'])),
                 )
                 for snail in it
             )
