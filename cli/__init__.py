@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
 from dataclasses import dataclass
+from email.policy import default
 from pathlib import Path
 import configargparse
 import logging
@@ -557,18 +559,19 @@ AVAX: {self.client.web3.get_balance()}
         print(f'\nRaces #: {total}')
         print(f'TOTAL CR: {total_cr}')
 
-    def _history_races(self, snail_id):
+    def _history_races(self, snail):
         total_cr = 0
         total = 0
+        stats = defaultdict(lambda: [0, 0, 0, 0])
         for race in (
             race
             for league in client.League
-            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
+            for race in self.client.iterate_race_history(filters={'token_id': snail.id, 'league': league})
         ):
             if self.args.price and int(race.race_type) > self.args.price:
                 continue
             for p, i in enumerate(race.results):
-                if i['token_id'] == snail_id:
+                if i['token_id'] == snail.id:
                     break
             else:
                 logger.error('snail not found, NOT POSSIBLE')
@@ -590,13 +593,24 @@ AVAX: {self.client.web3.get_balance()}
                 c = Fore.RED
                 cr = 0 - fee
             total_cr += cr
+            if p < 4:
+                stats[race.distance][p-1] += 1
+            stats[race.distance][3] += 1
             print(
-                f"{c}#{snail_id} number {p} in {race.track}, for {race.distance}m (on 1st: {time_on_first:0.2f}%, on 3rd: {time_on_third:0.2f}%) - {cr}{Fore.RESET}"
+                f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m (on 1st: {time_on_first:0.2f}%, on 3rd: {time_on_third:0.2f}%) - {cr}{Fore.RESET}"
             )
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
-        print(f'\nTOTAL CR: {total_cr}')
+        if total:
+            print(f'\nRaces #: {total}')
+            print(f'TOTAL CR: {total_cr}')
+            print('Stats (1/2/3/Total):', ' | '.join(
+                f'{Fore.CYAN}{k}{Fore.RESET}: {Fore.GREEN}{v[:3]}{Fore.RESET} ({v[3]})'
+                for k, v in stats.items()
+            ))
+        else:
+            logger.warning(f'Nothing for {snail.name_id}')
 
     def _join_race(self, join_arg: RaceJoin):
         try:
@@ -609,8 +623,13 @@ AVAX: {self.client.web3.get_balance()}
     def cmd_races(self):
         if self.args.finished:
             return self._finished_races()
-        if self.args.history:
-            return self._history_races(self.args.history)
+        if self.args.history is not None:
+            if self.args.history == 0:
+                for s in self.my_snails.values():
+                    self._history_races(s)
+            else:
+                self._history_races(Snail({'id': self.args.history}))
+            return
         if self.args.join:
             return self._join_race(self.args.join)
         return self._open_races()
@@ -745,7 +764,7 @@ def build_parser():
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
-    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID')
+    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID (use 0 for ALL)')
     pm.add_argument('-p', '--price', type=int, help='Filter for less or equal to PRICE')
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
     return parser

@@ -34,7 +34,7 @@ class Snail(AttrDict):
 
     @property
     def name_id(self):
-        pr = self.name
+        pr = self.name or f'#{self.id}'
         if str(self.id) not in pr:
             pr = f'{pr} (#{self.id})'
         return pr
