@@ -102,6 +102,7 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = 99999
         self._next_mission = None
+        self._bot_pause = False
 
     @staticmethod
     def _now():
@@ -333,38 +334,38 @@ AVAX: {self.client.web3.get_balance()}
         while True:
             try:
                 w = self.args.wait
-                if self.args.missions:
-                    did_anything = True
-                    now = datetime.now(tz=timezone.utc)
-                    if self._next_mission is None or self._next_mission < now:
-                        self._next_mission = self.join_missions()
-                        logger.info('next mission in at %s', self._next_mission)
-                    if self._next_mission is not None:
-                        # if wait for next mission is lower than wait argument, use it
-                        _w = (self._next_mission - now).total_seconds()
-                        if 0 < _w < w:
-                            w = _w
+                if not self._bot_pause:
+                    if self.args.missions:
+                        did_anything = True
+                        now = datetime.now(tz=timezone.utc)
+                        if self._next_mission is None or self._next_mission < now:
+                            self._next_mission = self.join_missions()
+                            logger.info('next mission in at %s', self._next_mission)
+                        if self._next_mission is not None:
+                            # if wait for next mission is lower than wait argument, use it
+                            _w = (self._next_mission - now).total_seconds()
+                            if 0 < _w < w:
+                                w = _w
 
-                if self.args.races:
-                    did_anything = True
-                    self.find_races()
+                    if self.args.races:
+                        did_anything = True
+                        self.find_races()
 
-                if self.args.races_over or self.args.missions_over:
-                    did_anything = True
-                    self.find_races_over()
+                    if self.args.races_over or self.args.missions_over:
+                        did_anything = True
+                        self.find_races_over()
 
-                if self.args.market:
-                    did_anything = True
-                    self._bot_marketplace()
+                    if self.args.market:
+                        did_anything = True
+                        self._bot_marketplace()
 
-                if self.args.coefficent:
-                    did_anything = True
-                    self._bot_coefficent()
+                    if self.args.coefficent:
+                        did_anything = True
+                        self._bot_coefficent()
 
-                if not did_anything:
-                    logger.error('choose something...')
-                    return
-
+                    if not did_anything:
+                        logger.error('choose something...')
+                        return
                 logger.debug('waiting %d seconds', w)
                 time.sleep(w)
             except client.gqlclient.requests.exceptions.HTTPError as e:
@@ -386,7 +387,11 @@ AVAX: {self.client.web3.get_balance()}
                     time.sleep(120)
             except Exception as e:
                 logger.exception('crash, waiting 2min: %s', e)
-                self.notifier.notify(f'bot unknown error, check logs ({tgbot.escape_markdown(str(e))})')
+                self.notifier.notify(f'''bot unknown error, check logs
+```
+{tgbot.escape_markdown(str(e))}
+```
+''')
                 time.sleep(120)
 
     def cmd_missions(self):

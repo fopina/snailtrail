@@ -24,9 +24,13 @@ def bot_auth(func):
             return
         try:
             return func(notifier, update, context)
-        except Exception:
+        except Exception as e:
             logger.exception('error caught')
-            update.message.reply_text('error occurred, check logs')
+            update.message.reply_markdown(f'''error occurred, check logs
+```
+{escape_markdown(str(e))}
+```
+''')
 
     wrapper_func.__doc__ = func.__doc__
     return wrapper_func
@@ -43,6 +47,7 @@ class Notifier:
             self.updater = Updater(self.__token)
             dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
+            dispatcher.add_handler(CommandHandler("pause", self.cmd_pause))
             dispatcher.add_handler(CallbackQueryHandler(self.handle_buttons))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
@@ -210,6 +215,15 @@ class Notifier:
             )
         keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
+
+    @bot_auth
+    def cmd_pause(self, update: Update, context: CallbackContext) -> None:
+        """
+        Toggle bot pause status (pausing ALL actions)
+        """
+        self.__cli._bot_pause = not self.__cli._bot_pause
+        ns = 'paused' if self.__cli._bot_pause else 'resumed'
+        update.message.reply_text(f'Bot {ns}')
 
     def idle(self):
         if self.updater:
