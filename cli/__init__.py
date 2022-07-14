@@ -166,7 +166,7 @@ class CLI:
                 continue
             to_queue = x.queueable_at
             tleft = to_queue - self._now()
-            base_msg = f"{x.id} : {x.name} ({x.level} - {x.stats['experience']['remaining']}) : "
+            base_msg = f"{x.name_id} : ({x.level} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
                 logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
@@ -210,13 +210,13 @@ class CLI:
                 # no snail for this track
                 continue
             logger.info(
-                f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name} ({snail.adaptations}){Fore.RESET}'
+                f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
             try:
                 r, _ = self.client.join_mission_races(
                     snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
                 )
-                msg = f"🐌 `{snail.name}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
+                msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
                     logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
                     self.notify_mission(msg)
@@ -225,7 +225,7 @@ class CLI:
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
-                self.notifier.notify(f'⛔ `{snail.name}` FAILED to join mission: {tgbot.escape_markdown(str(e))}')
+                self.notifier.notify(f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}')
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -442,7 +442,7 @@ AVAX: {self.client.web3.get_balance()}
                     ]
                     if not cands:
                         continue
-                    msg = f"🏎️  Race {race.track} ({race.id}) found for {','.join(cand[1].name + (cand[0] * '⭐') for cand in cands)}: {race.race_type} 🪙  {race.distance}m"
+                    msg = f"🏎️  Race {race.track} ({race.id}) found for {','.join(cand[1].name_id + (cand[0] * '⭐') for cand in cands)}: {race.race_type} 🪙  {race.distance}m"
                     if self.args.races_join:
                         join_actions = None
                         try:
@@ -453,7 +453,7 @@ AVAX: {self.client.web3.get_balance()}
                             msg += '\nFAILED to join ❌'
                     else:
                         join_actions = [
-                            (f'✅ Join with {cand[1].name} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}')
+                            (f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}')
                             for cand in cands
                         ] + [
                             ('🏳️ Skip', 'joinrace'),
@@ -479,7 +479,7 @@ AVAX: {self.client.web3.get_balance()}
                     snail = self.my_snails[i['token_id']]
                     break
             else:
-                snail = Snail({'name': 'UNKNOWN SNAIL'})
+                snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
             p += 1
             if p > 3:
                 e = '💩'
@@ -488,14 +488,14 @@ AVAX: {self.client.web3.get_balance()}
             else:
                 e = '🥇🥈🥉'[p - 1]
 
-            msg = f"{e} {snail.name} number {p} in {race.track}, for {race.distance}"
+            msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}"
             logger.info(msg)
             self.notifier.notify(msg, silent=True)
 
     def _open_races(self):
         for league in client.League:
             snails, races = self.find_races_in_league(league)
-            logger.info(f"Snails for {league}: {', '.join([s['name'] for s in snails])}")
+            logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
             if not snails:
                 continue
             for race in races:
@@ -534,7 +534,7 @@ AVAX: {self.client.web3.get_balance()}
                     snail = self.my_snails[i['token_id']]
                     break
             else:
-                snail = Snail({'name': 'UNKNOWN SNAIL'})
+                snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
             p += 1
             fee = int(race.prize_pool) / 9
             if p == 1:
@@ -550,7 +550,7 @@ AVAX: {self.client.web3.get_balance()}
                 c = Fore.RED
                 cr = 0 - fee
             total_cr += cr
-            print(f"{c}{snail.name} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
+            print(f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
