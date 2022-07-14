@@ -116,7 +116,7 @@ class Race(AttrDict):
     def __str__(self):
         if self.is_mission:
             return f"{self.track} (#{self.id}): {self.distance}"
-        return f"{self.track} (#{self.id}): {self.distance}m for {self.race_type} entry"
+        return f"{self.track} (#{self.id}): {self.distance}m {self.race_type} 🪙"
 
 
 def _parse_datetime(date_str):

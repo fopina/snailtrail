@@ -144,13 +144,13 @@ class CLI:
             time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
             p += 1
             if p < 4:
-                stats[race.distance][p-1] += 1
+                stats[race.distance][p - 1] += 1
             stats[race.distance][3] += 1
             races.append((race, p, time_on_first, time_on_third))
             total += 1
             if limit and total >= limit:
                 break
-        
+
         data = (races, stats)
         self._cached_snail_history[key] = (data, _now)
         return data
@@ -387,11 +387,13 @@ AVAX: {self.client.web3.get_balance()}
                     time.sleep(120)
             except Exception as e:
                 logger.exception('crash, waiting 2min: %s', e)
-                self.notifier.notify(f'''bot unknown error, check logs
+                self.notifier.notify(
+                    f'''bot unknown error, check logs
 ```
 {tgbot.escape_markdown(str(e))}
 ```
-''')
+'''
+                )
                 time.sleep(120)
 
     def cmd_missions(self):
@@ -495,7 +497,12 @@ AVAX: {self.client.web3.get_balance()}
                     ]
                     if not cands:
                         continue
-                    msg = f"🏎️  Race {race.track} ({race.id}) found for {','.join(cand[1].name_id + (cand[0] * '⭐') for cand in cands)}: {race.race_type} 🪙  {race.distance}m"
+                    candidate_list = ','.join(
+                        f"{cand[1].name_id}{(cand[0] * '⭐')}"
+                        f"`{'.'.join(map(str, self.cached_snail_history(cand[1].id, int(race.race_type))[1][race.distance]))}`"
+                        for cand in cands
+                    )
+                    msg = f"🏎️  Race {race} matched {candidate_list}"
                     if self.args.races_join:
                         join_actions = None
                         try:
@@ -618,8 +625,8 @@ AVAX: {self.client.web3.get_balance()}
             race, p, time_on_first, time_on_third = race_data
             fee = int(race.prize_pool) / 9
             if p < 4:
-                c = [Fore.GREEN, Fore.YELLOW, Fore.LIGHTRED_EX][p-1]
-                m = [4, 1.5, 0.5][p-1]
+                c = [Fore.GREEN, Fore.YELLOW, Fore.LIGHTRED_EX][p - 1]
+                m = [4, 1.5, 0.5][p - 1]
                 cr = fee * m
             else:
                 c = Fore.RED
@@ -633,10 +640,12 @@ AVAX: {self.client.web3.get_balance()}
         if total:
             print(f'\nRaces #: {total}')
             print(f'TOTAL CR: {total_cr}')
-            print('Stats (1/2/3/Total):', ' | '.join(
-                f'{Fore.CYAN}{k}{Fore.RESET}: {Fore.GREEN}{v[:3]}{Fore.RESET} ({v[3]})'
-                for k, v in stats.items()
-            ))
+            print(
+                'Stats (1/2/3/Total):',
+                ' | '.join(
+                    f'{Fore.CYAN}{k}{Fore.RESET}: {Fore.GREEN}{v[:3]}{Fore.RESET} ({v[3]})' for k, v in stats.items()
+                ),
+            )
         else:
             logger.warning(f'Nothing for {snail.name_id}')
 
