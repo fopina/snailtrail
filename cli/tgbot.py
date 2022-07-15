@@ -13,7 +13,7 @@ def escmv2(*a, **b):
 
 def bot_auth(func):
     def wrapper_func(notifier, update: Update, context: CallbackContext):
-        if not notifier.owner_id or update.effective_user['id'] != notifier.owner_id:
+        if not notifier.chat_id or update.effective_user['id'] != notifier.chat_id:
             logger.error(
                 '%s %s (%s / %d) not in allow list',
                 update.effective_user['first_name'],
@@ -37,10 +37,10 @@ def bot_auth(func):
 
 
 class Notifier:
-    def __init__(self, token, owner_id, cli_obj, settings_list=None):
+    def __init__(self, token, chat_id, settings_list=None):
         self.__token = token
-        self.owner_id = owner_id
-        self.__cli = cli_obj
+        self.chat_id = chat_id
+        self.clis = {}
         self._settings_list = settings_list
 
         if token:
@@ -59,10 +59,17 @@ class Notifier:
         else:
             self.updater = None
 
+    @property
+    def any_cli(self):
+        return list(self.clis.values())[0]
+
     def _slow_query(self, query):
         return query.edit_message_reply_markup(
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('🚧 Loading...', callback_data='ignore')]])
         )
+
+    def register_cli(self, cli):
+        self.clis[cli.owner] = cli
 
     def handle_buttons(self, update: Update, context: CallbackContext) -> None:
         """Parses the CallbackQuery and updates the message text."""
@@ -85,12 +92,13 @@ class Notifier:
             return
         opts = opts[0]
 
-        if not hasattr(self.__cli.args, opts):
+        _cli = self.any_cli
+        if not hasattr(_cli.args, opts):
             query.edit_message_text(text=f"Unknown setting: {opts}")
             return
 
-        ov = getattr(self.__cli.args, opts)
-        setattr(self.__cli.args, opts, not ov)
+        ov = getattr(_cli.args, opts)
+        setattr(_cli.args, opts, not ov)
         query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
 
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
@@ -100,9 +108,10 @@ class Notifier:
         if not opts:
             query.edit_message_reply_markup()
             return
-        race_id, snail_id = map(int, opts[0].split(' '))
+        owner, snail_id, race_id = opts[0].split(' ')
+        cli = self.clis[owner]
         try:
-            r, _ = self.__cli.client.join_competitive_races(snail_id, race_id, self.__cli.owner)
+            r, _ = cli.client.join_competitive_races(int(snail_id), int(race_id), cli.owner)
             query.edit_message_text(query.message.text + '\n✅  Race joined')
         except Exception as e:
             logger.exception('unexpected joinRace error')
@@ -131,12 +140,17 @@ class Notifier:
         My snails stats
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        it = list(self.__cli.my_snails.values())
-        it.sort(key=lambda x: x.breed_status)
-        # queuable times
-        queues = {s.id: s for s in self.__cli.client.iterate_my_snails_for_missions(self.__cli.owner)}
-        for s in it:
-            s['queueable_at'] = queues.get(s.id).get('queueable_at')
+        all_snails = []
+
+        for c in self.clis.values():
+            it = list(c.my_snails.values())
+            it.sort(key=lambda x: x.breed_status)
+            # queuable times
+            queues = {s.id: s for s in c.client.iterate_my_snails_for_missions(c.owner)}
+            for s in it:
+                s['queueable_at'] = queues.get(s.id).get('queueable_at')
+            all_snails.extend(it)
+
         update.message.reply_markdown_v2(
             '\n'.join(
                 '🐌  %s %s 🍆  *%s* 🏁 %s 🎫 %s'
@@ -147,7 +161,7 @@ class Notifier:
                     escmv2(self._queueable_at(snail)),
                     escmv2(str(snail.stats['mission_tickets'])),
                 )
-                for snail in it
+                for snail in all_snails
             )
         )
 
@@ -157,33 +171,38 @@ class Notifier:
         Current balance (snail count, avax, slime)
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        update.message.reply_text(self.__cli._balance())
+        msg = '\n'.join(
+            c._balance()
+            for c in self.clis.values()
+        )
+        update.message.reply_text(msg)
 
     @bot_auth
     def cmd_nextmission(self, update: Update, context: CallbackContext) -> None:
         """
         Show time to next daily mission
         """
-        if self.__cli._next_mission is None:
-            update.message.reply_markdown('next mission is *unknown*')
-        else:
-            update.message.reply_markdown(
-                f'next mission in `{str(self.__cli._next_mission - self.__cli._now()).split(".")[0]}`'
-            )
+        msgs = []
+        for c in self.clis.values():
+            if c._next_mission is None:
+                msgs.append('next mission is *unknown*')
+            else:
+                msgs.append(f'next mission in `{str(c._next_mission - c._now()).split(".")[0]}`')
+        update.message.reply_markdown('\n'.join(msgs))
 
     @bot_auth
     def cmd_incubate(self, update: Update, context: CallbackContext) -> None:
         """
         Show current incubation coefficent
         """
-        update.message.reply_markdown(f'current coefficient is `{self.__cli.client.web3.get_current_coefficent()}`')
+        update.message.reply_markdown(f'current coefficient is `{self.any_cli.client.web3.get_current_coefficent()}`')
 
     @bot_auth
     def cmd_marketplace_stats(self, update: Update, context: CallbackContext) -> None:
         """
         Show marketplace stats - volume, floors and highs
         """
-        d = self.__cli.client.marketplace_stats()
+        d = self.any_cli.client.marketplace_stats()
         txt = [f"*Volume*: {d['volume']}"]
         for k, v in d['prices'].items():
             txt.append(f"*{k}*: {' / '.join(map(str, v))}")
@@ -194,7 +213,8 @@ class Notifier:
         """
         Reset snails cache
         """
-        self.__cli.reset_cache_my_snails()
+        for c in self.clis.values():
+            c.reset_cache_my_snails()
         update.message.reply_text('✅')
 
     @bot_auth
@@ -207,7 +227,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'🔧 {setting.dest}: {getattr(self.__cli.args, setting.dest)}',
+                        f'🔧 {setting.dest}: {getattr(self.any_cli.args, setting.dest)}',
                         callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]
@@ -221,8 +241,10 @@ class Notifier:
         """
         Toggle bot pause status (pausing ALL actions)
         """
-        self.__cli._bot_pause = not self.__cli._bot_pause
-        ns = 'paused' if self.__cli._bot_pause else 'resumed'
+        final = not self.any_cli._bot_pause
+        for c in self.clis.values():
+            c._bot_pause = final
+        ns = 'paused' if final else 'resumed'
         update.message.reply_text(f'Bot {ns}')
 
     def idle(self):
@@ -256,7 +278,7 @@ class Notifier:
             return f"🔥 NO BREED?"
 
     def _queueable_at(self, snail):
-        tleft = snail.queueable_at - self.__cli._now()
+        tleft = snail.queueable_at - self.any_cli._now()
         if tleft.total_seconds() <= 0:
             return '✅'
         return f'⏲️  {str(tleft).rsplit(":", 1)[0]}'
@@ -288,7 +310,7 @@ class Notifier:
             :class:`telegram.error.TelegramError`
 
         """
-        if self.updater and self.owner_id:
+        if self.updater and self.chat_id:
             if edit is None:
                 if actions:
                     keyboard = [[InlineKeyboardButton(x[0], callback_data=x[1])] for x in actions]
@@ -296,7 +318,7 @@ class Notifier:
                 else:
                     reply_markup = None
                 return self.updater.bot.send_message(
-                    self.owner_id, message, parse_mode=format, disable_notification=silent, reply_markup=reply_markup
+                    self.chat_id, message, parse_mode=format, disable_notification=silent, reply_markup=reply_markup
                 )
             else:
                 return self.updater.bot.edit_message_text(

@@ -28,9 +28,10 @@ class Wallet:
 class CLI:
     owner = None
 
-    def __init__(self, wallet: Wallet, proxy_url: str, args):
+    def __init__(self, wallet: Wallet, proxy_url: str, args, main_one=False):
         self.args = args
         self.owner = wallet.address
+        self.main_one = main_one
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
@@ -40,9 +41,6 @@ class CLI:
             gql_retry=args.retry if args.retry > 0 else None,
         )
         self.notifier = args.notify
-        self.notifier._cli = self
-        if self.args.tg_bot:
-            self.notifier.start_polling()
         self._notified_races = set()
         self._notified_races_over = set()
         self._notify_mission_data = None
@@ -271,77 +269,73 @@ AVAX: {self.client.web3.get_balance()}
             self._notify_coefficent = coef
 
     def cmd_bot(self):
-        self._next_mission = None
+        self.cmd_bot_greet()
+        while True:
+            w = self.cmd_bot_tick()
+            time.sleep(w)
+
+    def cmd_bot_greet(self):
         msg = f'👋  Running *v{VERSION}*'
         if not self.args.tg_bot:
             msg += ' `(non-interactive)`'
         self.notifier.notify(msg)
 
-        did_anything = False
-        while True:
-            try:
-                w = self.args.wait
-                if not self._bot_pause:
-                    if self.args.missions:
-                        did_anything = True
-                        now = datetime.now(tz=timezone.utc)
-                        if self._next_mission is None or self._next_mission < now:
-                            self._next_mission = self.join_missions()
-                            logger.info('next mission in at %s', self._next_mission)
-                        if self._next_mission is not None:
-                            # if wait for next mission is lower than wait argument, use it
-                            _w = (self._next_mission - now).total_seconds()
-                            if 0 < _w < w:
-                                w = _w
+    def cmd_bot_tick(self):
+        try:
+            w = self.args.wait
+            if not self._bot_pause:
+                if self.args.missions:
+                    now = datetime.now(tz=timezone.utc)
+                    if self._next_mission is None or self._next_mission < now:
+                        self._next_mission = self.join_missions()
+                        logger.info('next mission in at %s', self._next_mission)
+                    if self._next_mission is not None:
+                        # if wait for next mission is lower than wait argument, use it
+                        _w = (self._next_mission - now).total_seconds()
+                        if 0 < _w < w:
+                            w = _w
 
-                    if self.args.races:
-                        did_anything = True
-                        self.find_races()
+                if self.args.races:
+                    self.find_races()
 
-                    if self.args.races_over or self.args.missions_over:
-                        did_anything = True
-                        self.find_races_over()
+                if self.args.races_over or self.args.missions_over:
+                    self.find_races_over()
 
-                    if self.args.market:
-                        did_anything = True
-                        self._bot_marketplace()
+                if self.args.market and self.main_one:
+                    self._bot_marketplace()
 
-                    if self.args.coefficent:
-                        did_anything = True
-                        self._bot_coefficent()
+                if self.args.coefficent and self.main_one:
+                    self._bot_coefficent()
 
-                    if not did_anything:
-                        logger.error('choose something...')
-                        return
-                logger.debug('waiting %d seconds', w)
-                time.sleep(w)
-            except client.gqlclient.requests.exceptions.HTTPError as e:
-                if e.response.status_code in (502, 504):
-                    # log stacktrace to check if specific calls cause this more frequently
-                    logger.exception('site %d... waiting', e.response.status_code)
-                    time.sleep(20)
-                elif e.response.status_code == 429:
-                    # FIXME: handle retry-after header after checking it out
-                    logger.exception(
-                        'site %d... waiting: %s - %s',
-                        e.response.status_code,
-                        e.response.headers,
-                        type(e.response.headers.get('retry-after')),
-                    )
-                    time.sleep(120)
-                else:
-                    logger.exception('crash, waiting 2min: %s', e)
-                    time.sleep(120)
-            except Exception as e:
+            logger.debug('waiting %d seconds', w)
+            return w
+        except client.gqlclient.requests.exceptions.HTTPError as e:
+            if e.response.status_code in (502, 504):
+                # log stacktrace to check if specific calls cause this more frequently
+                logger.exception('site %d... waiting', e.response.status_code)
+                return 20
+            elif e.response.status_code == 429:
+                # FIXME: handle retry-after header after checking it out
+                logger.exception(
+                    'site %d... waiting: %s - %s',
+                    e.response.status_code,
+                    e.response.headers,
+                    type(e.response.headers.get('retry-after')),
+                )
+                return 120
+            else:
                 logger.exception('crash, waiting 2min: %s', e)
-                self.notifier.notify(
-                    f'''bot unknown error, check logs
+                return 120
+        except Exception as e:
+            logger.exception('crash, waiting 2min: %s', e)
+            self.notifier.notify(
+                f'''bot unknown error, check logs
 ```
 {tgbot.escape_markdown(str(e))}
 ```
 '''
-                )
-                time.sleep(120)
+            )
+            return 120
 
     def cmd_missions(self):
         if self.args.join:
@@ -467,7 +461,7 @@ AVAX: {self.client.web3.get_balance()}
                             msg += '\nFAILED to join ❌'
                     else:
                         join_actions = [
-                            (f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}', f'joinrace {race.id} {cand[1].id}')
+                            (f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}', f'joinrace {self.owner} {cand[1].id} {race.id}')
                             for cand in cands
                         ] + [
                             ('🏳️ Skip', 'joinrace'),

@@ -3,6 +3,7 @@
 from pathlib import Path
 import logging
 import os
+import time
 from colorama import Fore
 import configargparse
 
@@ -222,15 +223,37 @@ def main(argv=None):
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
 
-    c = cli.CLI(args.wallet[0], proxy_url, args)
-    try:
-        c.run()
-    except KeyboardInterrupt:
-        logger.info('Stopping...')
-    finally:
-        c.notifier.stop_polling()
-        if not args.proxy:
-            p.stop()
+    clis = []
+    first_one = True
+    for w in args.wallet:
+        c = cli.CLI(w, proxy_url, args, main_one=first_one)
+        first_one = False
+        args.notify.register_cli(c)
+        clis.append(c)
+
+    if args.cmd == 'bot':
+        # this cmd is special as it should loop infinitely
+        if args.tg_bot:
+            args.notify.start_polling()
+        try:
+            clis[0].cmd_bot_greet()
+            while True:
+                for c in clis:
+                    w = c.cmd_bot_tick()
+                    time.sleep(w)
+        except KeyboardInterrupt:
+            logger.info('Stopping...')
+        finally:
+            args.notify.stop_polling()
+            if not args.proxy:
+                p.stop()
+    else:
+        try:
+            for c in clis:
+                w = c.run()
+        finally:
+            if not args.proxy:
+                p.stop()
 
 
 if __name__ == '__main__':
