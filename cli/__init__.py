@@ -238,9 +238,12 @@ def main(argv=None):
         try:
             clis[0].cmd_bot_greet()
             while True:
+                wf = 99999
                 for c in clis:
                     w = c.cmd_bot_tick()
-                    time.sleep(w)
+                    if w < wf:
+                        wf = w
+                time.sleep(wf)
         except KeyboardInterrupt:
             logger.info('Stopping...')
         finally:
@@ -250,7 +253,7 @@ def main(argv=None):
     else:
         try:
             for c in clis:
-                w = c.run()
+                c.run()
         finally:
             if not args.proxy:
                 p.stop()
