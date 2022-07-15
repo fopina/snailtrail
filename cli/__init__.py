@@ -34,6 +34,11 @@ class FileOrInt(int):
         return int.__new__(cls, content)
 
 
+class AppendWalletAction(configargparse.argparse._AppendAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        return super().__call__(parser, namespace, cli.Wallet(*map(FileOrString, values)), option_string)
+
+
 class StoreRaceJoin(configargparse.argparse.Action):
     def __init__(
         self,
@@ -60,9 +65,13 @@ class StoreRaceJoin(configargparse.argparse.Action):
 
 class StoreBotConfig(configargparse.argparse._StoreAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        super().__call__(
-            parser, namespace, tgbot.Notifier(FileOrString(values[0]), FileOrInt(values[1]), None), option_string
-        )
+        bot = tgbot.Notifier(FileOrString(values[0]), FileOrInt(values[1]), None)
+        bot._settings_list = [
+            x
+            for x in parser._subparsers._actions[-1].choices['bot']._actions
+            if isinstance(x, configargparse.argparse._StoreTrueAction)
+        ]
+        super().__call__(parser, namespace, bot, option_string)
 
 
 def build_parser():
@@ -74,19 +83,18 @@ def build_parser():
         args_for_writing_out_config_file=['--output-config'],
     )
     parser.add_argument(
-        '--owner', type=FileOrString, default='owner.conf', help='owner wallet (value or path to file with value)'
+        '--wallet',
+        nargs=2,
+        metavar=('ADDRESS', 'PRIVATE_KEY'),
+        action=AppendWalletAction,
+        help='owner wallet and its private key (values or path to files with value)',
     )
+    parser.add_argument('--test', nargs=2, action='append')
     parser.add_argument(
         '--web3-rpc',
         type=FileOrString,
         default='https://api.avax.network/ext/bc/C/rpc',
         help='web3 http endpoint (value or path to file with value)',
-    )
-    parser.add_argument(
-        '--web3-wallet-key',
-        type=FileOrString,
-        default='pkey.conf',
-        help='wallet private key (value or path to file with value)',
     )
     parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
@@ -194,13 +202,10 @@ def build_parser():
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
-    if args.notify:
-        args.notify._settings_list = [
-                x
-                for x in build_parser()._subparsers._actions[-1].choices['bot']._actions
-                if isinstance(x, configargparse.argparse._StoreTrueAction)
-            ]
+    p = build_parser()
+    args = p.parse_args(argv)
+    if not args.wallet:
+        args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug('debug enabled')
@@ -217,7 +222,7 @@ def main(argv=None):
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
 
-    c = cli.CLI(proxy_url, args)
+    c = cli.CLI(args.wallet[0], proxy_url, args)
     try:
         c.run()
     except KeyboardInterrupt:

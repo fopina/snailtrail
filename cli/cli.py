@@ -3,10 +3,12 @@ from dataclasses import dataclass
 import time
 from datetime import datetime, timezone
 import logging
+from colorama import Fore
 
 from snail.gqltypes import Snail
 from .decorators import cached_property_with_ttl
-from snail import client, proxy, VERSION
+from snail import client, VERSION
+from . import tgbot
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +19,22 @@ class RaceJoin:
     race_id: int
 
 
+@dataclass
+class Wallet:
+    address: str
+    private_key: str
+
+
 class CLI:
     owner = None
 
-    def __init__(self, proxy_url, args):
+    def __init__(self, wallet: Wallet, proxy_url: str, args):
         self.args = args
-        self.owner = args.owner
+        self.owner = wallet.address
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
-            private_key=args.web3_wallet_key,
+            private_key=wallet.private_key,
             web3_provider=args.web3_rpc,
             rate_limiter=args.rate_limit,
             gql_retry=args.retry if args.retry > 0 else None,
