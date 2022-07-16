@@ -207,7 +207,7 @@ class CLI:
                 f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
             try:
-                r, _ = self.client.join_mission_races(
+                r, rcpt = self.client.join_mission_races(
                     snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
                 )
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
@@ -216,6 +216,7 @@ class CLI:
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     logger.warning('requires transaction')
+                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
@@ -356,7 +357,6 @@ AVAX: {self.client.web3.get_balance()}
                 if rcpt is None:
                     logger.info(c)
                 else:
-                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
                     logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
             except client.ClientError as e:
                 if e.args[0] == 'requires_transaction':
