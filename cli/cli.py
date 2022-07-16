@@ -314,7 +314,8 @@ AVAX: {self.client.web3.get_balance()}
                 # log stacktrace to check if specific calls cause this more frequently
                 logger.exception('site %d... waiting', e.response.status_code)
                 return 20
-            elif e.response.status_code == 429:
+
+            if e.response.status_code == 429:
                 # FIXME: handle retry-after header after checking it out
                 logger.exception(
                     'site %d... waiting: %s - %s',
@@ -323,9 +324,16 @@ AVAX: {self.client.web3.get_balance()}
                     type(e.response.headers.get('retry-after')),
                 )
                 return 120
-            else:
-                logger.exception('crash, waiting 2min: %s', e)
-                return 120
+
+            logger.exception('crash, waiting 2min: %s', e)
+            return 120
+        except client.gqlclient.APIError as e:
+            logger.exception('re-join as last error')
+            msg = str(e)
+            if msg.startswith('This snail tried joining a mission as last, needs to rest '):
+                return int(msg[58:].split(' ', 1)[0])
+            logger.error('crash, waiting 2min (logged)')
+            return 120
         except Exception as e:
             logger.exception('crash, waiting 2min: %s', e)
             self.notifier.notify(
