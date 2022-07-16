@@ -356,7 +356,8 @@ AVAX: {self.client.web3.get_balance()}
                 if rcpt is None:
                     logger.info(c)
                 else:
-                    logger.info(f'{c} - LASTSPOT (tx: {rcpt["transactionHash"]})')
+                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
+                    logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
             except client.ClientError as e:
                 if e.args[0] == 'requires_transaction':
                     logger.error('only last spot available, use --last-spot')
@@ -469,7 +470,10 @@ AVAX: {self.client.web3.get_balance()}
                             msg += '\nFAILED to join ❌'
                     else:
                         join_actions = [
-                            (f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}', f'joinrace {self.owner} {cand[1].id} {race.id}')
+                            (
+                                f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}',
+                                f'joinrace {self.owner} {cand[1].id} {race.id}',
+                            )
                             for cand in cands
                         ] + [
                             ('🏳️ Skip', 'joinrace'),
