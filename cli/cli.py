@@ -47,7 +47,6 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = 99999
         self._next_mission = None
-        self._bot_pause = False
 
     @staticmethod
     def _now():
@@ -284,7 +283,7 @@ AVAX: {self.client.web3.get_balance()}
     def cmd_bot_tick(self):
         try:
             w = self.args.wait
-            if not self._bot_pause:
+            if not self.args.paused:
                 if self.args.missions:
                     now = datetime.now(tz=timezone.utc)
                     if self._next_mission is None or self._next_mission < now:

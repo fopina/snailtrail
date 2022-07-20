@@ -47,7 +47,6 @@ class Notifier:
             self.updater = Updater(self.__token)
             dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
-            dispatcher.add_handler(CommandHandler("pause", self.cmd_pause))
             dispatcher.add_handler(CallbackQueryHandler(self.handle_buttons))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
@@ -235,17 +234,6 @@ class Notifier:
             )
         keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
-
-    @bot_auth
-    def cmd_pause(self, update: Update, context: CallbackContext) -> None:
-        """
-        Toggle bot pause status (pausing ALL actions)
-        """
-        final = not self.any_cli._bot_pause
-        for c in self.clis.values():
-            c._bot_pause = final
-        ns = 'paused' if final else 'resumed'
-        update.message.reply_text(f'Bot {ns}')
 
     def idle(self):
         if self.updater:
