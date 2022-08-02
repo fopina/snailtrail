@@ -40,7 +40,7 @@ class CLI:
             rate_limiter=args.rate_limit,
             gql_retry=args.retry if args.retry > 0 else None,
         )
-        self.notifier = args.notify
+        self.notifier: tgbot.Notifier = args.notify
         self._notified_races = set()
         self._notified_races_over = set()
         self._notify_mission_data = None

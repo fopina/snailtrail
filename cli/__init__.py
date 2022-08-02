@@ -90,7 +90,6 @@ def build_parser():
         action=AppendWalletAction,
         help='owner wallet and its private key (values or path to files with value)',
     )
-    parser.add_argument('--test', nargs=2, action='append')
     parser.add_argument(
         '--web3-rpc',
         type=FileOrString,
@@ -224,7 +223,7 @@ def main(argv=None):
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
 
-    clis = []
+    clis: list[cli.CLI] = []
     first_one = True
     for w in args.wallet:
         c = cli.CLI(w, proxy_url, args, main_one=first_one)
