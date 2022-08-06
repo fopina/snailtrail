@@ -17,11 +17,18 @@ $ cat pkey.conf
 badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0
 ```
 
+Configure an telegram bot to receive notifications, go to https://core.telegram.org/bots#6-botfather for more details on how-to
+You need to provide bot token_ID and chat__ID
+```
+--notify token_ID chat_ID
+```
+
 ## Quickstart
 
 ```
 $ pip install -r requirements.txt
-$ python cli.py
+$ python --help
+$ python main.py --notify token_ID chat_ID bot [xyz]
 
 INFO:__main__:starting proxy
 INFO:__main__:proxy ready on http://127.0.0.1:50930
