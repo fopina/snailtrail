@@ -244,10 +244,10 @@ class CLI:
                     )
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
-                    logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
+                    logger.info(f'{msg} - {r["message"]}')
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
-                    logger.warning('requires transaction')
+                    logger.info(f'{msg} LAST SPOT - {r["message"]}')
                     logger.info(
                         f'TEMPDEBUG: {rcpt.transactionHash.hex()} {snail.id} {race.id} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
                     )
