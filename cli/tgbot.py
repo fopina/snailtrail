@@ -155,7 +155,7 @@ class Notifier:
                 '🐌  %s %s 🍆  *%s* 🏁 %s 🎫 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
-                    escmv2(f"lv {snail.level} - {snail.family} {snail.gender} {snail.klass} {snail.purity}"),
+                    escmv2(f"lv {snail.level} - {snail.family} {snail.gender.emoji()} {snail.klass} {snail.purity}"),
                     self._breed_status_markdown(snail.breed_status),
                     escmv2(self._queueable_at(snail)),
                     escmv2(str(snail.stats['mission_tickets'])),
@@ -259,11 +259,11 @@ class Notifier:
         if status >= 0:
             return escmv2(f"⏲️ {status:.2f}d")
         elif status == -1:
-            return f"✅ BREEDER"
+            return f"✅"
         elif status == -2:
-            return f"✅ NEW BREEDER"
+            return f"🥒"
         else:
-            return f"🔥 NO BREED?"
+            return f"🔥"
 
     def _queueable_at(self, snail):
         tleft = snail.queueable_at - self.any_cli._now()

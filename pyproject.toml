@@ -10,4 +10,4 @@ source = ['snail','cli']
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--disable-socket"
-testpaths = ["tests"]
+testpaths = ["tests", "snail", "cli"]

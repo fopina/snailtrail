@@ -14,4 +14,4 @@ deploy:
 	curl $(shell cat portainer.conf) -d tag=snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ')
 
 test:
-	pytest --doctest-modules
+	pytest --doctest-modules --cov

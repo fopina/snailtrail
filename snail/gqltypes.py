@@ -11,6 +11,13 @@ class Gender(Enum):
     def __str__(self) -> str:
         return self.name
 
+    def emoji(self):
+        if self == self.FEMALE:
+            return '👨'
+        elif self == self.MALE:
+            return '👩'
+        return '❓'
+
 
 class AttrDict(dict):
     _DICT_METHODS = set(dir(dict))
@@ -30,6 +37,8 @@ class Snail(AttrDict):
     'ehlo'
     >>> s.gender
     <Gender.MALE: 2>
+    >>> s.gender.emoji()
+    '👩'
     """
 
     @property
