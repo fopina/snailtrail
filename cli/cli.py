@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 from colorama import Fore
 
@@ -315,7 +315,14 @@ AVAX: {self.client.web3.get_balance()}
                 if self.args.missions:
                     now = datetime.now(tz=timezone.utc)
                     if self._next_mission is None or self._next_mission < now:
-                        self._next_mission = self.join_missions()
+                        try:
+                            self._next_mission = self.join_missions()
+                        except client.gqlclient.APIError as e:
+                            msg = str(e)
+                            if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
+                                raise
+                            logger.exception('re-join as last error')
+                            self._next_mission = now + timedelta(seconds=int(msg[58:].split(' ', 1)[0]))
                         logger.info('next mission in at %s', self._next_mission)
                     if self._next_mission is not None:
                         # if wait for next mission is lower than wait argument, use it
@@ -356,11 +363,7 @@ AVAX: {self.client.web3.get_balance()}
             logger.exception('crash, waiting 2min: %s', e)
             return 120
         except client.gqlclient.APIError as e:
-            logger.exception('re-join as last error')
-            msg = str(e)
-            if msg.startswith('This snail tried joining a mission as last, needs to rest '):
-                return int(msg[58:].split(' ', 1)[0])
-            logger.error('crash, waiting 2min (logged)')
+            logger.exception('crash, waiting 2min (logged)')
             return 120
         except Exception as e:
             logger.exception('crash, waiting 2min: %s', e)
