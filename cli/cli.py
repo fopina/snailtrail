@@ -228,7 +228,11 @@ class CLI:
                             rcpt = self.client.rejoin_mission_races(r)
                         else:
                             self._expensive_missions.add(race.id)
-                            estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
+                            try:
+                                estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
+                            except:
+                                # ignore any errors estimating
+                                estimated_gas = '-'
                             logger.info(
                                 f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
                             )
