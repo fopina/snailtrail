@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from datetime import timedelta, datetime, timezone
 from pathlib import Path
 import logging
 import os
@@ -241,17 +242,20 @@ def main(argv=None):
 
     if args.cmd == 'bot':
         # this cmd is special as it should loop infinitely
-        if args.tg_bot:
-            args.notify.start_polling()
+        args.notify.start_polling()
+
+        cli_waits = {}
         try:
             clis[0].cmd_bot_greet()
             while True:
-                wf = 99999
+                now = datetime.now(tz=timezone.utc)
                 for c in clis:
+                    if c.owner in cli_waits and now < cli_waits[c.owner]:
+                        continue
                     w = c.cmd_bot_tick()
-                    if w < wf:
-                        wf = w
-                time.sleep(wf)
+                    cli_waits[c.owner] = now + timedelta(seconds=w)
+                wf = min(list(cli_waits.values()))
+                time.sleep((wf - now).total_seconds())
         except KeyboardInterrupt:
             logger.info('Stopping...')
         finally:
