@@ -41,6 +41,8 @@ class CLI:
             gql_retry=args.retry if args.retry > 0 else None,
         )
         self.notifier: tgbot.Notifier = args.notify
+        # FIXME: change these sets to some "circular" queue to avoid eating up memory
+        self._expensive_missions = set()
         self._notified_races = set()
         self._notified_races_over = set()
         self._notify_mission_data = None
@@ -185,6 +187,9 @@ class CLI:
             if race.participation:
                 # already joined
                 continue
+            if race.id in self._expensive_missions:
+                # already saw this was NOT cheap (and last spot), skip
+                continue
             athletes = len(race.athletes)
             if athletes == 10:
                 # race full
@@ -206,16 +211,37 @@ class CLI:
                 f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
             try:
-                r, rcpt = self.client.join_mission_races(
-                    snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
-                )
+                if self.args.cheap and snail.id in boosted:
+                    # join without allowing last spot to capture payload
+                    try:
+                        # if this succeeds, it was not a last spot - that should not happen...
+                        r, rcpt = self.client.join_mission_races(
+                            snail.id, race.id, self.owner, allow_last_spot=False
+                        )
+                        logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
+                    except client.ClientError as e:
+                        if e.args[0] != 'requires_transaction':
+                            raise
+                        r = e.args[1]
+                        if r['payload']['size'] == 0:
+                            rcpt = self.client.rejoin_mission_races(r)
+                        else:
+                            self._expensive_missions.add(race.id)
+                            estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
+                            logger.info(f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
+                            boosted.remove(snail.id)
+                            continue
+                else:
+                    r, rcpt = self.client.join_mission_races(
+                        snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
+                    )
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
                     logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET}')
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     logger.warning('requires transaction')
-                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
+                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {snail.id} {race.id} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')

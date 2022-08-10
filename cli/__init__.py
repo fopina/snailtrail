@@ -146,6 +146,11 @@ def build_parser():
         action='store_true',
         help='Take last spots when negative mission tickets',
     )
+    pm.add_argument(
+        '--cheap',
+        action='store_true',
+        help='Cheap mode - only take --fair/--boost last spots if they are low-fee races. Other cheap stuff to be added',
+    )
     pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     pm.add_argument(
         '--races-join',

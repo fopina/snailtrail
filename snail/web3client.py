@@ -54,10 +54,12 @@ class Client:
     def incubator_contract(self):
         return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_INCUBATOR), abi=abi.INCUBATOR)
 
-    def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None):
+    def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
         tx = function_call.buildTransaction({"nonce": nonce, "from": self.wallet})
+        if estimate_only:
+            return self.web3.eth.estimate_gas(tx)
         signed_txn = self.web3.eth.account.sign_transaction(tx, private_key=self.__pkey)
         tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         if wait_for_transaction_receipt is False:
@@ -83,6 +85,7 @@ class Client:
         salt: int,
         signature: str,
         wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
     ):
         return self._bss(
             self.race_contract.functions.joinDailyMission(
@@ -94,6 +97,7 @@ class Client:
                 signature,
             ),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
         )
 
     def join_competitive_mission(
@@ -104,6 +108,7 @@ class Client:
         salt: int,
         signature: str,
         wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
     ):
         return self._bss(
             self.race_contract.functions.joinCompetitiveRace(
@@ -114,6 +119,7 @@ class Client:
                 signature,
             ),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
         )
 
     def claimable_rewards(self):
