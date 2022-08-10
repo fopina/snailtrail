@@ -49,6 +49,7 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = 99999
         self._next_mission = None
+        self._snail_mission_cooldown = {}
 
     @staticmethod
     def _now():
@@ -157,9 +158,11 @@ class CLI:
 
         closest = None
         for x in self.client.iterate_my_snails_for_missions(self.owner):
-            if self.args.exclude and x['id'] in self.args.exclude:
+            if self.args.exclude and x.id in self.args.exclude:
                 continue
             to_queue = x.queueable_at
+            if x.id in self._snail_mission_cooldown and to_queue < self._snail_mission_cooldown[x.id]:
+                to_queue = self._snail_mission_cooldown[x.id]
             tleft = to_queue - self._now()
             base_msg = f"{x.name_id} : ({x.level} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
@@ -248,6 +251,13 @@ class CLI:
             except client.ClientError as e:
                 logger.exception('failed to join mission')
                 self.notifier.notify(f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}')
+            except client.gqlclient.APIError as e:
+                # handle re-join timeout errors
+                msg = str(e)
+                if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
+                    raise
+                logger.exception('re-join as last error for %s', snail)
+                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=int(msg[58:].split(' ', 1)[0]))
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
@@ -313,16 +323,9 @@ AVAX: {self.client.web3.get_balance()}
             w = self.args.wait
             if not self.args.paused:
                 if self.args.missions:
-                    now = datetime.now(tz=timezone.utc)
+                    now = self._now()
                     if self._next_mission is None or self._next_mission < now:
-                        try:
-                            self._next_mission = self.join_missions()
-                        except client.gqlclient.APIError as e:
-                            msg = str(e)
-                            if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
-                                raise
-                            logger.exception('re-join as last error')
-                            self._next_mission = now + timedelta(seconds=int(msg[58:].split(' ', 1)[0]))
+                        self._next_mission = self.join_missions()
                         logger.info('next mission in at %s', self._next_mission)
                     if self._next_mission is not None:
                         # if wait for next mission is lower than wait argument, use it
