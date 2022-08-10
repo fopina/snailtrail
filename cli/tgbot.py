@@ -26,11 +26,13 @@ def bot_auth(func):
             return func(notifier, update, context)
         except Exception as e:
             logger.exception('error caught')
-            update.message.reply_markdown(f'''error occurred, check logs
+            update.message.reply_markdown(
+                f'''error occurred, check logs
 ```
 {escape_markdown(str(e))}
 ```
-''')
+'''
+            )
 
     wrapper_func.__doc__ = func.__doc__
     return wrapper_func
@@ -170,10 +172,7 @@ class Notifier:
         Current balance (snail count, avax, slime)
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        msg = '\n'.join(
-            c._balance()
-            for c in self.clis.values()
-        )
+        msg = '\n'.join(c._balance() for c in self.clis.values())
         update.message.reply_text(msg)
 
     @bot_auth

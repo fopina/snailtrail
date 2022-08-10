@@ -180,7 +180,9 @@ def build_parser():
     pm.add_argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
-    pm.add_argument('--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)')
+    pm.add_argument(
+        '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
+    )
 
     pm = subparsers.add_parser('snails')
     pm.add_argument('-s', '--sort', choices=['breed', 'lvl'], help='Sort snails by')

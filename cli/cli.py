@@ -215,9 +215,7 @@ class CLI:
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
-                        r, rcpt = self.client.join_mission_races(
-                            snail.id, race.id, self.owner, allow_last_spot=False
-                        )
+                        r, rcpt = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=False)
                         logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
                     except client.ClientError as e:
                         if e.args[0] != 'requires_transaction':
@@ -228,7 +226,9 @@ class CLI:
                         else:
                             self._expensive_missions.add(race.id)
                             estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
-                            logger.info(f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
+                            logger.info(
+                                f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
+                            )
                             boosted.remove(snail.id)
                             continue
                 else:
@@ -241,7 +241,9 @@ class CLI:
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     logger.warning('requires transaction')
-                    logger.info(f'TEMPDEBUG: {rcpt.transactionHash.hex()} {snail.id} {race.id} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}')
+                    logger.info(
+                        f'TEMPDEBUG: {rcpt.transactionHash.hex()} {snail.id} {race.id} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
+                    )
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
