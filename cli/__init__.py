@@ -103,6 +103,7 @@ def build_parser():
         nargs=2,
         action=StoreBotConfig,
         metavar=('TOKEN', 'CHAT_ID'),
+        default=tgbot.Notifier('', ''),
         help='Telegram bot token and target chat id to use for notifications (value or path to file with value)',
     )
     parser.add_argument(
