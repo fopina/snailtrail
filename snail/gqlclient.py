@@ -88,16 +88,17 @@ class Client(requests.Session):
             raise APIError(problems)
         return r["data"]
 
-    def get_all_snails_marketplace(self, offset=0, filters={}):
+    def get_all_snails_marketplace(self, offset=0, limit=20, filters={}):
         return self.query(
             "getAllSnail",
             {
                 "filters": filters,
                 "offset": offset,
+                "limit": limit,
             },
             """
-            query getAllSnail($filters: SnailFilters, $offset: Int) {
-                marketplace_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
+            query getAllSnail($filters: SnailFilters, $offset: Int, $limit: Int) {
+                marketplace_promise(limit: $limit, offset: $offset, order: 1, filters: $filters) {
                     ... on Snails {
                     snails {
                         id
@@ -175,12 +176,12 @@ class Client(requests.Session):
             """,
         )['snails_promise']
 
-    def get_mission_races(self, offset=0, filters={}):
+    def get_mission_races(self, offset=0, limit=20, filters={}):
         return self.query(
             "getMissionRaces",
             {
                 "filters": filters,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
             },
             """
@@ -208,12 +209,12 @@ class Client(requests.Session):
             """,
         )['mission_races_promise']
 
-    def get_onboarding_races(self, offset=0, filters={}):
+    def get_onboarding_races(self, offset=0, limit=20, filters={}):
         return self.query(
             "getOnboardingRaces",
             {
                 "filters": filters,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
             },
             """
@@ -262,12 +263,12 @@ class Client(requests.Session):
             """,
         )['onboarding_races_promise']
 
-    def get_finished_races(self, offset=0, filters={}, own=False):
+    def get_finished_races(self, offset=0, limit=20, filters={}, own=False):
         return self.query(
             "getFinishedRaces",
             {
                 "filters": filters,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
             },
             """
@@ -305,12 +306,12 @@ class Client(requests.Session):
             % ('own' if own else 'all'),
         )['finished_races_promise']
 
-    def get_race_history(self, offset=0, filters={}):
+    def get_race_history(self, offset=0, limit=20, filters={}):
         return self.query(
             "getRaceHistory",
             {
                 "filters": filters,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
             },
             """
@@ -352,12 +353,13 @@ class Client(requests.Session):
         self,
         owner,
         offset=0,
+        limit=20,
     ):
         return self.query(
             "getMySnailsForMissions",
             {
                 "owner": owner,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
             },
             """
@@ -393,13 +395,14 @@ class Client(requests.Session):
         self,
         owner,
         league,
+        limit=20,
         offset=0,
     ):
         return self.query(
             "getMySnailsForRanked",
             {
                 "owner": owner,
-                "limit": 20,
+                "limit": limit,
                 "offset": offset,
                 "league": league,
             },

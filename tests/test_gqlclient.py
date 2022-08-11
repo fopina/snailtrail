@@ -6,12 +6,15 @@ from pathlib import Path
 
 
 class Test(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        schema_file = Path(__file__).parent / 'schema.graphql'
+        cls.gql = gql.Client(schema=schema_file.read_text())
+
     def setUp(self) -> None:
         self.client = gqlclient.Client()
         self.req_mock = mock.MagicMock()
         self.client.request = self.req_mock
-        schema_file = Path(__file__).parent / 'schema.graphql'
-        self.gql = gql.Client(schema=schema_file.read_text())
 
     def assertValidGQL(self, gql_string):
         try:
