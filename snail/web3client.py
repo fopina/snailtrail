@@ -1,10 +1,9 @@
 from functools import cached_property
 from typing import Any, Union
-from unittest import result
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
-from web3 import Web3
+from web3 import Web3, exceptions  # noqa - for others to import from here
 from web3.middleware import geth_poa_middleware
 
 from . import abi

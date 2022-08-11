@@ -25,6 +25,33 @@ class Wallet:
     private_key: str
 
 
+class SetQueue(dict):
+    def __init__(self, capacity=10):
+        super().__init__()
+        self.capacity = capacity
+        self.size = 0
+
+    def add(self, item):
+        # delete first to make sure it ends in last
+        try:
+            self.remove(item)
+        except KeyError:
+            pass
+        self[item] = None
+        self.size += 1
+        self.truncate()
+
+    def truncate(self, capacity=None):
+        capacity = capacity or self.capacity
+        while self.size > capacity:
+            _f = next(iter(self.keys()))
+            self.remove(_f)
+
+    def remove(self, item):
+        del self[item]
+        self.size -= 1
+
+
 class CLI:
     owner = None
 
@@ -41,10 +68,8 @@ class CLI:
             gql_retry=args.retry if args.retry > 0 else None,
         )
         self.notifier: tgbot.Notifier = args.notify
-        # FIXME: change these sets to some "circular" queue to avoid eating up memory
-        self._expensive_missions = set()
-        self._notified_races = set()
-        self._notified_races_over = set()
+        self._notified_races = SetQueue(capacity=100)
+        self._notified_races_over = SetQueue(capacity=100)
         self._notify_mission_data = None
         self._notify_marketplace = {}
         self._notify_coefficent = 99999
@@ -190,9 +215,6 @@ class CLI:
             if race.participation:
                 # already joined
                 continue
-            if race.id in self._expensive_missions:
-                # already saw this was NOT cheap (and last spot), skip
-                continue
             athletes = len(race.athletes)
             if athletes == 10:
                 # race full
@@ -227,7 +249,6 @@ class CLI:
                         if r['payload']['size'] == 0:
                             rcpt = self.client.rejoin_mission_races(r)
                         else:
-                            self._expensive_missions.add(race.id)
                             try:
                                 estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
                             except:
@@ -236,7 +257,10 @@ class CLI:
                             logger.info(
                                 f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
                             )
-                            boosted.remove(snail.id)
+                            # TODO: add snail to cooldown, is 120 enough? check future logs
+                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=120)
+                            # also remove from queueable (due to "continue")
+                            queueable.remove(snail)
                             continue
                 else:
                     r, rcpt = self.client.join_mission_races(
@@ -260,8 +284,15 @@ class CLI:
                 msg = str(e)
                 if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
                     raise
-                logger.exception('re-join as last error for %s', snail)
+                logger.exception('re-join as last error for %s', snail.name_id)
                 self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=int(msg[58:].split(' ', 1)[0]))
+            except client.web3client.exceptions.ContractLogicError as e:
+                if 'Race already submitted' in str(e):
+                    logger.error('Too late for the race, try next one')
+                    # continue loop to next race *without* removing snail from queueable
+                    continue
+                raise
+
             # remove snail from queueable (as it is no longer available)
             queueable.remove(snail)
 
