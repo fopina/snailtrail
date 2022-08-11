@@ -257,8 +257,8 @@ class CLI:
                             logger.info(
                                 f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
                             )
-                            # TODO: add snail to cooldown, is 120 enough? check future logs
-                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=120)
+                            # TODO: add snail to cooldown, is 150 too much? check future logs
+                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=150)
                             # also remove from queueable (due to "continue")
                             queueable.remove(snail)
                             continue
