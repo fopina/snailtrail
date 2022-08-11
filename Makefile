@@ -1,3 +1,8 @@
+test:
+	pytest --doctest-modules --cov
+
+all: test pub deploy
+
 build:
 	docker build -t x .
 
@@ -12,9 +17,6 @@ pub:
 deploy:
 	# add portainer service webhook to portainer.conf
 	curl $(shell cat portainer.conf) -d tag=snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ')
-
-test:
-	pytest --doctest-modules --cov
 
 sit:
 	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
