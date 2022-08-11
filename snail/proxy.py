@@ -38,7 +38,7 @@ class Proxy:
         if wait_for_ready:
             for _ in range(50):
                 try:
-                    requests.get('http://1.1.1.1', proxies={'https': self.url()}, verify=False)
+                    requests.get('http://1.1.1.1', proxies={'https': self.url(), 'http': self.url()}, verify=False)
                     break
                 except requests.exceptions.ProxyError:
                     time.sleep(0.1)

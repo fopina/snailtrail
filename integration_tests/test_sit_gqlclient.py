@@ -1,9 +1,7 @@
 import sys
 from pathlib import Path
 import unittest
-from unittest import TestCase, mock
-import gql
-from graphql.error.syntax_error import GraphQLSyntaxError
+from unittest import TestCase
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
@@ -21,7 +19,7 @@ class Test(TestCase):
         cls.proxy = proxy.Proxy()
         cls.proxy.start()
         proxy_url = cls.proxy.url()
-        cls.client = gqlclient.Client(proxy=proxy_url, rate_limiter=1)
+        cls.client = gqlclient.Client(proxy=proxy_url, rate_limiter=1, retry=3)
     
     @classmethod
     def tearDownClass(cls) -> None:

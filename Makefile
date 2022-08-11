@@ -15,3 +15,6 @@ deploy:
 
 test:
 	pytest --doctest-modules --cov
+
+sit:
+	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
