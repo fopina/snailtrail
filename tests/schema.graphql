@@ -1,0 +1,504 @@
+input RaceFilters {
+  owner: String
+  league: Int
+  status: [Int]
+  id: [Int]
+}
+
+input RaceHistoryFilters {
+  token_id: Int!
+  category: Int
+  league: Int
+  distance: Int
+  adaptations: [Int]
+}
+
+input VisualFilters {
+  eyes: Int
+  eye_sockets: Int
+  mouth: Int
+  head: Int
+  nostrils: Int
+  form: Int
+  shell: Int
+  bottom: Int
+  top: Int
+  back: Int
+  side: Int
+}
+
+input SnailFilters {
+  id: [Int]
+  family: Int
+  klass: Int
+  generation: Int
+  adaptations: [Int]
+  purity: Int
+  parent_male: Int
+  parent_female: Int
+  visuals: VisualFilters
+  stat_season: Int
+  owner: String
+  gender: Int
+  name: String
+}
+
+input IncubateParams {
+  owner: String!
+  item_id: Int
+  market_price_wei: String
+  nonce: Int!
+  fid: Int!
+  mid: Int!
+}
+
+input JoinRaceParams {
+  token_id: Int!
+  race_id: Int!
+  address: String!
+  signature: String!
+}
+
+type Query {
+  snails_promise(
+    limit: Int
+    offset: Int
+    order: Int
+    filters: SnailFilters
+  ): SnailPromise!
+  gene_market_promise(
+    limit: Int
+    offset: Int
+    order: Int
+    filters: SnailFilters
+  ): SnailPromise!
+  marketplace_promise(
+    limit: Int
+    offset: Int
+    order: Int
+    filters: SnailFilters
+  ): SnailPromise!
+  marketplace_stats_promise(market: Int): MarketplaceStatsPromise!
+  snail_promise(token_id: Int!): SnailPromise!
+  rarity_promise: RarityPromise!
+  statics_promise: StaticsPromise!
+  races_promise(limit: Int, offset: Int, filters: RaceFilters): RacePromise!
+  onboarding_races_promise(
+    limit: Int
+    offset: Int
+    filters: RaceFilters
+  ): RacePromise!
+  scheduled_races_promise(
+    limit: Int
+    offset: Int
+    filters: RaceFilters
+  ): RacePromise!
+  finished_races_promise(
+    limit: Int
+    offset: Int
+    filters: RaceFilters
+  ): RacePromise!
+  mission_races_promise(
+    limit: Int
+    offset: Int
+    filters: RaceFilters
+  ): RacePromise!
+  race_history_promise(
+    limit: Int
+    offset: Int
+    filters: RaceHistoryFilters
+  ): RacePromise!
+  simulation_promise(female: Int!, male: Int!): SimulationPromise!
+  my_snails_promise(
+    owner: String!
+    gender: Int
+    limit: Int
+    offset: Int
+  ): MySnailsPromise
+  my_snails_ranked_promise(
+    owner: String!
+    league: Int!
+    adaptations: [Int]
+    limit: Int
+    offset: Int
+  ): MySnailsPromise
+  my_snails_mission_promise(
+    owner: String!
+    adaptations: [Int]
+    limit: Int
+    offset: Int
+  ): MySnailsPromise
+  race_schedule_promise: RaceSchedulePromise
+  incubate_promise(params: IncubateParams): IncubatePromise!
+  whitelist_promise(address: String!): WhitelistPromise!
+  name_status_promise(name: String!): NameStatusPromise!
+}
+
+type Mutation {
+  join_mission_promise(params: JoinRaceParams): JoinRacePromise
+  join_competitive_promise(params: JoinRaceParams): JoinRacePromise
+}
+
+type Problem {
+  problem: [String!]
+}
+
+union SnailPromise = Snails | Snail | Problem
+
+union RarityPromise = Rarity | Problem
+
+union StaticsPromise = Statics | Problem
+
+union RacePromise = Race | Races | RaceHistory | Problem
+
+union SimulationPromise = Simulation | Problem
+
+union MySnailsPromise = Snails | Problem
+
+union RaceSchedulePromise = RaceSchedule | Problem
+
+union IncubatePromise = Incubate | Problem
+
+union Stat = MeanStat | CounterStat
+
+union JoinRacePromise = JoinRaceResponse | Problem
+
+union JoinPayload = MissionPayload | CompetitivePayload
+
+union WhitelistPromise = WhitelistStatus | Problem
+
+union NameStatusPromise = NameStatus | Problem
+
+union MarketplaceStatsPromise = MarketplaceStats | Problem
+
+type MarketplaceStats {
+  volume: Float!
+  floors: [MarketStat]
+  highs: [MarketStat]
+}
+
+type MarketStat {
+  id: Int
+  name: String
+  value: Float
+}
+
+type NameStatus {
+  status: Boolean!
+  message: String
+}
+
+type WhitelistStatus {
+  whitelist_round: Int!
+  anti_bot_round: Int!
+  public_round: Int!
+  proof: [String]
+}
+
+type JoinRaceResponse {
+  status: Int!
+  message: String
+  payload: JoinPayload
+  signature: String
+}
+
+type MissionPayload {
+  race_id: Int!
+  token_id: Int!
+  address: String!
+  athletes: [Int]!
+  owners: [String]!
+  size: Int!
+  completed_races: [CompletedRace]
+  timeout: Int!
+  salt: Int!
+}
+
+type CompetitivePayload {
+  race_id: Int!
+  token_id: Int!
+  address: String!
+  entry_fee_wei: String!
+  size: Int!
+  completed_races: [CompletedRace]
+  timeout: Int!
+  salt: Int!
+}
+
+type CompletedRace {
+  race_id: Int!
+  results: [Int]!
+  owners: [String]!
+}
+
+type Incubate {
+  payload: IncubatorPayload
+  signature: String
+}
+
+type IncubatorPayload {
+  owner: String!
+  item_id: Int!
+  base_fee_wei: String!
+  market_price_wei: String!
+  nonce: Int!
+  fid: Int!
+  mid: Int!
+  timeout: Int!
+  salt: Int!
+}
+
+type Snails {
+  snails: [Snail]
+  count: Int
+}
+
+type Snail {
+  id: Int!
+  family: String!
+  klass: String!
+  generation: Int!
+  adaptations: [String]!
+  purity: Int!
+  visuals: [Attribute]
+  parent_male: Int!
+  parent_female: Int!
+  genome_coef: String!
+  salt: String!
+  name: String
+  genome: [String]!
+  image: String!
+  image_nobg: String!
+  image_headshot: String!
+  stats: DashboardStats
+  more_stats(seasons: [Int]): [SeasonStats]
+  colors: Colors
+  owner: String
+  gender: Gender
+  breeding: BreedInfo
+  birthday: String
+  new_born: Boolean
+  queueable_at: String
+  market: MarketListing
+  holder: String
+  gene_market: GeneMarket
+  layers: [Layer]
+  race_history: [Race]
+}
+
+type GeneMarket {
+  on_sale: Boolean
+  price: Float
+  price_wei: String
+  remainder: Int
+  last_sale: Float
+  highest_sale: Float
+  item_id: Int
+  timeout: Int
+}
+
+type MarketListing {
+  item_id: Int
+  price: Float
+  on_sale: Boolean
+  price_wei: String
+  last_sale: Float
+  highest_sale: Float
+  history: [SoldItem]
+}
+
+type SoldItem {
+  from: String
+  to: String
+  price: Float
+  at: String
+}
+
+type Layer {
+  id: Int
+  name: String
+  image: String
+}
+
+type Experience {
+  xp: Int!
+  level: Int!
+  on: Int!
+  remaining: Int!
+  reward: Int!
+}
+
+type BreedInfo {
+  breed_status: BreedStatus
+  breed_detail: BreedDetail
+}
+
+type BreedDetail {
+  monthly_breed_limit: Int
+  monthly_breed_available: Int
+  monthly_breed_used: Int
+  children: [Int]
+  cycle_start: String
+  cycle_end: String
+  days_remaining: Float
+  breed_count_total: Float
+  breed_count_male: Int
+  breed_count_female: Int
+}
+
+type BreedStatus {
+  cycle_start: String
+  cycle_end: String
+  cycle_gender: Int
+  cycle_total: Int
+  cycle_remaining: Int
+}
+
+type Gender {
+  id: Int
+  value: String!
+  last_change_at: String
+  can_change_at: String
+}
+
+type Colors {
+  body_primary: String
+  shell_primary: String
+  helm_primary: String
+  extension_primary: String
+}
+
+type Attribute {
+  trait_type: String!
+  value: String!
+  id: Int!
+  count: Int
+  percentage: Float
+}
+
+type DashboardStats {
+  races: Int
+  elo: String
+  earned_avax: Float
+  earned_token: Float
+  mission_tickets: Int
+  win_ratio: String
+  top_three_ratio: String
+  experience: Experience
+}
+
+type SeasonStats {
+  season: String!
+  season_stats: [CategoryStats]
+}
+
+type CategoryStats {
+  category_name: String!
+  category_id: Int!
+  category_stats: [Stat]
+}
+
+type CounterStat {
+  id: Int!
+  name: String!
+  count: Int!
+}
+
+type MeanStat {
+  id: Int!
+  name: String!
+  count: Int!
+  min: Float!
+  mean: Float!
+  max: Float!
+  std: Float!
+}
+
+type Rarity {
+  rarity: [Attribute]
+}
+
+type Statics {
+  traits: [TraitType]
+}
+
+type TraitType {
+  name: String!
+  id: Int!
+  options: [Attribute]
+}
+
+type Simulation {
+  family: [Probability]
+  purity: [Probability]
+  klass: [Probability]
+  generation: [Probability]
+  adaptation: String
+}
+
+type Probability {
+  name: String
+  p: Float
+  hint: String
+}
+
+type RaceHistory {
+  races: [Race]
+  count: Int
+}
+
+type Races {
+  all: [Race]
+  own: [Race]
+}
+
+type Race {
+  id: Int!
+  conditions: [String]!
+  distance: String!
+  league: String!
+  status: String!
+  season: String!
+  track: String!
+  race_type: String!
+  prize_pool: String!
+  currency: String!
+  starts_at: String
+  results: [ResultsTimeData]
+  athletes: [Int]
+  participation: Boolean
+  race_feed: [RaceFeedResponse]
+  reward_status: Int
+}
+
+type RaceSchedule {
+  current: Race
+  next: Race
+}
+
+union RaceFeedResponse = SectorDataResponse | TimeDataResponse | Problem
+
+type AthleteData {
+  id: Int!
+  distance: Float
+}
+
+type AthleteTimeData {
+  id: Int
+  time: Float
+}
+
+type ResultsTimeData {
+  token_id: Int
+  time: Float
+}
+
+type SectorDataResponse {
+  sector_data: [AthleteData]
+  sector: Int!
+}
+
+type TimeDataResponse {
+  time_data: [AthleteTimeData]
+  next_race: Int
+}
