@@ -4,6 +4,8 @@ from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 import logging
 
+from .cli import CLI
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,7 +63,7 @@ class Notifier:
             self.updater = None
 
     @property
-    def any_cli(self):
+    def any_cli(self) -> CLI:
         return list(self.clis.values())[0]
 
     def _slow_query(self, query):
@@ -101,6 +103,7 @@ class Notifier:
         ov = getattr(_cli.args, opts)
         setattr(_cli.args, opts, not ov)
         query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
+        _cli.save_bot_settings()
 
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process join race buttons"""

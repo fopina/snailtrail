@@ -143,6 +143,9 @@ def build_parser():
         help='If auto, these snail ids should always take last spots for missions (boost)',
     )
     pm.add_argument(
+        '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
+    )
+    pm.add_argument(
         '-f',
         '--fair',
         action='store_true',
@@ -241,6 +244,9 @@ def main(argv=None):
         clis.append(c)
 
     if args.cmd == 'bot':
+        for c in clis:
+            c.load_bot_settings()
+
         # this cmd is special as it should loop infinitely
         args.notify.start_polling()
 

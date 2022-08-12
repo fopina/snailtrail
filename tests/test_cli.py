@@ -1,3 +1,4 @@
+import tempfile
 from unittest import TestCase, mock
 import cli
 from . import data
@@ -34,3 +35,23 @@ class Test(TestCase):
         q.add(7)
         q.add(8)
         self.assertEqual(list(q), [2, 5, 6, 7, 8])
+
+    def test_bot_settings(self):
+        with tempfile.NamedTemporaryFile() as f:
+            args = cli.build_parser().parse_args(
+                ['--notify', '123:a', '2', 'bot', '--settings', f.name, '-c'], config_file_contents=''
+            )
+            c = cli.cli.CLI(cli.cli.Wallet('wallet1', 'pkey1'), 'http://localhost:99999', args, True)
+            self.assertTrue(args.coefficent)
+            self.assertFalse(args.market)
+            args.market = True
+            c.save_bot_settings()
+
+            args = cli.build_parser().parse_args(
+                ['--notify', '123:a', '2', 'bot', '--settings', f.name, '-c'], config_file_contents=''
+            )
+            c = cli.cli.CLI(cli.cli.Wallet('wallet1', 'pkey1'), 'http://localhost:99999', args, True)
+            self.assertTrue(args.coefficent)
+            self.assertFalse(args.market)
+            c.load_bot_settings()
+            self.assertTrue(args.market)

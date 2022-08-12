@@ -32,13 +32,11 @@ class Test(TestCase):
         self.assertNotIn('authorization', self.client.headers)
         c = gqlclient.Client(http_token='x')
         self.assertIn('authorization', c.headers)
-    
+
     def test_init_retry(self):
-        self.assertEqual(self.client.adapters['https://'].max_retries.total
-, 0)
+        self.assertEqual(self.client.adapters['https://'].max_retries.total, 0)
         c = gqlclient.Client(retry=5)
-        self.assertEqual(c.adapters['https://'].max_retries.total
-, 5)
+        self.assertEqual(c.adapters['https://'].max_retries.total, 5)
 
     def test_marketplace_stats(self):
         self.client.marketplace_stats(1)

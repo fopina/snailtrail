@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+import json
 import time
 from datetime import datetime, timedelta, timezone
 import logging
@@ -79,6 +80,27 @@ class CLI:
     @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
+
+    def load_bot_settings(self):
+        settings_file = getattr(self.args, 'settings', None)
+        if not settings_file:
+            return
+        try:
+            settings = json.loads(settings_file.read_text())
+        except FileNotFoundError:
+            logger.warning('no initial settings found at %s', settings_file)
+            return
+        for k, v in settings.items():
+            setattr(self.args, k, v)
+
+    def save_bot_settings(self):
+        settings_file = getattr(self.args, 'settings', None)
+        if not settings_file:
+            return
+        if not self.notifier._settings_list:
+            return
+        data = {x.dest: getattr(self.args, x.dest) for x in self.notifier._settings_list}
+        settings_file.write_text(json.dumps(data))
 
     def cached_snail_history(self, snail_id, price=None, limit=None):
         """

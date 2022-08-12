@@ -20,7 +20,7 @@ class Test(TestCase):
         cls.proxy.start()
         proxy_url = cls.proxy.url()
         cls.client = gqlclient.Client(proxy=proxy_url, rate_limiter=1, retry=3)
-    
+
     @classmethod
     def tearDownClass(cls) -> None:
         print('stopping proxy')
@@ -59,25 +59,29 @@ class Test(TestCase):
 
     def test_join_competitive_races(self):
         with self.assertRaisesRegex(gqlclient.APIError, 'Signature does not match the information.'):
-            self.client.join_competitive_races(TEST_SNAIL, 171971, TEST_ADDRESS, '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c')
+            self.client.join_competitive_races(
+                TEST_SNAIL,
+                171971,
+                TEST_ADDRESS,
+                '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c',
+            )
 
     def test_join_mission_races(self):
         with self.assertRaisesRegex(gqlclient.APIError, 'Signature does not match the information.'):
-            self.client.join_mission_races(TEST_SNAIL, 171971, TEST_ADDRESS, '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c')
+            self.client.join_mission_races(
+                TEST_SNAIL,
+                171971,
+                TEST_ADDRESS,
+                '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c',
+            )
 
     def test_get_my_snails_for_ranked(self):
         r = self.client.get_my_snails_for_ranked(TEST_ADDRESS, 5)
-        self.assertIn(
-            TEST_SNAIL,
-            {x['id'] for x in r['snails']}
-        )
+        self.assertIn(TEST_SNAIL, {x['id'] for x in r['snails']})
 
     def test_get_my_snails_for_missions(self):
         r = self.client.get_my_snails_for_missions(TEST_ADDRESS)
-        self.assertIn(
-            TEST_SNAIL,
-            {x['id'] for x in r['snails']}
-        )
+        self.assertIn(TEST_SNAIL, {x['id'] for x in r['snails']})
 
     def test_get_race_history(self):
         with self.assertRaisesRegex(Exception, "Field 'token_id' of required type 'Int!'"):
@@ -85,7 +89,6 @@ class Test(TestCase):
         r = self.client.get_race_history(limit=1, filters={'token_id': TEST_SNAIL})
         self.assertEqual(len(r['races']), 1)
         self.assertEqual(r['races'][0]['__typename'], 'Race')
-
 
     def test_get_finished_races(self):
         r = self.client.get_finished_races(limit=1)
