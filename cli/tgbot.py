@@ -59,6 +59,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
+            dispatcher.add_handler(CommandHandler("help", self.cmd_help))
         else:
             self.updater = None
 
@@ -136,7 +137,12 @@ class Notifier:
         """
         Help
         """
-        update.message.reply_text('Help!')
+        m = [
+            f'/{v[0]} - {v[1]}'
+            for v in self._listed_commands()
+            if v[0] != 'help'
+        ]
+        update.message.reply_text('\n'.join(m))
 
     @bot_auth
     def cmd_stats(self, update: Update, context: CallbackContext) -> None:
@@ -223,6 +229,9 @@ class Notifier:
         """
         Toggle bot settings
         """
+        if not self._settings_list:
+            update.message.reply_markdown('No settings available...')
+            return
         keyboard = []
         for i in range(0, len(self._settings_list), 2):
             keyboard.append(
@@ -241,15 +250,17 @@ class Notifier:
         if self.updater:
             self.updater.idle()
 
+    def _listed_commands(self):
+        return [
+            (v1.command[0], v1.callback.__doc__.strip())
+            for v in self.updater.dispatcher.handlers.values()
+            for v1 in v
+            if isinstance(v1, CommandHandler) and v1.command[0] != 'start'
+        ]
+
     def start_polling(self):
         if self.updater:
-            commands = [
-                (v1.command[0], v1.callback.__doc__.strip())
-                for v in self.updater.dispatcher.handlers.values()
-                for v1 in v
-                if isinstance(v1, CommandHandler) and v1.command[0] != 'start'
-            ]
-            self.updater.bot.set_my_commands(commands)
+            self.updater.bot.set_my_commands(self._listed_commands())
             self.updater.start_polling()
 
     def stop_polling(self):
