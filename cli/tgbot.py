@@ -97,6 +97,12 @@ class Notifier:
         opts = opts[0]
 
         _cli = self.any_cli
+
+        if opts == '__help':
+            m = [f'`{setting.dest}` {escape_markdown(setting.help)}' for setting in self._settings_list]
+            query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
+            return
+
         if not hasattr(_cli.args, opts):
             query.edit_message_text(text=f"Unknown setting: {opts}")
             return
@@ -238,7 +244,12 @@ class Notifier:
                     for setting in self._settings_list[i : i + 2]
                 ]
             )
-        keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
+        keyboard.append(
+            [
+                InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
+                InlineKeyboardButton(f'❔ Help', callback_data='toggle __help'),
+            ]
+        )
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
 
     def idle(self):
