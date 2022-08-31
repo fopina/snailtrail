@@ -23,13 +23,15 @@ class Test(TestCase):
 
     def test_help(self):
         self.bot.cmd_help(self.update, self.context)
-        self.update.message.reply_text.assert_called_once_with('''/stats - My snails stats
+        self.update.message.reply_text.assert_called_once_with(
+            '''/stats - My snails stats
 /nextmission - Show time to next daily mission
 /balance - Current balance (snail count, avax, slime)
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
 /reloadsnails - Reset snails cache
-/settings - Toggle bot settings''')
+/settings - Toggle bot settings'''
+        )
 
     def test_settings(self):
         self.bot.cmd_settings(self.update, self.context)
@@ -39,10 +41,10 @@ class Test(TestCase):
         self.bot.clis[0] = mock.MagicMock(args=mock.MagicMock(wtv=False))
         self.bot._settings_list = [mock.MagicMock(dest='wtv')]
         self.bot.cmd_settings(self.update, self.context)
-        expected_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton('🔧 wtv: False', callback_data=f'toggle wtv')],
-            [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
-        ])
+        expected_markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton('🔧 wtv: False', callback_data=f'toggle wtv')],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+        )
         self.update.message.reply_markdown.assert_called_once_with('Toggle settings', reply_markup=expected_markup)
-
-

@@ -127,9 +127,8 @@ class Notifier:
         """
         Start
         """
-        user = update.effective_user
         update.message.reply_markdown_v2(
-            fr'Hi {user.mention_markdown_v2()}\!',
+            fr'Hi {update.effective_user.mention_markdown_v2()}\!',
         )
 
     @bot_auth
@@ -137,11 +136,7 @@ class Notifier:
         """
         Help
         """
-        m = [
-            f'/{v[0]} - {v[1]}'
-            for v in self._listed_commands()
-            if v[0] != 'help'
-        ]
+        m = [f'/{v[0]} - {v[1]}' for v in self._listed_commands() if v[0] != 'help']
         update.message.reply_text('\n'.join(m))
 
     @bot_auth
