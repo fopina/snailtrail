@@ -197,6 +197,7 @@ def build_parser():
     pm.add_argument('--stats', action='store_true', help='marketplace stats')
 
     pm = subparsers.add_parser('incubate')
+    pm.add_argument('-f', '--fee', type=int, nargs='*')
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
@@ -271,7 +272,10 @@ def main(argv=None):
     else:
         try:
             for c in clis:
-                c.run()
+                r = c.run()
+                if r is False:
+                    # do not process any other clis
+                    break
         finally:
             if not args.proxy:
                 p.stop()

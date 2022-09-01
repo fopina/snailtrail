@@ -709,7 +709,8 @@ AVAX: {self.client.web3.get_balance()}
 
     def cmd_races(self):
         if self.args.finished:
-            return self._finished_races()
+            self._finished_races()
+            return
         if self.args.history is not None:
             if self.args.history == 0:
                 for s in self.my_snails.values():
@@ -718,13 +719,32 @@ AVAX: {self.client.web3.get_balance()}
                 self._history_races(Snail({'id': self.args.history}))
             return
         if self.args.join:
-            return self._join_race(self.args.join)
-        return self._open_races()
+            self._join_race(self.args.join)
+            return
+        self._open_races()
 
     def cmd_incubate(self):
-        # TODO: everything, just showing coefficient for now
-        print(self.client.web3.get_current_coefficent())
+        if self.args.fee is not None:
+            pc = self.client.web3.get_current_coefficent()
+            argc = len(self.args.fee)
+            if argc == 2:
+                snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
+                assert len(snails) == 2
+                print(snails[0].incubation_fee(snails[1], pc=pc))
+                return False
+            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+            snail_fees = []
+            for si1 in range(len(snails)):
+                for si2 in range(si1 + 1, len(snails)):
+                    fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                    snail_fees.append((fee, snails[si1], snails[si2]))
+            for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
+                print(f'{snail1.name} - {snail2.name} for {fee}')
+            return True
+        else:
+            print(self.client.web3.get_current_coefficent())
+            return False
 
     def run(self):
         if self.args.cmd:
-            getattr(self, f'cmd_{self.args.cmd}')()
+            return getattr(self, f'cmd_{self.args.cmd}')()
