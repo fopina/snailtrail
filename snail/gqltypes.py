@@ -41,6 +41,14 @@ class Snail(AttrDict):
     '👩'
     """
 
+    GENE_FEES = {
+        'X': 6,
+        'A': 5,
+        'M': 4,
+        'H': 3,
+        'G': 2,
+    }
+
     @property
     def name_id(self):
         pr = self.name or f'#{self.id}'
@@ -88,12 +96,30 @@ class Snail(AttrDict):
         return _parse_datetime(x)
 
     @property
+    def breed_count_total(self):
+        return self['breeding']['breed_detail']['breed_count_total']
+
+    @property
     def market_price(self):
         return self.market['price']
 
     @property
     def queueable_at(self):
         return _parse_datetime_micro(self['queueable_at'])
+
+    def incubation_fee(self, other_snail, pc=1.0):
+        # https://docs.snailtrail.art/reproduction/incubator/incubation_fee/#incubation-fee
+        """
+        >>> sf = Snail({'id': 8267, 'name': 'X', 'gender': {'id': 1}, 'genome': ['G', 'M', 'G', 'X', 'G', 'G', 'G', 'M', 'G', 'G', 'G', 'G', 'M', 'G', 'A', 'G', 'G', 'G', 'H', 'X'], 'breeding': {'breed_detail': {'breed_count_total': 1}}})
+        >>> sm = Snail({'id': 9217, 'name': 'Y', 'gender': {'id': 2}, 'genome': ['X', 'H', 'M', 'H', 'M', 'M', 'M', 'A', 'M', 'X', 'M', 'M', 'M', 'G', 'A', 'H', 'M', 'G', 'M', 'H'], 'breeding': {'breed_detail': {'breed_count_total': 0.333333333}}})
+        >>> sf.incubation_fee(sm, pc=7.786)
+        1200.0821332980368
+        """
+        acc = 0
+        for i in range(20):
+            acc += self.GENE_FEES[self.genome[i]] + self.GENE_FEES[other_snail.genome[i]]
+        acc = acc * (1 + (self.breed_count_total + other_snail.breed_count_total) / 10) * pc
+        return acc
 
     def __str__(self) -> str:
         """

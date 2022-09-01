@@ -120,6 +120,7 @@ class Client(requests.Session):
                         breed_detail {
                             cycle_end
                             monthly_breed_available
+                            breed_count_total
                         }
                         __typename
                         }
@@ -161,6 +162,7 @@ class Client(requests.Session):
                         breed_detail {
                             cycle_end
                             monthly_breed_available
+                            breed_count_total
                         }
                         }
                         stats {
