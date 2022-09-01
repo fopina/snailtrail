@@ -35,7 +35,16 @@ class Client(requests.Session):
         super().__init__()
         self.headers.update(
             {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0) Gecko/20100101 Firefox/91.0",
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0",
+                "accept-language": "en-GB,en;q=0.5",
+                "referer": "https://api.snailtrail.art/graphql/",
+                "origin": "https://api.snailtrail.art",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "pragma": "no-cache",
+                "cache-control": "no-cache",
+                "te": "trailers",
             }
         )
         self.trust_env = False
