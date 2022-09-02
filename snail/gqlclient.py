@@ -97,6 +97,53 @@ class Client(requests.Session):
             raise APIError(problems)
         return r["data"]
 
+    def get_all_genes_marketplace(self, offset=0, limit=24, filters={}):
+        return self.query(
+            "getAllSnail",
+            {
+                "filters": filters,
+                "offset": offset,
+                "limit": limit,
+            },
+            """
+            query getAllSnail($filters: SnailFilters, $offset: Int, $limit: Int) {
+                gene_market_promise(limit: $limit, offset: $offset, order: 1, filters: $filters) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on Snails {
+                    snails {
+                        id
+                        adaptations
+                        name
+                        image
+                        purity
+                        gene_market {
+                        price
+                        item_id
+                        on_sale
+                        price_wei
+                        __typename
+                        }
+                        stats {
+                        experience {
+                            level
+                            __typename
+                        }
+                        __typename
+                        }
+                        __typename
+                    }
+                    count
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+        )['gene_market_promise']
+
     def get_all_snails_marketplace(self, offset=0, limit=20, filters={}):
         return self.query(
             "getAllSnail",

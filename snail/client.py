@@ -48,6 +48,11 @@ class Client:
             if max_calls and calls >= max_calls:
                 break
 
+    def iterate_all_genes_marketplace(self, filters={}):
+        yield from self._iterate_pages(
+            self.gql.get_all_genes_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
+        )
+
     def iterate_all_snails_marketplace(self, filters={}):
         yield from self._iterate_pages(
             self.gql.get_all_snails_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}

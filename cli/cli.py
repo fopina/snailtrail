@@ -185,6 +185,25 @@ class CLI:
                 f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.market_price}{Fore.RESET}"
             )
 
+    def find_market_genes(self, price_filter=2):
+        all_snails = {}
+        for snail in self.client.iterate_all_genes_marketplace():
+            if snail.gene_market_price > price_filter:
+                break
+            all_snails[snail.id] = snail
+            if len(all_snails) == 20:
+                break
+        logger.debug('Fetching details for %d snails', len(all_snails))
+        keys = list(all_snails.keys())
+        for i in range(0, len(keys), 20):
+            for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
+                all_snails[x.id].update(x)
+
+        for snail_id, snail in all_snails.items():
+            logger.info(
+                f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.gene_market_price}{Fore.RESET}"
+            )
+
     def notify_mission(self, message):
         """helper method to group all the notify mission calls in a single telegram message (re-edit)"""
         if self._notify_mission_data:
@@ -486,6 +505,8 @@ AVAX: {self.client.web3.get_balance()}
             print(f"Volume: {d['volume']}")
             for k, v in d['prices'].items():
                 print(f"{k}: {v}")
+        elif self.args.genes:
+            self.find_market_genes(price_filter=self.args.price)
         else:
             self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
 
@@ -732,12 +753,31 @@ AVAX: {self.client.web3.get_balance()}
                 assert len(snails) == 2
                 print(snails[0].incubation_fee(snails[1], pc=pc))
                 return False
-            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+
             snail_fees = []
-            for si1 in range(len(snails)):
-                for si2 in range(si1 + 1, len(snails)):
-                    fee = snails[si1].incubation_fee(snails[si2], pc=pc)
-                    snail_fees.append((fee, snails[si1], snails[si2]))
+            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+
+            if self.args.genes:
+                male_snails = {}
+                for snail in self.client.iterate_all_genes_marketplace():
+                    male_snails[snail.id] = snail
+                    if len(male_snails) == self.args.genes:
+                        break
+                keys = list(male_snails.keys())
+                for i in range(0, len(keys), 20):
+                    for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
+                        male_snails[x.id].update(x)
+
+                for s1 in snails:
+                    for s2 in male_snails.values():
+                        fee = s1.incubation_fee(s2, pc=pc)
+                        snail_fees.append((fee + s2.gene_market_price, s1, s2))
+            else:
+                for si1 in range(len(snails)):
+                    for si2 in range(si1 + 1, len(snails)):
+                        fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                        snail_fees.append((fee, snails[si1], snails[si2]))
+
             for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
                 print(f'{snail1.name} - {snail2.name} for {fee}')
             return True

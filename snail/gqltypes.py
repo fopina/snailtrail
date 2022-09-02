@@ -104,6 +104,10 @@ class Snail(AttrDict):
         return self.market['price']
 
     @property
+    def gene_market_price(self):
+        return self.gene_market['price']
+
+    @property
     def queueable_at(self):
         return _parse_datetime_micro(self['queueable_at'])
 

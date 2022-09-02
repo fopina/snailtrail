@@ -193,11 +193,15 @@ def build_parser():
 
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
-    pm.add_argument('-p', '--price', type=float, default=1.5, help='price limit for search')
+    pm.add_argument('-g', '--genes', action='store_true', help='search genes marketplace')
+    pm.add_argument('-p', '--price', type=float, default=1, help='price limit for search')
     pm.add_argument('--stats', action='store_true', help='marketplace stats')
 
     pm = subparsers.add_parser('incubate')
     pm.add_argument('-f', '--fee', type=int, nargs='*')
+    pm.add_argument(
+        '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
+    )
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
