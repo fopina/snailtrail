@@ -125,6 +125,9 @@ def build_parser():
         default=3,
         help='Retry GraphQL queries that result in 429, 502 and 504 (exponential backoff) - 0 to disable',
     )
+    parser.add_argument(
+        '-a', '--account', type=int, help='Use single account (if multiple accounts in config) - 0-index of the wallet array (in config)'
+    )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
@@ -244,8 +247,15 @@ def main(argv=None):
         proxy_url = p.url()
 
     clis: list[cli.CLI] = []
+    wallets = args.wallet
+    if args.account is not None:
+        if args.account >= len(args.wallet):
+            logger.error('you have %d wallets, --account must be less than that, because it is the 0-index of the wallet...', len(args.wallet))
+            return 1
+        wallets = [args.wallet[args.account]]
+
     first_one = True
-    for w in args.wallet:
+    for w in wallets:
         c = cli.CLI(w, proxy_url, args, main_one=first_one)
         first_one = False
         args.notify.register_cli(c)
@@ -289,4 +299,4 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    main()
+    exit(main() or 0)
