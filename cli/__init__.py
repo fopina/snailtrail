@@ -202,6 +202,9 @@ def build_parser():
     pm.add_argument(
         '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
     )
+    pm.add_argument(
+        '-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW'
+    )
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')

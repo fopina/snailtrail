@@ -756,6 +756,8 @@ AVAX: {self.client.web3.get_balance()}
 
             snail_fees = []
             snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+            if self.args.breeders:
+                snails = [x for x in snails if x.breed_status < 0]
 
             if self.args.genes:
                 male_snails = {}
