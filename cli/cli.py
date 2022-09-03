@@ -342,9 +342,24 @@ class CLI:
                             queueable.remove(snail)
                             continue
                 else:
-                    r, rcpt = self.client.join_mission_races(
-                        snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
-                    )
+                    try:
+                        r, rcpt = self.client.join_mission_races(
+                            snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
+                        )
+                    except client.ClientError as e:
+                        if e.args[0] != 'requires_transaction':
+                            raise
+                        logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
+                        if not self.args.fair:
+                            raise
+
+                        r = e.args[1]
+                        # join last spot anyway, even if not "boosted" (negative tickets)
+                        if self.args.cheap and not r['payload']['size'] == 0:
+                            raise
+
+                        rcpt = self.client.rejoin_mission_races(r)
+
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
                     logger.info(f'{msg} - {r["message"]}')
