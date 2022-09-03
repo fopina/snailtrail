@@ -126,7 +126,10 @@ def build_parser():
         help='Retry GraphQL queries that result in 429, 502 and 504 (exponential backoff) - 0 to disable',
     )
     parser.add_argument(
-        '-a', '--account', type=int, help='Use single account (if multiple accounts in config) - 0-index of the wallet array (in config)'
+        '-a',
+        '--account',
+        type=int,
+        help='Use single account (if multiple accounts in config) - 0-index of the wallet array (in config)',
     )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
@@ -168,7 +171,7 @@ def build_parser():
     pm.add_argument(
         '--race-stats',
         action='store_true',
-        help='Include similar race stats for the snail when notifying about a new race (will generate extra queries)',
+        help='Include similar race stats for the snail when notifying about a new race and for race over notifications (will generate extra queries)',
     )
     pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
     pm.add_argument('--race-price', type=int, help='Maximum price for race')
@@ -205,9 +208,7 @@ def build_parser():
     pm.add_argument(
         '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
     )
-    pm.add_argument(
-        '-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW'
-    )
+    pm.add_argument('-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW')
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
@@ -250,7 +251,10 @@ def main(argv=None):
     wallets = args.wallet
     if args.account is not None:
         if args.account >= len(args.wallet):
-            logger.error('you have %d wallets, --account must be less than that, because it is the 0-index of the wallet...', len(args.wallet))
+            logger.error(
+                'you have %d wallets, --account must be less than that, because it is the 0-index of the wallet...',
+                len(args.wallet),
+            )
             return 1
         wallets = [args.wallet[args.account]]
 

@@ -111,7 +111,7 @@ class Snail(AttrDict):
     def queueable_at(self):
         return _parse_datetime_micro(self['queueable_at'])
 
-    def incubation_fee(self, other_snail, pc=1.0):
+    def incubation_fee(self, other_snail: 'Snail', pc=1.0):
         # https://docs.snailtrail.art/reproduction/incubator/incubation_fee/#incubation-fee
         """
         >>> sf = Snail({'id': 8267, 'name': 'X', 'gender': {'id': 1}, 'genome': ['G', 'M', 'G', 'X', 'G', 'G', 'G', 'M', 'G', 'G', 'G', 'G', 'M', 'G', 'A', 'G', 'G', 'G', 'H', 'X'], 'breeding': {'breed_detail': {'breed_count_total': 1}}})

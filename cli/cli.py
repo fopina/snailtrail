@@ -4,9 +4,10 @@ import json
 import time
 from datetime import datetime, timedelta, timezone
 import logging
+from typing import Union
 from colorama import Fore
 
-from snail.gqltypes import Snail
+from snail.gqltypes import Race, Snail
 from .decorators import cached_property_with_ttl
 from snail import client, VERSION
 from . import tgbot
@@ -53,6 +54,89 @@ class SetQueue(dict):
         self.size -= 1
 
 
+class CachedSnailHistory:
+    def __init__(self, cli: 'CLI'):
+        self.cli = cli
+        self._cache = {}
+
+    def __race_stats(self, snail_id, race):
+        for p, i in enumerate(race.results):
+            if i['token_id'] == snail_id:
+                break
+        else:
+            logger.error('snail not found, NOT POSSIBLE')
+            return None, None, None
+        time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
+        time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
+        p += 1
+        return time_on_first, time_on_third, p
+
+    def get(self, snail_id: Union[int, Snail], price: Union[int, Race] = None, limit=None):
+        """
+        Return snail race history plus a stats summary
+        """
+        if isinstance(price, Race):
+            price = int(price.race_type)
+        if isinstance(snail_id, Snail):
+            snail_id = snail_id.id
+        # FIXME: make this prettier with a TTLed lru_cache
+        key = (snail_id, price, limit)
+        data, last_update = self._cache.get(key, (None, 0))
+        _now = time.time()
+        # re-fetch only once per 30min
+        # TODO: make configurable? update only once and use race notifications to keep it up to date?
+        if _now - last_update < 1800:
+            return data
+
+        stats = defaultdict(lambda: [0, 0, 0, 0])
+        races = []
+        total = 0
+        for race in (
+            race
+            for league in client.League
+            for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
+        ):
+            if price and int(race.race_type) > price:
+                continue
+            time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
+            if time_on_first is None:
+                continue
+            if p < 4:
+                stats[race.distance][p - 1] += 1
+            stats[race.distance][3] += 1
+            races.append((race, p, time_on_first, time_on_third))
+            total += 1
+            if limit and total >= limit:
+                break
+
+        data = (races, stats)
+        self._cache[key] = (data, _now)
+        return data
+
+    def update(self, snail_id: Union[int, Snail], race: Race, limit=None):
+        price = int(race.race_type)
+        if isinstance(snail_id, Snail):
+            snail_id = snail_id.id
+
+        key = (snail_id, price, limit)
+        data, last_update = self._cache.get(key, (None, 0))
+        _now = time.time()
+        if _now - last_update >= 1800:
+            # do not update anything as cache already expired
+            return False
+
+        time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
+        if time_on_first is None:
+            return False
+
+        races, stats = data
+        if p < 4:
+            stats[race.distance][p - 1] += 1
+        stats[race.distance][3] += 1
+        races.append((race, p, time_on_first, time_on_third))
+        return True
+
+
 class CLI:
     owner = None
 
@@ -76,6 +160,7 @@ class CLI:
         self._notify_coefficent = 99999
         self._next_mission = None
         self._snail_mission_cooldown = {}
+        self._snail_history = CachedSnailHistory(self)
 
     @staticmethod
     def _now():
@@ -101,53 +186,6 @@ class CLI:
             return
         data = {x.dest: getattr(self.args, x.dest) for x in self.notifier._settings_list}
         settings_file.write_text(json.dumps(data))
-
-    def cached_snail_history(self, snail_id, price=None, limit=None):
-        """
-        Return snail race history plus a stats summary
-        """
-        # FIXME: make this prettier with a TTLed lru_cache
-        if not hasattr(self, '_cached_snail_history'):
-            setattr(self, '_cached_snail_history', {})
-
-        key = (snail_id, price, limit)
-        data, last_update = self._cached_snail_history.get(key, (None, 0))
-        _now = time.time()
-        # re-fetch only once per 30min
-        # TODO: make configurable? update only once and use race notifications to keep it up to date?
-        if _now - last_update < 1800:
-            return data
-
-        stats = defaultdict(lambda: [0, 0, 0, 0])
-        races = []
-        total = 0
-        for race in (
-            race
-            for league in client.League
-            for race in self.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
-        ):
-            if price and int(race.race_type) > price:
-                continue
-            for p, i in enumerate(race.results):
-                if i['token_id'] == snail_id:
-                    break
-            else:
-                logger.error('snail not found, NOT POSSIBLE')
-                continue
-            time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
-            time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
-            p += 1
-            if p < 4:
-                stats[race.distance][p - 1] += 1
-            stats[race.distance][3] += 1
-            races.append((race, p, time_on_first, time_on_third))
-            total += 1
-            if limit and total >= limit:
-                break
-
-        data = (races, stats)
-        self._cached_snail_history[key] = (data, _now)
-        return data
 
     @cached_property_with_ttl(600)
     def my_snails(self):
@@ -536,16 +574,12 @@ AVAX: {self.client.web3.get_balance()}
             races.append(x)
         return snails, races
 
-    def find_races(self):
-        if self.args.race_stats:
-            _x = lambda snail, race: (
-                '`'
-                + '.'.join(map(str, self.cached_snail_history(snail.id, int(race.race_type))[1][race.distance]))
-                + '`'
-            )
-        else:
-            _x = lambda x, y: ''
+    def race_stats_text(self, snail, race):
+        if not self.args.race_stats:
+            return ''
+        return '`' + '.'.join(map(str, self._snail_history.get(snail, race)[1][race.distance])) + '`'
 
+    def find_races(self):
         for league in client.League:
             _, races = self.find_races_in_league(league)
             for race in races:
@@ -568,7 +602,7 @@ AVAX: {self.client.web3.get_balance()}
                     if not cands:
                         continue
                     candidate_list = ','.join(
-                        f"{cand[1].name_id}{(cand[0] * '⭐')}{_x(cand[1], race)}" for cand in cands
+                        f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[1], race)}" for cand in cands
                     )
                     msg = f"🏎️  Race {race} matched {candidate_list}"
                     if self.args.races_join:
@@ -620,6 +654,9 @@ AVAX: {self.client.web3.get_balance()}
                 e = '🥇🥈🥉'[p - 1]
 
             msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}"
+            if not race.is_mission and self.args.race_stats:
+                self._snail_history.update(snail, race)
+                msg += ' ' + self.race_stats_text(snail, race)
             logger.info(msg)
             self.notifier.notify(msg, silent=True)
 
@@ -691,7 +728,7 @@ AVAX: {self.client.web3.get_balance()}
     def _history_races(self, snail):
         total_cr = 0
         total = 0
-        races, stats = self.cached_snail_history(snail.id, self.args.price, self.args.limit)
+        races, stats = self._snail_history.get(snail, self.args.price, self.args.limit)
         for race_data in races:
             race, p, time_on_first, time_on_third = race_data
             fee = int(race.prize_pool) / 9
