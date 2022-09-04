@@ -10,6 +10,29 @@ class League(int, Enum):
 
 class ClientError(Exception):
     """Client raised error"""
+    def __str__(self) -> str:
+        return super().__str__()
+
+
+class RequiresTransactionClientError(ClientError):
+    """
+    Client raised error when action requires transaction
+
+    >>> e = RequiresTransactionClientError('requires_transaction')
+    >>> str(e)
+    'requires_transaction'
+    >>> e = RequiresTransactionClientError('requires_transaction', {'x': 1})
+    >>> str(e)
+    'requires_transaction (size: ?)'
+    >>> e = RequiresTransactionClientError('requires_transaction', {'payload': {'size': 2}})
+    >>> str(e)
+    'requires_transaction (size: 2)'
+    """
+    def __str__(self) -> str:
+        if len(self.args) > 1:
+            size = self.args[1].get('payload', {}).get('size', '?')
+            return f'{self.args[0]} (size: {size})'
+        return self.args[0]
 
 
 class Client:
@@ -127,7 +150,7 @@ class Client:
             if allow_last_spot:
                 return r, self.rejoin_mission_races(r)
             else:
-                raise ClientError('requires_transaction', r)
+                raise RequiresTransactionClientError('requires_transaction', r)
         else:
             raise ClientError('unknown status', r)
 

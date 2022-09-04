@@ -321,9 +321,7 @@ class CLI:
                         # if this succeeds, it was not a last spot - that should not happen...
                         r, rcpt = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=False)
                         logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
-                    except client.ClientError as e:
-                        if e.args[0] != 'requires_transaction':
-                            raise
+                    except client.RequiresTransactionClientError as e:
                         r = e.args[1]
                         if r['payload']['size'] == 0:
                             rcpt = self.client.rejoin_mission_races(r)
@@ -346,9 +344,7 @@ class CLI:
                         r, rcpt = self.client.join_mission_races(
                             snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
                         )
-                    except client.ClientError as e:
-                        if e.args[0] != 'requires_transaction':
-                            raise
+                    except client.RequiresTransactionClientError as e:
                         logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         if not self.args.fair:
                             raise
@@ -520,11 +516,10 @@ AVAX: {self.client.web3.get_balance()}
                     logger.info(c)
                 else:
                     logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
+            except client.RequiresTransactionClientError:
+                logger.error('only last spot available, use --last-spot')
             except client.ClientError as e:
-                if e.args[0] == 'requires_transaction':
-                    logger.error('only last spot available, use --last-spot')
-                else:
-                    logger.exception('unexpected joinMission error')
+                logger.exception('unexpected joinMission error')
         else:
             # list missions
             snails = list(self.client.iterate_my_snails_for_missions(self.owner))
