@@ -71,7 +71,24 @@ class CachedSnailHistory:
         p += 1
         return time_on_first, time_on_third, p
 
-    def get(self, snail_id: Union[int, Snail], price: Union[int, Race] = None, limit=None):
+    def get_all(self, snail_id: Union[int, Snail], limit=None):
+        if isinstance(snail_id, Snail):
+            snail_id = snail_id.id
+        # trigger any caching
+        self.get(snail_id, 50, limit=limit)
+        races = []
+        stats = defaultdict(lambda: [0, 0, 0, 0])
+        for k, v in self._cache.items():
+            if (k[0], k[2]) != (snail_id, limit):
+                continue
+            r, s = v[0]
+            races.extend(r)
+            for k1, v1 in s.items():
+                for i in range(4):
+                    stats[k1][i] += v1[i]
+        return races, stats
+
+    def get(self, snail_id: Union[int, Snail], price: Union[int, Race], limit=None):
         """
         Return snail race history plus a stats summary
         """
@@ -88,30 +105,39 @@ class CachedSnailHistory:
         if _now - last_update < 1800:
             return data
 
-        stats = defaultdict(lambda: [0, 0, 0, 0])
-        races = []
-        total = 0
+        races_per_price = {
+            50: [],
+            100: [],
+            200: [],
+            500: [],
+        }
+
         for race in (
             race
             for league in client.League
             for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
         ):
-            if price and int(race.race_type) > price:
-                continue
-            time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
-            if time_on_first is None:
-                continue
-            if p < 4:
-                stats[race.distance][p - 1] += 1
-            stats[race.distance][3] += 1
-            races.append((race, p, time_on_first, time_on_third))
-            total += 1
-            if limit and total >= limit:
-                break
+            races_per_price[int(race.race_type)].append(race)
 
-        data = (races, stats)
-        self._cache[key] = (data, _now)
-        return data
+        for race_type, history_races in races_per_price.items():
+            stats = defaultdict(lambda: [0, 0, 0, 0])
+            races = []
+            total = 0
+            for race in history_races:
+                time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
+                if time_on_first is None:
+                    continue
+                if p < 4:
+                    stats[race.distance][p - 1] += 1
+                stats[race.distance][3] += 1
+                races.append((race, p, time_on_first, time_on_third))
+                total += 1
+                if limit and total >= limit:
+                    break
+
+            data = (races, stats)
+            self._cache[(snail_id, race_type, limit)] = (data, _now)
+        return self._cache[key][0]
 
     def update(self, snail_id: Union[int, Snail], race: Race, limit=None):
         price = int(race.race_type)
@@ -587,7 +613,7 @@ AVAX: {self.client.web3.get_balance()}
     def race_stats_text(self, snail, race):
         if not self.args.race_stats:
             return ''
-        return '`' + '.'.join(map(str, self._snail_history.get(snail, race)[1][race.distance])) + '`'
+        return '`' + '.'.join(map(str, self._snail_history.get_all(snail)[1][race.distance])) + '`'
 
     def find_races(self):
         for league in client.League:

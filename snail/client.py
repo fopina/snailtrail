@@ -10,6 +10,7 @@ class League(int, Enum):
 
 class ClientError(Exception):
     """Client raised error"""
+
     def __str__(self) -> str:
         return super().__str__()
 
@@ -28,6 +29,7 @@ class RequiresTransactionClientError(ClientError):
     >>> str(e)
     'requires_transaction (size: 2)'
     """
+
     def __str__(self) -> str:
         if len(self.args) > 1:
             size = self.args[1].get('payload', {}).get('size', '?')
