@@ -7,7 +7,7 @@ import logging
 from typing import Union
 from colorama import Fore
 
-from snail.gqltypes import Race, Snail
+from snail.gqltypes import Race, Snail, Gender
 from .decorators import cached_property_with_ttl
 from snail import client, VERSION
 from . import tgbot
@@ -826,6 +826,10 @@ AVAX: {self.client.web3.get_balance()}
                 assert len(snails) == 2
                 print(snails[0].incubation_fee(snails[1], pc=pc))
                 return False
+            elif argc == 1:
+                snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
+                assert len(snails) == 1
+                main_snail = snails
 
             snail_fees = []
             snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
@@ -843,18 +847,32 @@ AVAX: {self.client.web3.get_balance()}
                     for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
                         male_snails[x.id].update(x)
 
+                if argc == 1:
+                    snails = main_snail
                 for s1 in snails:
                     for s2 in male_snails.values():
                         fee = s1.incubation_fee(s2, pc=pc)
                         snail_fees.append((fee + s2.gene_market_price, s1, s2))
             else:
-                for si1 in range(len(snails)):
-                    for si2 in range(si1 + 1, len(snails)):
-                        fee = snails[si1].incubation_fee(snails[si2], pc=pc)
-                        snail_fees.append((fee, snails[si1], snails[si2]))
+                if argc == 1:
+                    for si2 in snails:
+                        if main_snail == si2:
+                            continue
+                        fee = main_snail[0].incubation_fee(si2, pc=pc)
+                        snail_fees.append((fee, main_snail[0], si2))
+                else:
+                    for si1 in range(len(snails)):
+                        for si2 in range(si1 + 1, len(snails)):
+                            fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                            snail_fees.append((fee, snails[si1], snails[si2]))
 
+            colors = {
+                Gender.MALE: Fore.BLUE,
+                Gender.FEMALE: Fore.MAGENTA,
+                Gender.UNDEFINED: Fore.YELLOW,
+            }
             for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
-                print(f'{snail1.name} - {snail2.name} for {fee}')
+                print(f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail1.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee}{Fore.RESET}')
             return True
         else:
             print(self.client.web3.get_current_coefficent())

@@ -204,7 +204,14 @@ def build_parser():
     pm.add_argument('--stats', action='store_true', help='marketplace stats')
 
     pm = subparsers.add_parser('incubate')
-    pm.add_argument('-f', '--fee', type=int, nargs='*')
+    pm.add_argument(
+        '-f',
+        '--fee',
+        metavar='SNAIL_ID',
+        type=int,
+        nargs='*',
+        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
+    )
     pm.add_argument(
         '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
     )
