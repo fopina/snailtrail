@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 import itertools
 from typing import Any
 from enum import Enum
@@ -158,10 +158,8 @@ class Snail(AttrDict):
         >>> Snail.family_from_genome(['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'])
         ('G', 10)
         """
-        counter = defaultdict(lambda: 0)
-        for g in genome:
-            counter[g] += 1
-        s = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+        counter = Counter(genome)
+        s = counter.most_common()
         c = s[0]
         for s1 in s[1:]:
             if s1[1] != c[1]:
