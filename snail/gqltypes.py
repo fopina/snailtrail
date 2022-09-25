@@ -1,3 +1,5 @@
+from collections import defaultdict
+import itertools
 from typing import Any
 from enum import Enum
 from datetime import datetime, timezone
@@ -23,6 +25,7 @@ class AttrDict(dict):
     _DICT_METHODS = set(dir(dict))
 
     def __getattribute__(self, __name: str) -> Any:
+        # FIXME: accessing dict values using this is A LOT slower
         if __name in AttrDict._DICT_METHODS:
             return super().__getattribute__(__name)
         if __name in self.__class__.__dict__.keys():
@@ -124,6 +127,49 @@ class Snail(AttrDict):
             acc += self.GENE_FEES[self.genome[i]] + self.GENE_FEES[other_snail.genome[i]]
         acc = acc * (1 + (self.breed_count_total + other_snail.breed_count_total) / 10) * pc
         return acc
+
+    def incubation_simulation(self, other_snail: 'Snail'):
+        # https://docs.snailtrail.art/reproduction/incubator/incubation_fee/#incubation-fee
+        """
+        >>> sf = Snail({'id': 8267, 'name': 'X', 'gender': {'id': 1}, 'genome': ['G', 'M', 'G', 'X', 'G', 'G', 'G', 'M', 'G', 'G', 'G', 'G', 'M', 'G', 'A', 'G', 'G', 'G', 'H', 'X']})
+        >>> sm = Snail({'id': 2397, 'name': 'Y', 'gender': {'id': 2}, 'genome': ['M', 'H', 'M', 'M', 'A', 'M', 'G', 'M', 'H', 'M', 'M', 'M', 'M', 'M', 'X', 'A', 'M', 'H', 'H', 'X']})
+        >>> sf.incubation_simulation(sm)
+        ([(('M', 12), 10), (('G', 11), 66), (('M', 11), 406), (('M', 6), 420), (('G', 10), 1760), (('M', 10), 4410), (('G', 6), 6496), (('G', 9), 13860), (('M', 7), 15680), (('M', 9), 19260), (('M', 8), 35756), (('G', 7), 43120), (('G', 8), 43512)], 184756)
+        """
+        counter = defaultdict(lambda: 0)
+
+        total = 0
+        for pos in itertools.combinations(range(20), 10):
+            total += 1
+            genome = other_snail.genome.copy()
+            for i in pos:
+                genome[i] = self['genome'][i]
+            f = self.family_from_genome(genome)
+            counter[f] += 1
+        return sorted(counter.items(), key=lambda x: x[1]), total
+
+    @staticmethod
+    def family_from_genome(genome):
+        """
+        >>> Snail.family_from_genome(['G', 'M', 'G', 'X', 'G', 'G', 'G', 'M', 'G', 'G', 'G', 'G', 'M', 'G', 'A', 'G', 'G', 'G', 'H', 'X'])
+        ('G', 13)
+        >>> Snail.family_from_genome(['M', 'H', 'M', 'M', 'A', 'M', 'G', 'M', 'H', 'M', 'M', 'M', 'M', 'M', 'X', 'A', 'M', 'H', 'H', 'X'])
+        ('M', 11)
+        >>> Snail.family_from_genome(['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'])
+        ('G', 10)
+        """
+        counter = defaultdict(lambda: 0)
+        for g in genome:
+            counter[g] += 1
+        s = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+        c = s[0]
+        for s1 in s[1:]:
+            if s1[1] != c[1]:
+                break
+            # lesser fee, more dominant!
+            if Snail.GENE_FEES[s1[0]] < Snail.GENE_FEES[c[0]]:
+                c = s1
+        return c
 
     def __str__(self) -> str:
         """
