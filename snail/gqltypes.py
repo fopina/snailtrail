@@ -134,7 +134,7 @@ class Snail(AttrDict):
         >>> sf = Snail({'id': 8267, 'name': 'X', 'gender': {'id': 1}, 'genome': ['G', 'M', 'G', 'X', 'G', 'G', 'G', 'M', 'G', 'G', 'G', 'G', 'M', 'G', 'A', 'G', 'G', 'G', 'H', 'X']})
         >>> sm = Snail({'id': 2397, 'name': 'Y', 'gender': {'id': 2}, 'genome': ['M', 'H', 'M', 'M', 'A', 'M', 'G', 'M', 'H', 'M', 'M', 'M', 'M', 'M', 'X', 'A', 'M', 'H', 'H', 'X']})
         >>> sf.incubation_simulation(sm)
-        ([(('M', 12), 10), (('G', 11), 66), (('M', 11), 406), (('M', 6), 420), (('G', 10), 1760), (('M', 10), 4410), (('G', 6), 6496), (('G', 9), 13860), (('M', 7), 15680), (('M', 9), 19260), (('M', 8), 35756), (('G', 7), 43120), (('G', 8), 43512)], 184756)
+        ([('M', 75942), ('G', 108814)], [(('M', 12), 10), (('G', 11), 66), (('M', 11), 406), (('M', 6), 420), (('G', 10), 1760), (('M', 10), 4410), (('G', 6), 6496), (('G', 9), 13860), (('M', 7), 15680), (('M', 9), 19260), (('M', 8), 35756), (('G', 7), 43120), (('G', 8), 43512)], 184756)
         """
         counter = defaultdict(lambda: 0)
 
@@ -146,7 +146,11 @@ class Snail(AttrDict):
                 genome[i] = self['genome'][i]
             f = self.family_from_genome(genome)
             counter[f] += 1
-        return sorted(counter.items(), key=lambda x: x[1]), total
+        r = sorted(counter.items(), key=lambda x: x[1])
+        counter_family = defaultdict(lambda: 0)
+        for x in r:
+            counter_family[x[0][0]] += x[1]
+        return sorted(counter_family.items(), key=lambda x: x[1]), r, total
 
     @staticmethod
     def family_from_genome(genome):

@@ -213,8 +213,17 @@ def build_parser():
         help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
     )
     pm.add_argument(
+        '-s',
+        '--sim',
+        metavar='SNAIL_ID',
+        type=int,
+        nargs='*',
+        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
+    )
+    pm.add_argument(
         '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
     )
+    pm.add_argument('-G', '--gene-family', type=int, help='filter gene market by this family (5 is Atlantis)')
     pm.add_argument('-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW')
 
     pm = subparsers.add_parser('rename')

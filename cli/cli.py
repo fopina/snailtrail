@@ -819,64 +819,154 @@ AVAX: {self.client.web3.get_balance()}
 
     def cmd_incubate(self):
         if self.args.fee is not None:
-            pc = self.client.web3.get_current_coefficent()
-            argc = len(self.args.fee)
-            if argc == 2:
-                snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
-                assert len(snails) == 2
-                print(snails[0].incubation_fee(snails[1], pc=pc))
-                return False
-            elif argc == 1:
-                snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
-                assert len(snails) == 1
-                main_snail = snails
+            return self.cmd_incubate_fee()
+        if self.args.sim is not None:
+            return self.cmd_incubate_sim()
+        print(self.client.web3.get_current_coefficent())
+        return False
 
-            snail_fees = []
-            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
-            if self.args.breeders:
-                snails = [x for x in snails if x.breed_status < 0]
-
-            if self.args.genes:
-                male_snails = {}
-                for snail in self.client.iterate_all_genes_marketplace():
-                    male_snails[snail.id] = snail
-                    if len(male_snails) == self.args.genes:
-                        break
-                keys = list(male_snails.keys())
-                for i in range(0, len(keys), 20):
-                    for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
-                        male_snails[x.id].update(x)
-
-                if argc == 1:
-                    snails = main_snail
-                for s1 in snails:
-                    for s2 in male_snails.values():
-                        fee = s1.incubation_fee(s2, pc=pc)
-                        snail_fees.append((fee + s2.gene_market_price, s1, s2))
-            else:
-                if argc == 1:
-                    for si2 in snails:
-                        if main_snail == si2:
-                            continue
-                        fee = main_snail[0].incubation_fee(si2, pc=pc)
-                        snail_fees.append((fee, main_snail[0], si2))
-                else:
-                    for si1 in range(len(snails)):
-                        for si2 in range(si1 + 1, len(snails)):
-                            fee = snails[si1].incubation_fee(snails[si2], pc=pc)
-                            snail_fees.append((fee, snails[si1], snails[si2]))
-
-            colors = {
-                Gender.MALE: Fore.BLUE,
-                Gender.FEMALE: Fore.MAGENTA,
-                Gender.UNDEFINED: Fore.YELLOW,
-            }
-            for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
-                print(f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail1.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee}{Fore.RESET}')
-            return True
-        else:
-            print(self.client.web3.get_current_coefficent())
+    def cmd_incubate_fee(self):
+        pc = self.client.web3.get_current_coefficent()
+        argc = len(self.args.fee)
+        if argc == 2:
+            snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
+            assert len(snails) == 2
+            print(snails[0].incubation_fee(snails[1], pc=pc))
             return False
+        elif argc == 1:
+            snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
+            assert len(snails) == 1
+            main_snail = snails
+
+        snail_fees = []
+        snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+        if self.args.breeders:
+            snails = [x for x in snails if x.breed_status < 0]
+
+        if self.args.genes:
+            male_snails = {}
+            for snail in self.client.iterate_all_genes_marketplace():
+                male_snails[snail.id] = snail
+                if len(male_snails) == self.args.genes:
+                    break
+            keys = list(male_snails.keys())
+            for i in range(0, len(keys), 20):
+                for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
+                    male_snails[x.id].update(x)
+
+            if argc == 1:
+                snails = main_snail
+            for s1 in snails:
+                for s2 in male_snails.values():
+                    fee = s1.incubation_fee(s2, pc=pc)
+                    snail_fees.append((fee + s2.gene_market_price, s1, s2))
+        else:
+            if argc == 1:
+                for si2 in snails:
+                    if main_snail == si2:
+                        continue
+                    fee = main_snail[0].incubation_fee(si2, pc=pc)
+                    snail_fees.append((fee, main_snail[0], si2))
+            else:
+                for si1 in range(len(snails)):
+                    for si2 in range(si1 + 1, len(snails)):
+                        fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                        snail_fees.append((fee, snails[si1], snails[si2]))
+
+        colors = {
+            Gender.MALE: Fore.BLUE,
+            Gender.FEMALE: Fore.MAGENTA,
+            Gender.UNDEFINED: Fore.YELLOW,
+        }
+        for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
+            print(
+                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee}{Fore.RESET}'
+            )
+        return True
+
+    def cmd_incubate_sim_report(self, results):
+        families, purities, total = results
+        return ' --- '.join(
+            [
+                ' / '.join(
+                    f'{Fore.GREEN}{f[0]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}' for f in families[::-1]
+                ),
+                ' / '.join(
+                    f'{Fore.GREEN}{f[0][0]}{f[0][1]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}'
+                    for f in purities[-1:-5:-1]
+                ),
+            ]
+        )
+
+    def cmd_incubate_sim(self):
+        pc = self.client.web3.get_current_coefficent()
+        argc = len(self.args.sim)
+        if argc == 2:
+            snails = list(self.client.iterate_all_snails(filters={'id': self.args.sim}))
+            assert len(snails) == 2
+            print(self.cmd_incubate_sim_report(snails[0].incubation_simulation(snails[1])))
+            return False
+        elif argc == 1:
+            snails = list(self.client.iterate_all_snails(filters={'id': self.args.sim}))
+            assert len(snails) == 1
+            main_snail = snails
+
+        ret = True
+        snail_fees = []
+        snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+        if self.args.breeders:
+            snails = [x for x in snails if x.breed_status < 0]
+
+        if self.args.genes:
+            male_snails = {}
+            filters = {}
+            if self.args.gene_family:
+                filters = {'family': self.args.gene_family}
+            for snail in self.client.iterate_all_genes_marketplace(filters=filters):
+                male_snails[snail.id] = snail
+                if len(male_snails) == self.args.genes:
+                    break
+            keys = list(male_snails.keys())
+            for i in range(0, len(keys), 20):
+                for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
+                    male_snails[x.id].update(x)
+
+            if argc == 1:
+                snails = main_snail
+                ret = False
+            for s1 in snails:
+                for s2 in male_snails.values():
+                    sim = s1.incubation_simulation(s2)
+                    fee = s1.incubation_fee(s2, pc=pc)
+                    snail_fees.append((sim, s1, s2, fee + s2.gene_market_price))
+        else:
+            if argc == 1:
+                for si2 in snails:
+                    if main_snail[0].id == si2.id:
+                        continue
+                    sim = main_snail[0].incubation_simulation(si2)
+                    fee = main_snail[0].incubation_fee(si2, pc=pc)
+                    snail_fees.append((sim, main_snail[0], si2, fee))
+            else:
+                for si1 in range(len(snails)):
+                    for si2 in range(si1 + 1, len(snails)):
+                        sim = snails[si1].incubation_simulation(snails[si2])
+                        fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                        snail_fees.append((sim, snails[si1], snails[si2], fee))
+
+        colors = {
+            Gender.MALE: Fore.BLUE,
+            Gender.FEMALE: Fore.MAGENTA,
+            Gender.UNDEFINED: Fore.YELLOW,
+        }
+        # use GENE_FEES to "weight" family (but reversed)
+        for sim, snail1, snail2, fee in sorted(
+            snail_fees, key=lambda x: (1 / Snail.GENE_FEES[x[0][0][0][0]], x[0][0][0][1])
+        ):
+            print(
+                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee:0.2f}{Fore.RESET}: {self.cmd_incubate_sim_report(sim)}'
+            )
+        return ret
 
     def run(self):
         if self.args.cmd:
