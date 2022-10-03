@@ -1,4 +1,5 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
+from xmlrpc.client import Boolean
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -66,6 +67,18 @@ class Notifier:
     @property
     def any_cli(self) -> CLI:
         return list(self.clis.values())[0]
+
+    @property
+    def multi_cli(self) -> Boolean:
+        return len(self.clis) > 1
+
+    def tag_with_wallet(self, cli: CLI, output: Optional[list] = None):
+        if not self.multi_cli:
+            return ''
+        m = f'`{cli.masked_wallet}`'
+        if output is not None:
+            output.append(m)
+        return m
 
     def _slow_query(self, query):
         return query.edit_message_reply_markup(
@@ -182,8 +195,11 @@ class Notifier:
         Current balance (snail count, avax, slime)
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        msg = '\n'.join(c._balance() for c in self.clis.values())
-        update.message.reply_text(msg)
+        msg = []
+        for c in self.clis.values():
+            self.tag_with_wallet(c, msg)
+            msg.append(c._balance())
+        update.message.reply_markdown('\n'.join(msg))
 
     @bot_auth
     def cmd_nextmission(self, update: Update, context: CallbackContext) -> None:
@@ -192,6 +208,7 @@ class Notifier:
         """
         msgs = []
         for c in self.clis.values():
+            self.tag_with_wallet(c, msgs)
             if c._next_mission is None:
                 msgs.append('next mission is *unknown*')
             else:

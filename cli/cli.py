@@ -1,3 +1,4 @@
+import argparse
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
@@ -5,7 +6,8 @@ import json
 import time
 from datetime import datetime, timedelta, timezone
 import logging
-from typing import Union
+from typing import Optional, Union
+from xmlrpc.client import Boolean
 from colorama import Fore
 
 from snail.gqltypes import Race, Snail, Gender
@@ -130,7 +132,14 @@ class CachedSnailHistory:
 class CLI:
     owner = None
 
-    def __init__(self, wallet: Wallet, proxy_url: str, args, main_one=False):
+    def __init__(self, wallet: Wallet, proxy_url: str, args: argparse.Namespace, main_one: Optional[Boolean] = None):
+        """
+        :param wallet: Wallet of the owner, containing address and (optionally) private key
+        :param proxy_url: URL of the proxy (mitmproxy or BURP) to use for GraphQL API calls
+        :param args: original argparse Namespace
+        :param main_one: flag to represent whether this is the only CLI instance (`None`) or if it is the `main` one (if there are more instances).
+                         `main` one is the one used for actions that report the same information on any account (such as incubation coefficient)
+        """
         self.args = args
         self.owner = wallet.address
         self.main_one = main_one
@@ -163,6 +172,10 @@ class CLI:
         if len(self.owner) < 20:
             return self.owner
         return f'{self.owner[:6]}...{self.owner[-4:]}'
+
+    @property
+    def report_as_main(self):
+        return self.main_one is not False
 
     def load_bot_settings(self):
         settings_file = getattr(self.args, 'settings', None)
@@ -462,10 +475,10 @@ AVAX: {self.client.web3.get_balance()}
                 if self.args.races_over or self.args.missions_over:
                     self.find_races_over()
 
-                if self.args.market and self.main_one:
+                if self.args.market and self.report_as_main:
                     self._bot_marketplace()
 
-                if self.args.coefficent and self.main_one:
+                if self.args.coefficent and self.report_as_main:
                     self._bot_coefficent()
 
             logger.debug('waiting %d seconds', w)
@@ -941,5 +954,8 @@ AVAX: {self.client.web3.get_balance()}
         return ret
 
     def run(self):
-        if self.args.cmd:
-            return getattr(self, f'cmd_{self.args.cmd}')()
+        if not self.args.cmd:
+            return
+        if self.main_one is not None:
+            print(f'{Fore.CYAN}== {self.masked_wallet}{Fore.RESET} ==')
+        return getattr(self, f'cmd_{self.args.cmd}')()

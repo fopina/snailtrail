@@ -30,7 +30,9 @@ class Test(TestCase):
 class TestBot(TestCase):
     def setUp(self) -> None:
         args = cli.build_parser().parse_args(['bot'], config_file_contents='')
-        c = cli.cli.CLI(cli.cli.Wallet('0x76e83242f32721952eba2df6c72aa27b63bd44ff', 'pkey1'), 'http://localhost:99999', args, True)
+        c = cli.cli.CLI(
+            cli.cli.Wallet('0x76e83242f32721952eba2df6c72aa27b63bd44ff', 'pkey1'), 'http://localhost:99999', args, True
+        )
         c.client.gql = mock.MagicMock()
         c.client.web3 = mock.MagicMock()
         self.cli = c

@@ -274,7 +274,7 @@ def main(argv=None):
             return 1
         wallets = [args.wallet[args.account]]
 
-    first_one = True
+    first_one = True if len(wallets) > 1 else None
     for w in wallets:
         c = cli.CLI(w, proxy_url, args, main_one=first_one)
         first_one = False
