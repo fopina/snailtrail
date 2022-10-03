@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cached_property
 import json
 import time
 from datetime import datetime, timedelta, timezone
@@ -154,6 +155,14 @@ class CLI:
     @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
+
+    @cached_property
+    def masked_wallet(self):
+        if self.owner[:2] != '0x':
+            return self.owner
+        if len(self.owner) < 20:
+            return self.owner
+        return f'{self.owner[:6]}...{self.owner[-4:]}'
 
     def load_bot_settings(self):
         settings_file = getattr(self.args, 'settings', None)

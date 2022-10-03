@@ -6,27 +6,6 @@ from . import data
 
 
 class Test(TestCase):
-    def test_set_queue(self):
-        q = cli.cli.SetQueue(capacity=5)
-        # add works (and it is ordered)
-        self.assertEqual(list(q), [])
-        q.add(2)
-        q.add(5)
-        q.add(1)
-        self.assertEqual(list(q), [2, 5, 1])
-        # remove works
-        q.remove(5)
-        self.assertEqual(list(q), [2, 1])
-        # add repeated moves it to last
-        q.add(2)
-        self.assertEqual(list(q), [1, 2])
-        # add above capacity, truncates it
-        q.add(5)
-        q.add(6)
-        q.add(7)
-        q.add(8)
-        self.assertEqual(list(q), [2, 5, 6, 7, 8])
-
     def test_bot_settings(self):
         with tempfile.NamedTemporaryFile() as f:
             args = cli.build_parser().parse_args(
@@ -51,10 +30,13 @@ class Test(TestCase):
 class TestBot(TestCase):
     def setUp(self) -> None:
         args = cli.build_parser().parse_args(['bot'], config_file_contents='')
-        c = cli.cli.CLI(cli.cli.Wallet('wallet1', 'pkey1'), 'http://localhost:99999', args, True)
+        c = cli.cli.CLI(cli.cli.Wallet('0x76e83242f32721952eba2df6c72aa27b63bd44ff', 'pkey1'), 'http://localhost:99999', args, True)
         c.client.gql = mock.MagicMock()
         c.client.web3 = mock.MagicMock()
         self.cli = c
+
+    def test_masked_owner(self):
+        self.assertEqual(self.cli.masked_wallet, '0x76e8...44ff')
 
     def test_join_missing(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
