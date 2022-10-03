@@ -10,48 +10,11 @@ from colorama import Fore
 from snail.gqltypes import Race, Snail, Gender
 from .decorators import cached_property_with_ttl
 from snail import client, VERSION
+from .types import RaceJoin, Wallet
+from .helpers import SetQueue
 from . import tgbot
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class RaceJoin:
-    snail_id: int
-    race_id: int
-
-
-@dataclass
-class Wallet:
-    address: str
-    private_key: str
-
-
-class SetQueue(dict):
-    def __init__(self, capacity=10):
-        super().__init__()
-        self.capacity = capacity
-        self.size = 0
-
-    def add(self, item):
-        # delete first to make sure it ends in last
-        try:
-            self.remove(item)
-        except KeyError:
-            pass
-        self[item] = None
-        self.size += 1
-        self.truncate()
-
-    def truncate(self, capacity=None):
-        capacity = capacity or self.capacity
-        while self.size > capacity:
-            _f = next(iter(self.keys()))
-            self.remove(_f)
-
-    def remove(self, item):
-        del self[item]
-        self.size -= 1
 
 
 class CachedSnailHistory:
