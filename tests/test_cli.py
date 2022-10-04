@@ -38,7 +38,7 @@ class TestBot(TestCase):
         self.cli = c
 
     def test_masked_owner(self):
-        self.assertEqual(self.cli.masked_wallet, '0x76e8...44ff')
+        self.assertEqual(self.cli.masked_wallet, '0x76e...4ff')
 
     def test_join_missing(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS

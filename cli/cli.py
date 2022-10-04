@@ -171,7 +171,7 @@ class CLI:
             return self.owner
         if len(self.owner) < 20:
             return self.owner
-        return f'{self.owner[:6]}...{self.owner[-4:]}'
+        return f'{self.owner[:5]}...{self.owner[-3:]}'
 
     @property
     def report_as_main(self):
@@ -417,6 +417,30 @@ AVAX: {self.client.web3.get_balance()}
         '''
 
     def cmd_balance(self):
+        if self.args.claim:
+            try:
+                r = self.client.web3.claim_rewards()
+                if r.get('status') == 1:
+                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    print(f'claimed {bal}')
+                else:
+                    print('ERROR:', r)
+            except client.web3client.exceptions.ContractLogicError as e:
+                print(e)
+            return
+        if self.args.send is not None:
+            target = self.args.wallet[self.args.send].address
+            if target == self.owner:
+                return
+            bal = self.client.web3.balance_of_slime(raw=True)
+            if not bal:
+                print('Nothing to send')
+                return
+            print(f'Sending {bal / 1000000000000000000} to {target}')
+            r = self.client.web3.transfer_slime(target, bal)
+            sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+            print(f'{sent} SLIME sent')
+            return
         print(self._balance())
 
     def _bot_marketplace(self):

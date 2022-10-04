@@ -230,7 +230,9 @@ def build_parser():
     pm.add_argument('snail', type=int, help='snail')
     pm.add_argument('name', help='new name')
 
-    subparsers.add_parser('balance')
+    pm = subparsers.add_parser('balance')
+    pm.add_argument('-c', '--claim', action='store_true', help='Claim rewards')
+    pm.add_argument('-s', '--send', type=int, metavar='account', help='Transfer slime to this account')
 
     pm = subparsers.add_parser('races')
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')

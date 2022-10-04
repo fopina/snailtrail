@@ -121,11 +121,25 @@ class Client:
             **kwargs,
         )
 
+    def claim_rewards(
+        self,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs
+    ):
+        return self._bss(
+            self.race_contract.functions.claimRewards(),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
     def claimable_rewards(self):
         return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
 
-    def balance_of_slime(self):
-        return self.slime_contract.functions.balanceOf(self.wallet).call({'from': self.wallet}) / 1000000000000000000
+    def balance_of_slime(self, raw=False):
+        x = self.slime_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
+        if raw:
+            return x
+        return x / 1000000000000000000
 
     def balance_of_snails(self):
         return self.snailnft_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
@@ -152,3 +166,16 @@ class Client:
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
         return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+
+    def transfer_slime(
+        self,
+        to: str,
+        amount: int,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs
+    ):
+        return self._bss(
+            self.slime_contract.functions.transfer(to, amount),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
