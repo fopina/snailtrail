@@ -10,6 +10,8 @@ pub:
 	docker buildx build \
 	              --platform linux/amd64,linux/arm64 \
 				  --build-arg VERSION=$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  --cache-from type=registry,ref=fopina/random:snailtrail-build-cache \
+				  --cache-to type=registry,ref=fopina/random:snailtrail-build-cache,mode=max \
 				  -t fopina/random:snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ') \
 				  -t fopina/random:snailtrail \
 				  --push .

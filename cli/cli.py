@@ -341,9 +341,6 @@ class CLI:
                             except:
                                 # ignore any errors estimating
                                 estimated_gas = '-'
-                            logger.info(
-                                f'TEMPDEBUG: (NOTCHEAP) {snail.id} {race.id} {estimated_gas} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
-                            )
                             # TODO: add snail to cooldown, is 150 too much? check future logs
                             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=150)
                             # also remove from queueable (due to "continue")
@@ -372,9 +369,6 @@ class CLI:
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     logger.info(f'{msg} LAST SPOT - {r["message"]}')
-                    logger.info(
-                        f'TEMPDEBUG: {rcpt.transactionHash.hex()} {snail.id} {race.id} {rcpt.gasUsed} {r["payload"]["size"]} {r["payload"]["completed_races"]}'
-                    )
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
