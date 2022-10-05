@@ -121,11 +121,7 @@ class Client:
             **kwargs,
         )
 
-    def claim_rewards(
-        self,
-        wait_for_transaction_receipt: Union[bool, float] = None,
-        **kwargs
-    ):
+    def claim_rewards(self, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
         return self._bss(
             self.race_contract.functions.claimRewards(),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
@@ -167,13 +163,7 @@ class Client:
         message = encode_defunct(sign_payload)
         return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
 
-    def transfer_slime(
-        self,
-        to: str,
-        amount: int,
-        wait_for_transaction_receipt: Union[bool, float] = None,
-        **kwargs
-    ):
+    def transfer_slime(self, to: str, amount: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
         return self._bss(
             self.slime_contract.functions.transfer(to, amount),
             wait_for_transaction_receipt=wait_for_transaction_receipt,

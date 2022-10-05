@@ -29,6 +29,7 @@ class Test(TestCase):
             '''/stats - My snails stats
 /nextmission - Show time to next daily mission
 /balance - Current balance (snail count, avax, slime)
+/claim - Claim rewards
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
 /reloadsnails - Reset snails cache

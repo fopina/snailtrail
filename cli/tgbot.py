@@ -1,11 +1,11 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from xmlrpc.client import Boolean
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 import logging
 
-from .cli import CLI
+from .cli import CLI, client
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ def bot_auth(func):
 
 
 class Notifier:
+    clis: Dict[str, CLI]
+
     def __init__(self, token, chat_id, settings_list=None):
         self.__token = token
         self.chat_id = chat_id
@@ -56,6 +58,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
+            dispatcher.add_handler(CommandHandler("claim", self.cmd_claim))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
@@ -99,6 +102,8 @@ class Notifier:
             return self.handle_buttons_toggle(opts, update, context)
         elif cmd == 'joinrace':
             return self.handle_buttons_joinrace(opts, update, context)
+        elif cmd == 'claim':
+            return self.handle_buttons_claim(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
 
     def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
@@ -140,6 +145,32 @@ class Notifier:
         except Exception as e:
             logger.exception('unexpected joinRace error')
             query.edit_message_text(query.message.text + f'\n❌ Race FAILED to join: {e}')
+
+    def handle_buttons_claim(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process claim buttons"""
+        query = update.callback_query
+        extra_text = []
+
+        def _claim(cli):
+            try:
+                r = cli.client.web3.claim_rewards()
+                if r.get('status') == 1:
+                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    extra_text.append(f'claimed {bal} from {cli.masked_wallet}')
+                else:
+                    extra_text.append(f'claim failed for {cli.masked_wallet}')
+                    logger.error('error claiming: %s', r)
+            except client.web3client.exceptions.ContractLogicError as e:
+                extra_text.append(f'claim failed for {cli.masked_wallet}: {e}')
+                logger.exception('error claiming')
+            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+
+        if not opts:
+            # claim every account
+            for c in self.clis.values():
+                _claim(c)
+        else:
+            _claim(self.clis[opts[0]])
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -200,6 +231,38 @@ class Notifier:
             self.tag_with_wallet(c, msg)
             msg.append(c._balance())
         update.message.reply_markdown('\n'.join(msg))
+
+    @bot_auth
+    def cmd_claim(self, update: Update, context: CallbackContext) -> None:
+        """
+        Claim rewards
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        msg = []
+        for c in self.clis.values():
+            msg.append((c.owner, c.masked_wallet, c.client.web3.claimable_rewards()))
+        keyboard = []
+        for i in range(0, len(msg), 2):
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f'💰 {data[1]}: {data[2]}',
+                        callback_data=f'claim {data[0]}',
+                    )
+                    for data in msg[i : i + 2]
+                ]
+            )
+        keyboard.append(
+            [
+                InlineKeyboardButton(f'All', callback_data='claim'),
+            ]
+        )
+        keyboard.append(
+            [
+                InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
+            ]
+        )
+        update.message.reply_markdown('Choose an option', reply_markup=InlineKeyboardMarkup(keyboard))
 
     @bot_auth
     def cmd_nextmission(self, update: Update, context: CallbackContext) -> None:
