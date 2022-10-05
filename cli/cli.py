@@ -258,7 +258,7 @@ class CLI:
             passed = self._now() - self._notify_mission_data['start']
 
         # 3.5h = 12600 seconds, create new mission message after that
-        if not self._notify_mission_data or passed.total_seconds() > 12600:
+        if not self._notify_mission_data or len(self._notify_mission_data['text']) > 2048 or passed.total_seconds() > 12600:
             msg = self.notifier.notify(message, silent=True)
             self._notify_mission_data = {'msg': msg, 'text': message, 'start': self._now()}
             return
