@@ -208,7 +208,7 @@ class Notifier:
 
         update.message.reply_markdown_v2(
             '\n'.join(
-                '🐌  %s %s 🍆  *%s* 🏁 %s 🎫 %s'
+                '🐌  %s\n%s\n🍆  *%s* 🏁 %s 🎫 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
                     escmv2(f"lv {snail.level} - {snail.family} {snail.gender.emoji()} {snail.klass} {snail.purity}"),
