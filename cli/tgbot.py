@@ -59,6 +59,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
             dispatcher.add_handler(CommandHandler("claim", self.cmd_claim))
+            dispatcher.add_handler(CommandHandler("swapsend", self.cmd_swapsend))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
@@ -104,6 +105,8 @@ class Notifier:
             return self.handle_buttons_joinrace(opts, update, context)
         elif cmd == 'claim':
             return self.handle_buttons_claim(opts, update, context)
+        elif cmd == 'swapsend':
+            return self.handle_buttons_swapsend(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
 
     def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
@@ -172,6 +175,32 @@ class Notifier:
         else:
             _claim(self.clis[opts[0]])
 
+    def handle_buttons_swapsend(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process swapsend buttons"""
+        query = update.callback_query
+        if not opts:
+            query.edit_message_reply_markup()
+            return
+        cli = self.clis.get(opts[0])
+        if cli is None:
+            query.edit_message_reply_markup()
+            return
+
+        extra_text = []
+        for c in self.clis.values():
+            if cli.owner == c.owner:
+                continue
+            bal = c.client.web3.balance_of_slime(raw=True)
+            if not bal:
+                extra_text.append(f'{c.masked_wallet}: Nothing to send')
+            else:
+                extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
+                query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+                r = c.client.web3.transfer_slime(cli.owner, bal)
+                sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+                extra_text.append(f'{c.masked_wallet}: sent {sent} SLIME')
+            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
         """
@@ -238,31 +267,38 @@ class Notifier:
         Claim rewards
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        msg = []
-        for c in self.clis.values():
-            msg.append((c.owner, c.masked_wallet, c.client.web3.claimable_rewards()))
         keyboard = []
-        for i in range(0, len(msg), 2):
+        for c in self.clis.values():
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {data[1]}: {data[2]}',
-                        callback_data=f'claim {data[0]}',
+                        f'💰 {c.masked_wallet}: {c.client.web3.claimable_rewards()}',
+                        callback_data=f'claim {c.owner}',
                     )
-                    for data in msg[i : i + 2]
                 ]
             )
-        keyboard.append(
-            [
-                InlineKeyboardButton(f'All', callback_data='claim'),
-            ]
-        )
-        keyboard.append(
-            [
-                InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
-            ]
-        )
+        keyboard.append([InlineKeyboardButton(f'All', callback_data='claim')])
+        keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
         update.message.reply_markdown('Choose an option', reply_markup=InlineKeyboardMarkup(keyboard))
+
+    @bot_auth
+    def cmd_swapsend(self, update: Update, context: CallbackContext) -> None:
+        """
+        Send all slime to one account (for single swaps)
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        keyboard = []
+        for c in self.clis.values():
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f'💰 {c.masked_wallet}: {c.client.web3.balance_of_slime():0.2f} / {c.client.web3.get_balance():0.2f}',
+                        callback_data=f'swapsend {c.owner}',
+                    )
+                ]
+            )
+        keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
+        update.message.reply_markdown('Choose a wallet', reply_markup=InlineKeyboardMarkup(keyboard))
 
     @bot_auth
     def cmd_nextmission(self, update: Update, context: CallbackContext) -> None:

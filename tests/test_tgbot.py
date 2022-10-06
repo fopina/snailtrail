@@ -7,7 +7,11 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 class Test(TestCase):
     def setUp(self) -> None:
         self.user = User(999999999, 'John', False, 'Valium', 'jval')
-        self.cli = mock.MagicMock(args=mock.MagicMock(wtv=False))
+        self.cli = mock.MagicMock(
+            args=mock.MagicMock(wtv=False),
+            masked_wallet='0x2f',
+            owner='0x2fff',
+        )
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
         self.bot._settings_list = [mock.MagicMock(dest='wtv', help='Whatever')]
         self.bot.register_cli(self.cli)
@@ -30,6 +34,7 @@ class Test(TestCase):
 /nextmission - Show time to next daily mission
 /balance - Current balance (snail count, avax, slime)
 /claim - Claim rewards
+/swapsend - Send all slime to one account (for single swaps)
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
 /reloadsnails - Reset snails cache
@@ -67,4 +72,70 @@ class Test(TestCase):
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
             text='`wtv` Whatever', parse_mode='Markdown'
+        )
+
+    def test_swapsend(self):
+        self.cli.client.web3.balance_of_slime = lambda: 1
+        self.cli.client.web3.get_balance = lambda: 2
+        cli2 = mock.MagicMock(
+            masked_wallet='0x3f',
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        cli2.client.web3.balance_of_slime = lambda: 3
+        cli2.client.web3.get_balance = lambda: 4
+        self.bot.register_cli(cli2)
+
+        self.bot.cmd_swapsend(self.update, self.context)
+        expected_markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton('💰 0x2f: 1.00 / 2.00', callback_data=f'swapsend 0x2fff')],
+                [InlineKeyboardButton('💰 0x3f: 3.00 / 4.00', callback_data=f'swapsend 0x3fff')],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+        )
+        self.update.message.reply_markdown.assert_called_once()
+        self.assertEqual(self.update.message.reply_markdown.call_args_list[0][0], ('Choose a wallet',))
+        self.assertEqual(
+            str(self.update.message.reply_markdown.call_args_list[0][1]['reply_markup']),
+            str(expected_markup),
+        )
+
+    def test_handle_buttons_swapsend(self):
+        self.cli.client.web3.balance_of_slime = lambda raw=True: 1
+        self.cli.client.web3.get_balance = lambda: 2
+        self.cli.client.web3.transfer_slime = lambda a, b: {'logs': [{'data': '0x1'}]}
+        cli2 = mock.MagicMock(
+            masked_wallet='0x3f',
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        cli2.client.web3.balance_of_slime = lambda raw=True: 3
+        cli2.client.web3.get_balance = lambda: 4
+        cli2.client.web3.transfer_slime = lambda a, b: {'logs': [{'data': '0x3'}]}
+        self.bot.register_cli(cli2)
+
+        self.update.callback_query = mock.MagicMock(data='swapsend')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_called_once_with()
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='swapsend 0x1')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_called_once_with()
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='swapsend 0x2fff')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_not_called()
+        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], '\n0x3f: sending 3e-18')
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
+            '\n0x3f: sending 3e-18\n0x3f: sent 3e-18 SLIME',
         )

@@ -257,8 +257,13 @@ class CLI:
         if self._notify_mission_data:
             passed = self._now() - self._notify_mission_data['start']
 
-        # 3.5h = 12600 seconds, create new mission message after that
-        if not self._notify_mission_data or len(self._notify_mission_data['text']) > 2048 or passed.total_seconds() > 12600:
+        # 3.5h = 12600 seconds, create new (reset) mission message after that
+        # or if existing message is near telegram message size limit (4096)
+        if (
+            not self._notify_mission_data
+            or len(self._notify_mission_data['text'].encode()) > 4000
+            or passed.total_seconds() > 12600
+        ):
             msg = self.notifier.notify(message, silent=True)
             self._notify_mission_data = {'msg': msg, 'text': message, 'start': self._now()}
             return
@@ -420,8 +425,7 @@ AVAX: {self.client.web3.get_balance()}
                     print('ERROR:', r)
             except client.web3client.exceptions.ContractLogicError as e:
                 print(e)
-            return
-        if self.args.send is not None:
+        elif self.args.send is not None:
             target = self.args.wallet[self.args.send].address
             if target == self.owner:
                 return
@@ -433,8 +437,8 @@ AVAX: {self.client.web3.get_balance()}
             r = self.client.web3.transfer_slime(target, bal)
             sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
             print(f'{sent} SLIME sent')
-            return
-        print(self._balance())
+        else:
+            print(self._balance())
 
     def _bot_marketplace(self):
         d = self.client.marketplace_stats()
