@@ -128,6 +128,7 @@ class Client:
         )
 
     def rejoin_mission_races(self, gql_payload, **kwargs):
+        print(gql_payload['payload']['completed_races'])
         return self.web3.join_daily_mission(
             (
                 gql_payload['payload']['race_id'],
@@ -135,7 +136,10 @@ class Client:
                 gql_payload['payload']['address'],
             ),
             gql_payload['payload']['size'],
-            [(x['race_id'], x['owners']) for x in gql_payload['payload']['completed_races']],
+            [
+                (x['race_id'], x['race_type'], x['owners'], x['results'])
+                for x in gql_payload['payload']['completed_races']
+            ],
             gql_payload['payload']['timeout'],
             gql_payload['payload']['salt'],
             gql_payload['signature'],

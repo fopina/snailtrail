@@ -532,7 +532,10 @@ class Client(requests.Session):
                         salt
                         completed_races {
                             race_id
+                            race_type
                             owners
+                            rewards_wei
+                            results
                             __typename
                         }
                         __typename

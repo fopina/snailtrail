@@ -37,10 +37,27 @@ input SnailFilters {
   parent_male: Int
   parent_female: Int
   visuals: VisualFilters
+  stats: StatFilters
   stat_season: Int
   owner: String
   gender: Int
   name: String
+  status: Int
+}
+
+input StatFilters {
+  elo: RangeFilter
+  level: RangeFilter
+  tickets: RangeFilter
+  races: RangeFilter
+  slime_boost: RangeFilter
+  purity: RangeFilter
+  generation: RangeFilter
+}
+
+input RangeFilter {
+  min: Int
+  max: Int
 }
 
 input IncubateParams {
@@ -50,6 +67,7 @@ input IncubateParams {
   nonce: Int!
   fid: Int!
   mid: Int!
+  use_scroll: Boolean
 }
 
 input JoinRaceParams {
@@ -57,6 +75,65 @@ input JoinRaceParams {
   race_id: Int!
   address: String!
   signature: String!
+}
+
+input BuyItemParams {
+  item_id: Int!
+  address: String!
+  count: Int = 1
+  payload: ExtraParams
+}
+
+input ExtraParams {
+  token_id: Int
+  name: String
+  use_scroll: Boolean
+}
+
+input ProfileParams {
+  username: String
+  collection_id: Int
+  image_id: Int
+  twitter: String
+  address: String!
+}
+
+input MicrowaveParams {
+  address: String!
+  token_ids: [Int!]!
+  signature: String!
+  use_scroll: Boolean
+}
+
+input PressureParams {
+  token_id: Int
+  items: [ItemParams!]!
+  address: String!
+  signature: String!
+}
+
+input ChangeAdaptationParams {
+  token_id: Int!
+  slot: Int!
+  address: String!
+}
+
+input ItemParams {
+  id: Int!
+  count: Int!
+}
+
+input InventoryFilters {
+  item_type: Int
+  status: [Int]
+  flag: ViewFlag
+  family: Int
+}
+
+enum ViewFlag {
+  ALL
+  COOKING
+  MIXING
 }
 
 type Query {
@@ -103,6 +180,11 @@ type Query {
     offset: Int
     filters: RaceFilters
   ): RacePromise!
+  mega_races_promise(
+    limit: Int
+    offset: Int
+    filters: RaceFilters
+  ): RacePromise!
   race_history_promise(
     limit: Int
     offset: Int
@@ -114,6 +196,7 @@ type Query {
     gender: Int
     limit: Int
     offset: Int
+    filters: SnailFilters
   ): MySnailsPromise
   my_snails_ranked_promise(
     owner: String!
@@ -132,11 +215,28 @@ type Query {
   incubate_promise(params: IncubateParams): IncubatePromise!
   whitelist_promise(address: String!): WhitelistPromise!
   name_status_promise(name: String!): NameStatusPromise!
+  race_participants_promise(race_id: Int!): SnailPromise!
+  race_dashboard_promise: RaceDashboardPromise!
+  shop_items_promise: ShopItemsPromise!
+  profile_promise(address: String!): ProfilePromise!
+  microwave_promise(params: MicrowaveParams): MicrowavePromise!
+  inventory_promise(
+    address: String!
+    limit: Int
+    offset: Int
+    filters: InventoryFilters
+  ): InventoryPromise!
+  pressure_simulation_promise(params: PressureParams): PressurePromise!
 }
 
 type Mutation {
   join_mission_promise(params: JoinRaceParams): JoinRacePromise
   join_competitive_promise(params: JoinRaceParams): JoinRacePromise
+  join_mega_race_promise(params: JoinRaceParams): JoinRacePromise
+  buy_shop_item_promise(params: BuyItemParams): BuyItemPromise
+  update_profile_promise(params: ProfileParams): BasicResponse
+  apply_pressure_promise(params: PressureParams): PressurePromise
+  change_adaptation_promise(params: ChangeAdaptationParams): BasicResponse
 }
 
 type Problem {
@@ -163,13 +263,142 @@ union Stat = MeanStat | CounterStat
 
 union JoinRacePromise = JoinRaceResponse | Problem
 
-union JoinPayload = MissionPayload | CompetitivePayload
+union JoinPayload = MissionPayload | CompetitivePayload | MegaRacePayload
 
 union WhitelistPromise = WhitelistStatus | Problem
 
 union NameStatusPromise = NameStatus | Problem
 
 union MarketplaceStatsPromise = MarketplaceStats | Problem
+
+union RaceDashboardPromise = RaceDashboardResponse | Problem
+
+union BuyItemPromise = BuyItemResponse | Problem
+
+union ShopItemsPromise = ShopItemsResponse | Problem
+
+union ProfilePromise = Profile | Problem
+
+union BasicResponse = Response | Problem
+
+union MicrowavePromise = GenericResponse | Problem
+
+union GenericPayload = MicrowavePayload
+
+union InventoryPromise = Inventory | Problem
+
+union PressurePromise = Pressure | Problem
+
+type Pressure {
+  snail: Snail
+  items: [Int]!
+  changes: [Change]!
+}
+
+type Change {
+  name: String
+  description: String
+  src: Int
+  src_type: Int
+  _from: String
+  _to: String
+}
+
+type GenericResponse {
+  status: Int!
+  message: String
+  payload: GenericPayload
+  signature: String
+}
+
+type MicrowavePayload {
+  owner: String!
+  order_id: Int!
+  size: Int!
+  token_ids: [Int]!
+  timeout: Int!
+  salt: Int!
+  coef: Float!
+  fee_wei: String!
+  fee_details: [String!]!
+}
+
+type Response {
+  success: Boolean!
+}
+
+type Profile {
+  address: String!
+  username: String
+  image: String
+  avatar: Avatar
+  avatar_options: [Avatar]
+  twitter: String
+  favorite_snails: [Int]
+  stats: ProfileStats
+}
+
+type Avatar {
+  name: String
+  image_id: Int
+  collection_id: Int
+  url: String
+}
+
+type ProfileStats {
+  total_races: Int
+  snails: Int
+  earned_slime: Float
+  earned_avax: Float
+  sold: Int
+  sold_amount: Float
+  bought: Int
+  bought_amount: Float
+  bred: Int
+  burned: Int
+  minted: Int
+}
+
+type Inventory {
+  count: Int
+  items: [InventoryItem]
+}
+
+type InventoryItem {
+  id: Int
+  type_id: Int
+  name: String
+  description: String
+  coef: Float
+  count: Int
+  status: Int
+  expires_at: String
+}
+
+type ShopItemsResponse {
+  items: [ShopItem]
+}
+
+type ShopItem {
+  id: Int
+  name: String
+  price: Float
+  currency: Int
+}
+
+type RaceDashboardResponse {
+  dashboard: RaceDashboardStats
+}
+
+type RaceDashboardStats {
+  mission: RaceStats
+  competitive: RaceStats
+  mega_race: RaceStats
+}
+
+type RaceStats {
+  active: Int!
+}
 
 type MarketplaceStats {
   volume: Float!
@@ -225,10 +454,23 @@ type CompetitivePayload {
   salt: Int!
 }
 
+type MegaRacePayload {
+  race_id: Int!
+  token_id: Int!
+  address: String!
+  entry_fee_wei: String!
+  size: Int!
+  completed_races: [CompletedRace]
+  timeout: Int!
+  salt: Int!
+}
+
 type CompletedRace {
   race_id: Int!
+  race_type: Int!
   results: [Int]!
   owners: [String]!
+  rewards_wei: [String]
 }
 
 type Incubate {
@@ -284,6 +526,32 @@ type Snail {
   gene_market: GeneMarket
   layers: [Layer]
   race_history: [Race]
+  burn: BurnInfo
+  auras: AuraInfo
+  owner_profile: Profile
+  slime_boost: Float
+  microwave: MicrowaveInfo
+}
+
+type MicrowaveInfo {
+  slime_boost: String
+}
+
+type AuraInfo {
+  auras: [Aura]
+}
+
+type Aura {
+  id: Int
+  name: String
+  expires_at: String
+}
+
+type BurnInfo {
+  died_at: String
+  cause: String
+  cause_id: Int
+  burned_by: String
 }
 
 type GeneMarket {
@@ -318,6 +586,7 @@ type Layer {
   id: Int
   name: String
   image: String
+  order: Int
 }
 
 type Experience {
@@ -388,14 +657,21 @@ type DashboardStats {
 }
 
 type SeasonStats {
-  season: String!
-  season_stats: [CategoryStats]
+  id: Int!
+  name: String!
+  data: [GameStats]
+}
+
+type GameStats {
+  id: Int!
+  name: String!
+  data: [CategoryStats]
 }
 
 type CategoryStats {
-  category_name: String!
-  category_id: Int!
-  category_stats: [Stat]
+  id: Int!
+  name: String!
+  data: [Stat]
 }
 
 type CounterStat {
@@ -428,6 +704,24 @@ type TraitType {
   options: [Attribute]
 }
 
+type BuyItemResponse {
+  status: Int!
+  message: String
+  payload: BuyItemPayload
+  signature: String
+}
+
+type BuyItemPayload {
+  item_id: Int!
+  order_id: Int!
+  currency: Int!
+  count: Int!
+  price_wei: String!
+  address: String!
+  timeout: Int!
+  salt: Int!
+}
+
 type Simulation {
   family: [Probability]
   purity: [Probability]
@@ -457,18 +751,27 @@ type Race {
   conditions: [String]!
   distance: String!
   league: String!
-  status: String!
+  status: Int!
   season: String!
   track: String!
   race_type: String!
   prize_pool: String!
-  currency: String!
+  currency: Int!
   starts_at: String
+  schedules_at: String
   results: [ResultsTimeData]
+  rewards: Rewards
   athletes: [Int]
   participation: Boolean
   race_feed: [RaceFeedResponse]
   reward_status: Int
+}
+
+type Rewards {
+  total: Float
+  base_distribution: [Float]
+  final_distribution: [Float]
+  multipliers: [Float]
 }
 
 type RaceSchedule {
