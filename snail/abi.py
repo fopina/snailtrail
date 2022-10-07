@@ -626,44 +626,38 @@ RACE = [
         "type": "function",
     },
     {
-        "inputs": [
+        'inputs': [
             {
-                "components": [
-                    {"internalType": "uint256", "name": "raceID", "type": "uint256"},
-                    {"internalType": "uint256", "name": "tokenID", "type": "uint256"},
-                    {"internalType": "address", "name": "owner", "type": "address"},
-                    {"internalType": "uint256", "name": "fee", "type": "uint256"},
-                    {
-                        "internalType": "uint256",
-                        "name": "resultSize",
-                        "type": "uint256",
-                    },
+                'components': [
+                    {'internalType': 'uint256', 'name': 'raceID', 'type': 'uint256'},
+                    {'internalType': 'uint256', 'name': 'tokenID', 'type': 'uint256'},
+                    {'internalType': 'address', 'name': 'owner', 'type': 'address'},
+                    {'internalType': 'uint256', 'name': 'fee', 'type': 'uint256'},
+                    {'internalType': 'uint256', 'name': 'resultSize', 'type': 'uint256'},
                 ],
-                "internalType": "struct SnailTrailRace.CompetitiveRaceInfo",
-                "name": "raceInfo",
-                "type": "tuple",
+                'internalType': 'struct SnailTrailRaceV2.CompetitiveRaceInfo',
+                'name': 'raceInfo',
+                'type': 'tuple',
             },
             {
-                "components": [
-                    {"internalType": "uint256", "name": "raceID", "type": "uint256"},
-                    {
-                        "internalType": "address[]",
-                        "name": "owners",
-                        "type": "address[]",
-                    },
+                'components': [
+                    {'internalType': 'uint256', 'name': 'raceID', 'type': 'uint256'},
+                    {'internalType': 'int8', 'name': 'raceType', 'type': 'int8'},
+                    {'internalType': 'address[]', 'name': 'winners', 'type': 'address[]'},
+                    {'internalType': 'uint256[]', 'name': 'rewards', 'type': 'uint256[]'},
                 ],
-                "internalType": "struct SnailTrailRace.RaceResult",
-                "name": "raceResult0",
-                "type": "tuple",
+                'internalType': 'struct SnailTrailRaceV2.RaceResult',
+                'name': 'raceResult',
+                'type': 'tuple',
             },
-            {"internalType": "uint256", "name": "timeout", "type": "uint256"},
-            {"internalType": "uint256", "name": "salt", "type": "uint256"},
-            {"internalType": "bytes", "name": "sig", "type": "bytes"},
+            {'internalType': 'uint256', 'name': 'timeout', 'type': 'uint256'},
+            {'internalType': 'uint256', 'name': 'salt', 'type': 'uint256'},
+            {'internalType': 'bytes', 'name': 'sig', 'type': 'bytes'},
         ],
-        "name": "joinCompetitiveRace",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function",
+        'name': 'joinCompetitiveRace',
+        'outputs': [],
+        'stateMutability': 'nonpayable',
+        'type': 'function',
     },
     {
         'inputs': [

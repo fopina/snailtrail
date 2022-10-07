@@ -167,7 +167,7 @@ class Client:
         if r.get('status') != 1:
             raise ClientError('unknown status', r)
 
-        m = [(x['race_id'], x['owners']) for x in r['payload']['completed_races']]
+        m = [(x['race_id'], x['race_type'], x['owners'], x['results']) for x in r['payload']['completed_races']]
         return r, self.web3.join_competitive_mission(
             (
                 r['payload']['race_id'],
