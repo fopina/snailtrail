@@ -461,7 +461,7 @@ AVAX: {self.client.web3.get_balance()}
             msg = f'Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
             self.notifier.notify(msg)
             logger.info(msg)
-            self._notify_coefficent = coef
+        self._notify_coefficent = coef
 
     def cmd_bot(self):
         self.cmd_bot_greet()
