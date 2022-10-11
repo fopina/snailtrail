@@ -35,6 +35,7 @@ class TestBot(TestCase):
         )
         c.client.gql = mock.MagicMock()
         c.client.web3 = mock.MagicMock()
+        c.notifier = mock.MagicMock()
         self.cli = c
 
     def test_masked_owner(self):
@@ -172,3 +173,16 @@ class TestBot(TestCase):
         self.assertEqual(r[1][10], [0, 2, 0, 2])
         # cached, API not called
         self.cli.client.gql.get_race_history.assert_not_called()
+
+    def test_bot_coefficent(self):
+        self.cli.client.web3.get_current_coefficent.side_effect = [2, 3, 1]
+        self.cli._bot_coefficent()
+        self.cli.notifier.notify.assert_called_once_with('Coefficent drop to *2.0000* (from *99999*)')
+
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_coefficent()
+        self.cli.notifier.notify.assert_not_called()
+
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_coefficent()
+        self.cli.notifier.notify.assert_called_once_with('Coefficent drop to *1.0000* (from *3*)')
