@@ -313,15 +313,17 @@ class CLI:
             if athletes == 10:
                 # race full
                 continue
+            conditions = set(race.conditions)
             for snail in queueable:
-                # FIXME: update for multiple adaptations
+                score = len(conditions.intersection(snail.adaptations))
+                # FIXME: merge with find_races_in_league / reduce complexity
                 if athletes == 9:
                     # don't queue non-boosted!
-                    if snail.id in boosted and ((snail.adaptations[0] in race.conditions) or self.args.no_adapt):
+                    if snail.id in boosted and (self.args.mission_matches <= score or self.args.no_adapt):
                         break
                 else:
                     # don't queue boosted here, so they wait for a last spot
-                    if snail.id not in boosted and (snail.adaptations[0] in race.conditions):
+                    if snail.id not in boosted and self.args.mission_matches <= score:
                         break
             else:
                 # no snail for this track

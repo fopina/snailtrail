@@ -186,6 +186,12 @@ def build_parser():
         action='store_true',
         help='Monitor finished missions with participation and notify on position (when top3)',
     )
+    pm.add_argument(
+        '--mission-matches',
+        type=int,
+        default=1,
+        help='Minimum adaptation matches to join mission - 1 might be worthy, higher might be crazy',
+    )
     pm.add_argument('--market', action='store_true', help='Monitor marketplace stats')
     pm.add_argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
     pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')

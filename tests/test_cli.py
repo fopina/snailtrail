@@ -61,15 +61,24 @@ class TestBot(TestCase):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
         self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
         self.cli.client.web3.sign_race_join.return_value = 'signed'
-        self.cli.args.no_adapt = True
+        self.cli.args.mission_matches = 0
         self.cli.join_missions()
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
             [
                 mock.call(8922, 169405, self.cli.owner, 'signed'),
-                mock.call(8851, 169406, self.cli.owner, 'signed'),
+                mock.call(9104, 169406, self.cli.owner, 'signed'),
             ],
         )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
+
+    def test_join_missions_max_adaptations(self):
+        self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
+        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.web3.sign_race_join.return_value = 'signed'
+        self.cli.args.mission_matches = 3
+        self.cli.join_missions()
+        self.cli.client.gql.join_mission_races.assert_not_called()
         self.cli.client.web3.join_daily_mission.assert_not_called()
 
     def test_join_missions_boosted(self):
@@ -81,9 +90,12 @@ class TestBot(TestCase):
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
             [
+                mock.call(8667, 169396, self.cli.owner, 'signed'),
                 mock.call(8851, 169399, self.cli.owner, 'signed'),
-                mock.call(8663, 169400, self.cli.owner, 'signed'),
-                mock.call(8267, 169401, self.cli.owner, 'signed'),
+                mock.call(8416, 169400, self.cli.owner, 'signed'),
+                mock.call(9104, 169401, self.cli.owner, 'signed'),
+                mock.call(8267, 169402, self.cli.owner, 'signed'),
+                mock.call(8663, 169403, self.cli.owner, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
