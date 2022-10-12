@@ -41,11 +41,19 @@ class TestBot(TestCase):
     def test_masked_owner(self):
         self.assertEqual(self.cli.masked_wallet, '0x76e...4ff')
 
-    def test_join_missing(self):
+    def test_join_missions(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
         self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.join_missions()
-        self.assertEqual(1, 1)
+        self.assertEqual(
+            self.cli.client.gql.join_mission_races.call_args_list,
+            [
+                mock.call(8922, 169405, self.cli.owner, 'signed'),
+                mock.call(8851, 169406, self.cli.owner, 'signed'),
+            ],
+        )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
 
     def test_cached_snail_history(self):
         self.cli.client.gql.get_race_history.side_effect = [

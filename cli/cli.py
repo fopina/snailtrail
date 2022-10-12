@@ -334,18 +334,13 @@ class CLI:
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
-                        r, rcpt = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=False)
+                        r, _ = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=False)
                         logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
                     except client.RequiresTransactionClientError as e:
                         r = e.args[1]
                         if r['payload']['size'] == 0:
-                            rcpt = self.client.rejoin_mission_races(r)
+                            self.client.rejoin_mission_races(r)
                         else:
-                            try:
-                                estimated_gas = self.client.rejoin_mission_races(r, estimate_only=True)
-                            except:
-                                # ignore any errors estimating
-                                estimated_gas = '-'
                             # TODO: add snail to cooldown, is 150 too much? check future logs
                             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=150)
                             # also remove from queueable (due to "continue")
@@ -353,7 +348,7 @@ class CLI:
                             continue
                 else:
                     try:
-                        r, rcpt = self.client.join_mission_races(
+                        r, _ = self.client.join_mission_races(
                             snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
                         )
                     except client.RequiresTransactionClientError as e:
@@ -366,7 +361,7 @@ class CLI:
                         if self.args.cheap and not r['payload']['size'] == 0:
                             raise
 
-                        rcpt = self.client.rejoin_mission_races(r)
+                        self.client.rejoin_mission_races(r)
 
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:

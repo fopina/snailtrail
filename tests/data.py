@@ -131,6 +131,7 @@ GQL_MISSION_RACES = {
             'id': 169311,
             'conditions': ['Mountain', 'Cold', 'Slide'],
             'distance': 'Treasury Run',
+            # 10 snails
             'athletes': [1161, 1946, 2218, 2266, 7655, 8003, 8803, 9189, 9408, 9525],
             'track': 'Hockenheimring',
             'participation': False,
@@ -140,6 +141,7 @@ GQL_MISSION_RACES = {
             'id': 169396,
             'conditions': ['Forest', 'Wet', 'Dodge'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [1288, 2036, 2784, 4747, 7082, 7602, 8069, 9273, 9326],
             'track': 'Pulau Siput',
             'participation': False,
@@ -149,6 +151,7 @@ GQL_MISSION_RACES = {
             'id': 169399,
             'conditions': ['Space', 'Storm', 'Jump'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [2126, 3925, 4765, 7104, 8168, 8458, 8957, 9911, 9989],
             'track': 'Bebbux',
             'participation': False,
@@ -158,6 +161,7 @@ GQL_MISSION_RACES = {
             'id': 169400,
             'conditions': ['Space', 'Storm', 'Roll'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [2269, 2993, 4985, 6633, 6869, 7972, 8188, 9314, 9719],
             'track': 'Circuit de Spa',
             'participation': False,
@@ -167,6 +171,7 @@ GQL_MISSION_RACES = {
             'id': 169401,
             'conditions': ['Beach', 'Cold', 'Jump'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [813, 1551, 2422, 5238, 5980, 8273, 8317, 9172, 9912],
             'track': 'Hockenheimring',
             'participation': False,
@@ -176,6 +181,7 @@ GQL_MISSION_RACES = {
             'id': 169402,
             'conditions': ['Beach', 'Hot', 'Roll'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [760, 1573, 4624, 5355, 6216, 6406, 8382, 8441, 8527],
             'track': 'Shanghai',
             'participation': False,
@@ -185,6 +191,7 @@ GQL_MISSION_RACES = {
             'id': 169403,
             'conditions': ['Forest', 'Snow', 'Dodge'],
             'distance': 'Treasury Run',
+            # 9 snails
             'athletes': [2240, 2421, 2570, 3343, 5953, 5961, 7058, 7158, 8658],
             'track': 'Hockenheimring',
             'participation': False,
@@ -194,6 +201,7 @@ GQL_MISSION_RACES = {
             'id': 169404,
             'conditions': ['Glacier', 'Wind', 'Roll'],
             'distance': 'Treasury Run',
+            # 8 snails
             'athletes': [1123, 1629, 2206, 4071, 8766, 8922, 9317, 9940],
             'track': 'Circuit de Monaco',
             'participation': True,
@@ -203,6 +211,7 @@ GQL_MISSION_RACES = {
             'id': 169405,
             'conditions': ['Forest', 'Wind', 'Dodge'],
             'distance': 'Treasury Run',
+            # 5 snails
             'athletes': [6150, 6962, 8419, 8531, 9783],
             'track': 'Circuit de Monaco',
             'participation': False,
@@ -212,6 +221,7 @@ GQL_MISSION_RACES = {
             'id': 169406,
             'conditions': ['Desert', 'Hot', 'Jump'],
             'distance': 'Treasury Run',
+            # 4 snails
             'athletes': [5439, 6449, 8915, 9342],
             'track': 'Silverstone Circuit',
             'participation': False,
