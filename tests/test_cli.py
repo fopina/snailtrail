@@ -1,7 +1,9 @@
 import tempfile
 from unittest import TestCase, mock
+
 import cli
 from snail.gqltypes import Race
+
 from . import data
 
 
@@ -51,6 +53,37 @@ class TestBot(TestCase):
             [
                 mock.call(8922, 169405, self.cli.owner, 'signed'),
                 mock.call(8851, 169406, self.cli.owner, 'signed'),
+            ],
+        )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
+
+    def test_join_missions_no_adaptations(self):
+        self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
+        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.web3.sign_race_join.return_value = 'signed'
+        self.cli.args.no_adapt = True
+        self.cli.join_missions()
+        self.assertEqual(
+            self.cli.client.gql.join_mission_races.call_args_list,
+            [
+                mock.call(8922, 169405, self.cli.owner, 'signed'),
+                mock.call(8851, 169406, self.cli.owner, 'signed'),
+            ],
+        )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
+
+    def test_join_missions_boosted(self):
+        self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
+        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.web3.sign_race_join.return_value = 'signed'
+        self.cli.args.boost = [int(s['id']) for s in data.GQL_MISSION_SNAILS['snails']]
+        self.cli.join_missions()
+        self.assertEqual(
+            self.cli.client.gql.join_mission_races.call_args_list,
+            [
+                mock.call(8851, 169399, self.cli.owner, 'signed'),
+                mock.call(8663, 169400, self.cli.owner, 'signed'),
+                mock.call(8267, 169401, self.cli.owner, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
