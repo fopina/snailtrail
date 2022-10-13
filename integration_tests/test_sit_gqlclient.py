@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import unittest
 from unittest import TestCase
+import os
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
@@ -15,16 +16,23 @@ TEST_SNAIL = 8813
 class Test(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        print('starting proxy')
-        cls.proxy = proxy.Proxy()
-        cls.proxy.start()
-        proxy_url = cls.proxy.url()
+        preset_proxy = os.getenv('SNAIL_TEST_PROXY')
+        if preset_proxy:
+            print('using existing proxy', preset_proxy)
+            proxy_url = preset_proxy
+            cls.proxy = None
+        else:
+            print('starting proxy')
+            cls.proxy = proxy.Proxy()
+            cls.proxy.start()
+            proxy_url = cls.proxy.url()
         cls.client = gqlclient.Client(proxy=proxy_url, rate_limiter=1, retry=3)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        print('stopping proxy')
-        cls.proxy.stop()
+        if cls.proxy is not None:
+            print('stopping proxy')
+            cls.proxy.stop()
 
     def test_marketplace_stats(self):
         r = self.client.marketplace_stats()

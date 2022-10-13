@@ -412,17 +412,21 @@ class Client(requests.Session):
         owner,
         offset=0,
         limit=20,
+        adaptations=None,
     ):
+        if adaptations is None:
+            adaptations = [1, 1, 1]
         return self.query(
             "getMySnailsForMissions",
             {
                 "owner": owner,
                 "limit": limit,
                 "offset": offset,
+                "adaptations": adaptations,
             },
             """
-            query getMySnailsForMissions($limit: Int, $offset: Int, $owner: String!) {
-                my_snails_mission_promise(limit: $limit, offset: $offset, owner: $owner) {
+            query getMySnailsForMissions($limit: Int, $offset: Int, $owner: String!, $adaptations: [Int]) {
+                my_snails_mission_promise(limit: $limit, offset: $offset, owner: $owner, adaptations: $adaptations) {
                     ... on Problem {
                     problem
                     __typename
