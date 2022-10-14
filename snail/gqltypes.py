@@ -21,6 +21,59 @@ class Gender(Enum):
         return '❓'
 
 
+class Adaptation(Enum):
+    """
+    Mapping taken directly from game JS
+
+    >>> s = Adaptation.MOUNTAIN
+    >>> s.name
+    'MOUNTAIN'
+    >>> str(s)
+    'Mountain'
+    >>> s.id
+    2
+    >>> Adaptation.from_id(2)
+    <Adaptation.MOUNTAIN: (2, 'Mountain')>
+    >>> Adaptation.from_str('Mountain')
+    <Adaptation.MOUNTAIN: (2, 'Mountain')>
+    """
+
+    DESERT = 1, 'Desert'
+    MOUNTAIN = 2, 'Mountain'
+    BEACH = 3, 'Beach'
+    GLACIER = 4, 'Glacier'
+    FOREST = 5, 'Forest'
+    SPACE = 6, 'Space'
+    HOT = 40, 'Hot'
+    COLD = 41, 'Cold'
+    WIND = 42, 'Wind'
+    WET = 43, 'Wet'
+    SNOW = 44, 'Snow'
+    STORM = 45, 'Storm'
+    SLIDE = 80, 'Slide'
+    JUMP = 81, 'Jump'
+    ROLL = 82, 'Roll'
+    DODGE = 83, 'Dodge'
+
+    def __str__(self) -> str:
+        return self.value[1]
+
+    @property
+    def id(self):
+        return self.value[0]
+
+    @classmethod
+    def from_id(cls, id: int):
+        for i in cls:
+            if id == i.id:
+                return i
+
+    @classmethod
+    def from_str(cls, id: str):
+        # simplify for now while name matches value text
+        return cls[id.upper()]
+
+
 class AttrDict(dict):
     _DICT_METHODS = set(dir(dict))
 
@@ -63,6 +116,11 @@ class Snail(AttrDict):
     def gender(self):
         if 'gender' in self:
             return list(Gender)[self['gender']['id']]
+
+    @property
+    def adaptations(self):
+        if 'adaptations' in self:
+            return list(map(Adaptation.from_str, self['adaptations']))
 
     @property
     def monthly_breed_available(self):
@@ -204,6 +262,11 @@ class Race(AttrDict):
         if self.is_mission:
             return f"{self.track} (#{self.id}): {self.distance}"
         return f"{self.track} (#{self.id}): {self.distance}m {self.race_type} 🪙"
+
+    @property
+    def conditions(self):
+        if 'conditions' in self:
+            return list(map(Adaptation.from_str, self['conditions']))
 
 
 def _parse_datetime(date_str):

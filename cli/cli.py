@@ -272,11 +272,11 @@ class CLI:
         self._notify_mission_data['text'] += f'\n{message} `[+{str(passed).rsplit(".")[0]}]`'
         self.notifier.notify(self._notify_mission_data['text'], edit=self._notify_mission_data['msg'])
 
-    def mission_queueable_snails(self):
+    def mission_queueable_snails(self, race_conditions=None):
         queueable = []
 
         closest = None
-        for x in self.client.iterate_my_snails_for_missions(self.owner):
+        for x in self.client.iterate_my_snails_for_missions(self.owner, adaptations=race_conditions):
             if self.args.exclude and x.id in self.args.exclude:
                 continue
             to_queue = x.queueable_at
@@ -294,7 +294,8 @@ class CLI:
         return queueable, closest
 
     def join_missions(self):
-        queueable, closest = self.mission_queueable_snails()
+        missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
+        queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
         if not queueable:
             return closest
 
@@ -305,7 +306,7 @@ class CLI:
                 if s.stats['mission_tickets'] < 0:
                     boosted.add(s.id)
 
-        for race in self.client.iterate_mission_races(filters={'owner': self.owner}):
+        for race in missions:
             if race.participation:
                 # already joined
                 continue
@@ -551,7 +552,7 @@ AVAX: {self.client.web3.get_balance()}
                 logger.exception('unexpected joinMission error')
         else:
             # list missions
-            snails = list(self.client.iterate_my_snails_for_missions(self.owner))
+            snails = None
             for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
                 athletes = len(x.athletes)
                 if x.participation:
@@ -561,6 +562,11 @@ AVAX: {self.client.web3.get_balance()}
                 else:
                     color = Fore.GREEN
                 c = f'{color}{x} - {athletes}{Fore.RESET}'
+                if snails is None:
+                    # delayed loading of snails to use first race adaptatios (we don't want to look like a bot!)
+                    snails = list(
+                        self.client.iterate_my_snails_for_missions(self.owner, adaptations=[c.id for c in x.conditions])
+                    )
                 candidates = self.find_candidates(x, snails)
                 if candidates:
                     c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'

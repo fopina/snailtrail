@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Generator, Iterable
 from enum import Enum
 from . import gqlclient, web3client, gqltypes
 
@@ -88,9 +88,13 @@ class Client:
             self.gql.get_all_snails, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_my_snails_for_missions(self, owner):
+    def iterate_my_snails_for_missions(self, owner, adaptations=None) -> Generator[gqltypes.Snail, None, None]:
         yield from self._iterate_pages(
-            self.gql.get_my_snails_for_missions, 'snails', klass=gqltypes.Snail, args=[owner]
+            self.gql.get_my_snails_for_missions,
+            'snails',
+            klass=gqltypes.Snail,
+            args=[owner],
+            kwargs={'adaptations': adaptations},
         )
 
     def iterate_my_snails_for_ranked(self, owner, league):
@@ -98,7 +102,7 @@ class Client:
             self.gql.get_my_snails_for_ranked, 'snails', klass=gqltypes.Snail, args=[owner, league]
         )
 
-    def iterate_mission_races(self, filters={}, max_calls=None):
+    def iterate_mission_races(self, filters={}, max_calls=None) -> Generator[gqltypes.Race, None, None]:
         yield from self._iterate_pages(
             self.gql.get_mission_races,
             'all',

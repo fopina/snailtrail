@@ -78,7 +78,6 @@ class Client(requests.Session):
             delta = time.time() - self._last_query - self.rate_limiter
             if delta < 0:
                 time.sleep(self.rate_limiter)
-
         r = self.post(
             self.url,
             json={
