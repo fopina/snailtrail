@@ -22,3 +22,11 @@ deploy:
 
 sit:
 	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
+
+burppub:
+	docker buildx build \
+	              --platform linux/amd64,linux/arm64 \
+				  --build-arg VERSION=$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-burp-$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-burp \
+				  --push burpdocker
