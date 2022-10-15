@@ -32,7 +32,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     logger.info("logging in")
-    driver = MyDriver(docker=False)
+    driver = MyDriver(docker=True)
     driver.implicitly_wait(20)
 
 

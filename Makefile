@@ -30,3 +30,11 @@ burppub:
 				  -t fopina/random:snailtrail-burp-$(shell git log --oneline . | wc -l | tr -d ' ') \
 				  -t fopina/random:snailtrail-burp \
 				  --push burpdocker
+
+browserpub:
+	docker buildx build \
+	              --platform linux/amd64,linux/arm64 \
+				  --build-arg VERSION=$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-browser-$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-browser \
+				  --push browserproxy
