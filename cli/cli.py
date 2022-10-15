@@ -1,20 +1,21 @@
 import argparse
-from collections import defaultdict
-from functools import cached_property
 import json
-import time
-from datetime import datetime, timedelta, timezone
 import logging
+import time
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+from functools import cached_property
 from typing import Optional, Union
 from xmlrpc.client import Boolean
-from colorama import Fore
 
-from snail.gqltypes import Race, Snail, Gender
-from .decorators import cached_property_with_ttl
-from snail import client, VERSION
-from .types import RaceJoin, Wallet
-from .helpers import SetQueue
+from colorama import Fore
+from snail import VERSION, client
+from snail.gqltypes import Gender, Race, Snail
+
 from . import tgbot
+from .decorators import cached_property_with_ttl
+from .helpers import SetQueue
+from .types import RaceJoin, Wallet
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class CachedSnailHistory:
 class CLI:
     owner = None
 
-    def __init__(self, wallet: Wallet, proxy_url: str, args: argparse.Namespace, main_one: Optional[Boolean] = None):
+    def __init__(self, wallet: Wallet, proxy_url: str, args: argparse.Namespace, main_one: Optional[Boolean] = None, graphql_endpoint: Optional[str] = None):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
         :param proxy_url: URL of the proxy (mitmproxy or BURP) to use for GraphQL API calls
@@ -150,6 +151,8 @@ class CLI:
             rate_limiter=args.rate_limit,
             gql_retry=args.retry if args.retry > 0 else None,
         )
+        if graphql_endpoint:
+            self.client.gql.url = graphql_endpoint
         self.notifier: tgbot.Notifier = args.notify
         self._notified_races = SetQueue(capacity=100)
         self._notified_races_over = SetQueue(capacity=100)
@@ -592,6 +595,7 @@ AVAX: {self.client.web3.get_balance()}
             self.find_market_genes(price_filter=self.args.price)
         else:
             self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
+        return False
 
     def cmd_rename(self):
         self.rename_snail()

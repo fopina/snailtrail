@@ -98,6 +98,7 @@ def build_parser():
         help='web3 http endpoint (value or path to file with value)',
     )
     parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
+    parser.add_argument('--graphql-endpoint', help='Snailtrail graphql endpoint', default='https://api.snailtrail.art/graphql/')
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
     parser.add_argument(
         '--notify',
@@ -258,7 +259,7 @@ def main(argv=None):
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug('debug enabled')
-    if args.proxy:
+    if args.proxy is not None:
         proxy_url = args.proxy
     else:
         logger.info('starting proxy')
@@ -284,7 +285,7 @@ def main(argv=None):
 
     first_one = True if len(wallets) > 1 else None
     for w in wallets:
-        c = cli.CLI(w, proxy_url, args, main_one=first_one)
+        c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
         first_one = False
         args.notify.register_cli(c)
         clis.append(c)
@@ -312,7 +313,7 @@ def main(argv=None):
             logger.info('Stopping...')
         finally:
             args.notify.stop_polling()
-            if not args.proxy:
+            if args.proxy is None:
                 p.stop()
     else:
         try:
@@ -322,7 +323,7 @@ def main(argv=None):
                     # do not process any other clis
                     break
         finally:
-            if not args.proxy:
+            if args.proxy is None:
                 p.stop()
 
 
