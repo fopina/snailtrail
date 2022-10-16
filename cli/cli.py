@@ -132,7 +132,14 @@ class CachedSnailHistory:
 class CLI:
     owner = None
 
-    def __init__(self, wallet: Wallet, proxy_url: str, args: argparse.Namespace, main_one: Optional[Boolean] = None, graphql_endpoint: Optional[str] = None):
+    def __init__(
+        self,
+        wallet: Wallet,
+        proxy_url: str,
+        args: argparse.Namespace,
+        main_one: Optional[Boolean] = None,
+        graphql_endpoint: Optional[str] = None,
+    ):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
         :param proxy_url: URL of the proxy (mitmproxy or BURP) to use for GraphQL API calls

@@ -33,9 +33,11 @@ class Adaptation(Enum):
     >>> s.id
     2
     >>> Adaptation.from_id(2)
-    <Adaptation.MOUNTAIN: (2, 'Mountain')>
+    Mountain
     >>> Adaptation.from_str('Mountain')
-    <Adaptation.MOUNTAIN: (2, 'Mountain')>
+    Mountain
+    >>> str([Adaptation.MOUNTAIN])
+    '[Mountain]'
     """
 
     DESERT = 1, 'Desert'
@@ -57,6 +59,9 @@ class Adaptation(Enum):
 
     def __str__(self) -> str:
         return self.value[1]
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def id(self):
@@ -255,6 +260,8 @@ class Race(AttrDict):
         >>> s = Race({'distance': 'Treasury Run'})
         >>> s.is_mission
         True
+        >>> str(s)
+        'None (#None): Treasury Run'
         """
         return self.distance == 'Treasury Run'
 

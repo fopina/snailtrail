@@ -98,7 +98,9 @@ def build_parser():
         help='web3 http endpoint (value or path to file with value)',
     )
     parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
-    parser.add_argument('--graphql-endpoint', help='Snailtrail graphql endpoint', default='https://api.snailtrail.art/graphql/')
+    parser.add_argument(
+        '--graphql-endpoint', help='Snailtrail graphql endpoint', default='https://api.snailtrail.art/graphql/'
+    )
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
     parser.add_argument(
         '--notify',
