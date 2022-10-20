@@ -18,6 +18,17 @@ class APIError(Exception):
         """
         return '\n'.join('|'.join(y) for x in self.args for y in x)
 
+    @classmethod
+    def make(cls, problems):
+        if len(problems) == 1 and len(problems[0]) == 1:
+            if problems[0][0] == 'Race is already full':
+                return RaceAlreadyFullAPIError(problems)
+        return cls(problems)
+
+
+class RaceAlreadyFullAPIError(APIError):
+    """ Specific type for "Race is already full" """
+
 
 class Client(requests.Session):
     def __init__(
@@ -93,7 +104,7 @@ class Client(requests.Session):
             raise Exception(r)
         problems = [v['problem'] for v in r['data'].values() if 'problem' in v]
         if problems:
-            raise APIError(problems)
+            raise APIError.make(problems)
         return r["data"]
 
     def get_all_genes_marketplace(self, offset=0, limit=24, filters={}):

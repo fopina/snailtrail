@@ -354,11 +354,18 @@ class CLI:
                         if r['payload']['size'] == 0:
                             self.client.rejoin_mission_races(r)
                         else:
-                            # TODO: add snail to cooldown, is 150 too much? check future logs
-                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=150)
+                            # add snail to cooldown, use 90 for now - check future logs if they still get locked
+                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
                             # also remove from queueable (due to "continue")
                             queueable.remove(snail)
                             continue
+                    except client.gqlclient.RaceAlreadyFullAPIError:
+                        logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
+                        # add snail to cooldown, use 90 for now - check future logs if they still get locked
+                        self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
+                        # also remove from queueable (due to "continue")
+                        queueable.remove(snail)
+                        continue
                 else:
                     try:
                         r, _ = self.client.join_mission_races(
@@ -558,7 +565,7 @@ AVAX: {self.client.web3.get_balance()}
                     logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
             except client.RequiresTransactionClientError:
                 logger.error('only last spot available, use --last-spot')
-            except client.ClientError as e:
+            except client.ClientError:
                 logger.exception('unexpected joinMission error')
         else:
             # list missions
