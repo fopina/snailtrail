@@ -272,7 +272,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.masked_wallet}: {c.client.web3.claimable_rewards()}',
+                        f'💰 {c.masked_wallet}: {c.client.web3.claimable_slime()}',
                         callback_data=f'claim {c.owner}',
                     )
                 ]

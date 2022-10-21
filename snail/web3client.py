@@ -13,6 +13,7 @@ CONTRACT_RACE = '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0'
 CONTRACT_SLIME = '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8'
 CONTRACT_SNAILNFT = '0xec675B7C5471c67E9B203c6D1C604df28A89FB7f'
 CONTRACT_INCUBATOR = '0x09457e0181dA074610530212A6378605382764b8'
+CONTRACT_MEGA_RACE = '0xa65592fC7afa222Ac30a80F273280e6477a274e3'
 
 
 class Client:
@@ -40,6 +41,10 @@ class Client:
     @cached_property
     def race_contract(self):
         return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_RACE), abi=abi.RACE)
+
+    @cached_property
+    def mega_race_contract(self):
+        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_MEGA_RACE), abi=abi.RACE)
 
     @cached_property
     def slime_contract(self):
@@ -128,11 +133,20 @@ class Client:
             **kwargs,
         )
 
-    def claimable_rewards(self):
+    def claimable_slime(self):
         return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
 
     def balance_of_slime(self, raw=False):
         x = self.slime_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
+        if raw:
+            return x
+        return x / 1000000000000000000
+
+    def claimable_wavax(self):
+        return self.mega_race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
+
+    def balance_of_wavax(self, raw=False):
+        x = self.mega_race_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
         if raw:
             return x
         return x / 1000000000000000000

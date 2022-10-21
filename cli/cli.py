@@ -422,11 +422,14 @@ class CLI:
         print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
     def _balance(self):
+        # FIXME: missing wavax (claimed)
         return f'''\
-Unclaimed SLIME: {self.client.web3.claimable_rewards()}
+Unclaimed SLIME: {self.client.web3.claimable_slime()}
 SLIME: {self.client.web3.balance_of_slime()}
-SNAILS: {self.client.web3.balance_of_snails()}
+Unclaimed WAVAX: {self.client.web3.claimable_wavax()}
+WAVAX: {self.client.web3.claimable_wavax()}
 AVAX: {self.client.web3.get_balance()}
+SNAILS: {self.client.web3.balance_of_snails()}
         '''
 
     def cmd_balance(self):
