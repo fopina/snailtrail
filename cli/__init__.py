@@ -187,7 +187,7 @@ def build_parser():
     pm.add_argument(
         '--missions-over',
         action='store_true',
-        help='Monitor finished missions with participation and notify on position (when top3)',
+        help='Monitor finished missions with participation and log position/earns (no notification sent)',
     )
     pm.add_argument(
         '--mission-matches',

@@ -387,12 +387,13 @@ class Client(requests.Session):
                         results {
                         token_id
                         time
-                        __typename
+                        }
+                        rewards {
+                        final_distribution
                         }
                         track
                         starts_at
                         prize_pool
-                        __typename
                     }
                     __typename
                     }

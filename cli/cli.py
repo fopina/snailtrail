@@ -623,7 +623,9 @@ AVAX: {self.client.web3.get_balance()}
                 it.sort(key=lambda x: x.tmp_stat_top3)
         for snail in it:
             if self.args.sort == 'stats':
-                print(f'{snail} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}')
+                print(
+                    f'{snail} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}'
+                )
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
 
@@ -739,17 +741,20 @@ AVAX: {self.client.web3.get_balance()}
             p += 1
             if p > 3:
                 e = '💩'
-                if race.is_mission:
-                    continue
             else:
                 e = '🥇🥈🥉'[p - 1]
+            if len(race.rewards['final_distribution']) >= p:
+                reward = race.rewards['final_distribution'][p - 1]
+            else:
+                reward = 0
 
-            msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}"
+            msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
             if not race.is_mission and self.args.race_stats:
                 self._snail_history.update(snail, race)
                 msg += ' ' + self.race_stats_text(snail, race)
             logger.info(msg)
-            self.notifier.notify(msg, silent=True)
+            if not race.is_mission:
+                self.notifier.notify(msg, silent=True)
 
     def _open_races(self):
         for league in client.League:
