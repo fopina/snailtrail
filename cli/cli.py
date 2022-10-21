@@ -721,12 +721,17 @@ AVAX: {self.client.web3.get_balance()}
                     self._notified_races.add(race['id'])
 
     def find_races_over(self):
+        first_run = not self._notified_races_over and not self.args.first_run_over
         for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
             if race['id'] in self._notified_races_over:
                 # notify only once...
                 continue
             self._notified_races_over.add(race['id'])
 
+            if first_run:
+                # do not log or notify anything on "first run"
+                # avoid restart spam with "pre-existing" finished races
+                continue
             if race.is_mission and not self.args.missions_over:
                 continue
             if not race.is_mission and not self.args.races_over:
@@ -755,6 +760,9 @@ AVAX: {self.client.web3.get_balance()}
             logger.info(msg)
             if not race.is_mission:
                 self.notifier.notify(msg, silent=True)
+        if first_run and not self._notified_races_over:
+            # HACK ALERT: add random value just to make sure next run is not "first_run"
+            self._notified_races_over.add(1)
 
     def _open_races(self):
         for league in client.League:

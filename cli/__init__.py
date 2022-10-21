@@ -190,6 +190,11 @@ def build_parser():
         help='Monitor finished missions with participation and log position/earns (no notification sent)',
     )
     pm.add_argument(
+        '--first-run-over',
+        action='store_true',
+        help='Also trigger log/notify for first run (mostly for testing)',
+    )
+    pm.add_argument(
         '--mission-matches',
         type=int,
         default=1,
