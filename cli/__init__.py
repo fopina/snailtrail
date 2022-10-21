@@ -204,7 +204,7 @@ def build_parser():
     )
 
     pm = subparsers.add_parser('snails')
-    pm.add_argument('-s', '--sort', choices=['breed', 'lvl'], help='Sort snails by')
+    pm.add_argument('-s', '--sort', choices=['breed', 'lvl', 'stats'], help='Sort snails by')
 
     pm = subparsers.add_parser('market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')

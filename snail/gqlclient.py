@@ -201,7 +201,35 @@ class Client(requests.Session):
             """,
         )['marketplace_promise']
 
-    def get_all_snails(self, offset: int = 0, filters={}):
+    def get_all_snails(self, offset: int = 0, filters={}, more_stats=False):
+        more_stats_query = """
+        more_stats(seasons: [1]) {
+            id
+            name
+            data {
+            id
+            name
+            data {
+                id
+                name
+                data {
+                ... on CounterStat {
+                    name
+                    count
+                }
+                ... on MeanStat {
+                    name
+                    count
+                    min
+                    mean
+                    max
+                    std
+                }
+                }
+            }
+            }
+        }
+        """ if more_stats else ''
         return self.query(
             "getAllSnail",
             {
@@ -236,12 +264,13 @@ class Client(requests.Session):
                             experience {level, xp, remaining}
                             mission_tickets
                         }
+                        %s
                     }
                     count
                     }
                 }
             }
-            """,
+            """ % (more_stats_query,),
         )['snails_promise']
 
     def get_mission_races(self, offset=0, limit=20, filters={}):

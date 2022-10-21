@@ -83,9 +83,12 @@ class Client:
             self.gql.get_all_snails_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_all_snails(self, filters={}) -> Iterable[gqltypes.Snail]:
+    def iterate_all_snails(self, filters={}, more_stats=False) -> Iterable[gqltypes.Snail]:
         yield from self._iterate_pages(
-            self.gql.get_all_snails, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
+            self.gql.get_all_snails,
+            'snails',
+            klass=gqltypes.Snail,
+            kwargs={'filters': filters, 'more_stats': more_stats},
         )
 
     def iterate_my_snails_for_missions(self, owner, adaptations=None) -> Generator[gqltypes.Snail, None, None]:
