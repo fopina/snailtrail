@@ -427,7 +427,7 @@ class CLI:
 Unclaimed SLIME: {self.client.web3.claimable_slime()}
 SLIME: {self.client.web3.balance_of_slime()}
 Unclaimed WAVAX: {self.client.web3.claimable_wavax()}
-WAVAX: {self.client.web3.claimable_wavax()}
+WAVAX: {self.client.web3.balance_of_wavax()}
 AVAX: {self.client.web3.get_balance()}
 SNAILS: {self.client.web3.balance_of_snails()}
         '''
