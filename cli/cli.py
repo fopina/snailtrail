@@ -165,7 +165,7 @@ class CLI:
         self._notified_races_over = SetQueue(capacity=100)
         self._notify_mission_data = None
         self._notify_marketplace = {}
-        self._notify_coefficent = 99999
+        self._notify_coefficent = None
         self._next_mission = None
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
@@ -475,7 +475,7 @@ SNAILS: {self.client.web3.balance_of_snails()}
 
     def _bot_coefficent(self):
         coef = self.client.web3.get_current_coefficent()
-        if coef < self._notify_coefficent:
+        if self._notify_coefficent is not None and coef < self._notify_coefficent:
             msg = f'Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
             self.notifier.notify(msg)
             logger.info(msg)

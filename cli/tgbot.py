@@ -287,6 +287,7 @@ class Notifier:
         Send all slime to one account (for single swaps)
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
+
         keyboard = []
         for c in self.clis.values():
             keyboard.append(
