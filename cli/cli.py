@@ -72,7 +72,6 @@ class CachedSnailHistory:
             return data
 
         races_per_price = {
-            50: [],
             100: [],
             200: [],
             500: [],
