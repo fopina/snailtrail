@@ -155,16 +155,18 @@ class Notifier:
         extra_text = []
 
         def _claim(cli):
+            extra_text.append(f'claiming {bal} from {cli.masked_wallet}...')
+            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
             try:
                 r = cli.client.web3.claim_rewards()
                 if r.get('status') == 1:
                     bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
-                    extra_text.append(f'claimed {bal} from {cli.masked_wallet}')
+                    extra_text[-1] = f'claimed {bal} from {cli.masked_wallet}'
                 else:
-                    extra_text.append(f'claim failed for {cli.masked_wallet}')
+                    extra_text[-1] = f'claim failed for {cli.masked_wallet}'
                     logger.error('error claiming: %s', r)
             except client.web3client.exceptions.ContractLogicError as e:
-                extra_text.append(f'claim failed for {cli.masked_wallet}: {e}')
+                extra_text[-1] = f'claim failed for {cli.masked_wallet}: {e}'
                 logger.exception('error claiming')
             query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
 
@@ -186,7 +188,8 @@ class Notifier:
             query.edit_message_reply_markup()
             return
 
-        extra_text = []
+        extra_text = [f'*Sending to {cli.masked_wallet}*']
+        query.edit_message_text('\n'.join(extra_text))
         for c in self.clis.values():
             if cli.owner == c.owner:
                 continue
@@ -195,11 +198,11 @@ class Notifier:
                 extra_text.append(f'{c.masked_wallet}: Nothing to send')
             else:
                 extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
-                query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+                query.edit_message_text('\n'.join(extra_text))
                 r = c.client.web3.transfer_slime(cli.owner, bal)
                 sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
-                extra_text.append(f'{c.masked_wallet}: sent {sent} SLIME')
-            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+                extra_text[-1] = f'{c.masked_wallet}: sent {sent} SLIME'
+            query.edit_message_text('\n'.join(extra_text))
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
