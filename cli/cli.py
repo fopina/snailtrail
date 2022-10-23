@@ -757,7 +757,7 @@ SNAILS: {self.client.web3.balance_of_snails()}
                 reward = 0
 
             msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
-            if not race.is_mission and self.args.race_stats:
+            if race.is_competitive and self.args.race_stats:
                 self._snail_history.update(snail, race)
                 msg += ' ' + self.race_stats_text(snail, race)
             logger.info(msg)

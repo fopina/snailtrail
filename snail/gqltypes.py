@@ -265,10 +265,52 @@ class Race(AttrDict):
         """
         return self.distance == 'Treasury Run'
 
+    @property
+    def is_mega(self):
+        """
+        >>> s = Race({'distance': 57})
+        >>> s.is_mega
+        False
+        >>> s = Race({'distance': 'Mega Run'})
+        >>> s.is_mega
+        True
+        >>> str(s)
+        'None (#None): Mega Run'
+        """
+        return self.distance == 'Mega Run'
+
+    @property
+    def is_mega(self):
+        """
+        >>> s = Race({'distance': 57})
+        >>> s.is_mega
+        False
+        >>> s = Race({'distance': 'Mega Run'})
+        >>> s.is_mega
+        True
+        >>> str(s)
+        'None (#None): Mega Run'
+        """
+        return self.distance == 'Mega Run'
+
+    @property
+    def is_competitive(self):
+        """
+        >>> s = Race({'distance': 'Mega Run'})
+        >>> s.is_competitive
+        False
+        >>> s = Race({'distance': 57})
+        >>> s.is_competitive
+        True
+        >>> str(s)
+        'None (#None): 57m None 🪙'
+        """
+        return type(self.distance) == int or self.distance.isdigit()
+
     def __str__(self):
-        if self.is_mission:
-            return f"{self.track} (#{self.id}): {self.distance}"
-        return f"{self.track} (#{self.id}): {self.distance}m {self.race_type} 🪙"
+        if self.is_competitive:
+            return f"{self.track} (#{self.id}): {self.distance}m {self.race_type} 🪙"
+        return f"{self.track} (#{self.id}): {self.distance}"
 
     @property
     def conditions(self):
