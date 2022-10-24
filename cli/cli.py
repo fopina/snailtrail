@@ -428,7 +428,7 @@ Unclaimed SLIME: {self.client.web3.claimable_slime()}
 SLIME: {self.client.web3.balance_of_slime()}
 Unclaimed WAVAX: {self.client.web3.claimable_wavax()}
 WAVAX: {self.client.web3.balance_of_wavax()}
-AVAX: {self.client.web3.get_balance()}
+AVAX: {self.client.web3.get_balance():.3f}
 SNAILS: {self.client.web3.balance_of_snails()}
         '''
 
