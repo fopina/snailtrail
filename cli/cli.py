@@ -459,13 +459,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         d = self.client.marketplace_stats()
         n = False
         txt = ['📉  Floors decreased']
-        for k, v in d['prices'].items():
-            ov = self._notify_marketplace.get(k, [99999])[0]
-            if ov > v[0]:
-                n = True
-                txt.append(f"*{k}*: {' / '.join(map(str, v))} (previously `{ov}`)")
-            else:
-                txt.append(f"*{k}*: {' / '.join(map(str, v))}")
+        # do not notify on first run / less init spam
+        if self._notify_marketplace:
+            for k, v in d['prices'].items():
+                ov = self._notify_marketplace.get(k, [99999])[0]
+                if ov > v[0]:
+                    n = True
+                    txt.append(f"*{k}*: {' / '.join(map(str, v))} (previously `{ov}`)")
+                else:
+                    txt.append(f"*{k}*: {' / '.join(map(str, v))}")
         self._notify_marketplace = d['prices']
         if n:
             self.notifier.notify('\n'.join(txt))
