@@ -596,16 +596,17 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             it = list(self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True))
             for snail in it:
                 stats = [None, None, None]
-                for s in snail.more_stats[0]['data']:
-                    if s['name'] == 'All':
-                        for s2 in s['data']:
-                            if s2['name'] == 'Dashboard':
-                                if s2['data'][0]['name'] == 'Races':
-                                    stats[0] = s2['data'][0]['count']
-                                elif s2['data'][0]['name'] == 'Win':
-                                    stats[1] = s2['data'][0]['count']
-                                elif s2['data'][0]['name'] == 'Top 3':
-                                    stats[2] = s2['data'][0]['count']
+                if len(snail.more_stats) > 0:
+                    for s in snail.more_stats[0]['data']:
+                        if s['name'] == 'All':
+                            for s2 in s['data']:
+                                if s2['name'] == 'Dashboard':
+                                    if s2['data'][0]['name'] == 'Races':
+                                        stats[0] = s2['data'][0]['count']
+                                    elif s2['data'][0]['name'] == 'Win':
+                                        stats[1] = s2['data'][0]['count']
+                                    elif s2['data'][0]['name'] == 'Top 3':
+                                        stats[2] = s2['data'][0]['count']
                 if all([x is not None for x in stats]):
                     snail['tmp_stat_top3'] = stats[2] * 100 / stats[0]
                     snail['tmp_stat_wins'] = stats[1] * 100 / stats[0]
@@ -626,7 +627,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for snail in it:
             if self.args.sort == 'stats':
                 print(
-                    f'{snail} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}'
+                    f'{snail} - {snail.stats["elo"]} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}'
                 )
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
