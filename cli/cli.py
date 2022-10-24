@@ -424,12 +424,9 @@ class CLI:
     def _balance(self):
         # FIXME: missing wavax (claimed)
         return f'''\
-Unclaimed SLIME: {self.client.web3.claimable_slime()}
-SLIME: {self.client.web3.balance_of_slime()}
-Unclaimed WAVAX: {self.client.web3.claimable_wavax()}
-WAVAX: {self.client.web3.balance_of_wavax()}
-AVAX: {self.client.web3.get_balance():.3f}
-SNAILS: {self.client.web3.balance_of_snails()}
+SLIME: {self.client.web3.claimable_slime()} / {self.client.web3.balance_of_slime()}
+WAVAX: {self.client.web3.claimable_wavax()} / {self.client.web3.balance_of_wavax()}
+AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_of_snails()}
         '''
 
     def cmd_balance(self):
