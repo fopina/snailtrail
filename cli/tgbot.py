@@ -156,7 +156,7 @@ class Notifier:
 
         def _claim(cli):
             extra_text.append(f'claiming from {cli.masked_wallet}...')
-            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+            query.edit_message_text('\n'.join(extra_text))
             try:
                 r = cli.client.web3.claim_rewards()
                 if r.get('status') == 1:
@@ -168,7 +168,7 @@ class Notifier:
             except client.web3client.exceptions.ContractLogicError as e:
                 extra_text[-1] = f'claim failed for {cli.masked_wallet}: {e}'
                 logger.exception('error claiming')
-            query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
+            query.edit_message_text('\n'.join(extra_text))
 
         if not opts:
             # claim every account
