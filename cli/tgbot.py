@@ -155,7 +155,7 @@ class Notifier:
         extra_text = []
 
         def _claim(cli):
-            extra_text.append(f'claiming {bal} from {cli.masked_wallet}...')
+            extra_text.append(f'claiming from {cli.masked_wallet}...')
             query.edit_message_text(query.message.text + '\n' + '\n'.join(extra_text))
             try:
                 r = cli.client.web3.claim_rewards()
