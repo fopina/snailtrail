@@ -29,8 +29,7 @@ def bot_auth(func):
             return func(notifier, update, context)
         except Exception as e:
             logger.exception('error caught')
-            update.message.reply_markdown(
-                f'''error occurred, check logs
+            update.message.reply_markdown(f'''error occurred, check logs
 ```
 {escape_markdown(str(e))}
 ```
@@ -261,7 +260,9 @@ class Notifier:
         msg = []
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
-            msg.append(c._balance())
+            msg.append(f'''*SLIME*: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}
+*WAVAX*: {c.client.web3.claimable_wavax()} / {c.client.web3.balance_of_wavax()}
+*AVAX*: {c.client.web3.get_balance():.3f} / *SNAILS*: {c.client.web3.balance_of_snails()}''')
         update.message.reply_markdown('\n'.join(msg))
 
     @bot_auth

@@ -143,3 +143,50 @@ class Test(TestCase):
             self.update.callback_query.edit_message_text.call_args_list[2][0][0],
             '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME',
         )
+
+    def test_cmd_balance(self):
+        self.cli.client.web3.claimable_slime.return_value = 1
+        self.cli.client.web3.balance_of_slime.return_value = 1
+        self.cli.client.web3.claimable_wavax.return_value = 1
+        self.cli.client.web3.balance_of_wavax.return_value = 1
+        self.cli.client.web3.get_balance.return_value = 1
+        self.cli.client.web3.balance_of_snails.return_value = 1
+        self.bot.cmd_balance(self.update, self.context)
+        self.update.message.reply_markdown.assert_called_once_with(
+            '''\
+*SLIME*: 1 / 1.000
+*WAVAX*: 1 / 1
+*AVAX*: 1.000 / *SNAILS*: 1'''
+        )
+
+    def test_cmd_balance_multi(self):
+        cli2 = mock.MagicMock(
+            masked_wallet='0x3f',
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        self.bot.register_cli(cli2)
+        self.cli.client.web3.claimable_slime.return_value = 1
+        self.cli.client.web3.balance_of_slime.return_value = 1
+        self.cli.client.web3.claimable_wavax.return_value = 1
+        self.cli.client.web3.balance_of_wavax.return_value = 1
+        self.cli.client.web3.get_balance.return_value = 1
+        self.cli.client.web3.balance_of_snails.return_value = 1
+        cli2.client.web3.claimable_slime.return_value = 2
+        cli2.client.web3.balance_of_slime.return_value = 2
+        cli2.client.web3.claimable_wavax.return_value = 2
+        cli2.client.web3.balance_of_wavax.return_value = 2
+        cli2.client.web3.get_balance.return_value = 2
+        cli2.client.web3.balance_of_snails.return_value = 2
+        self.bot.cmd_balance(self.update, self.context)
+        self.update.message.reply_markdown.assert_called_once_with(
+            '''\
+`0x2f`
+*SLIME*: 1 / 1.000
+*WAVAX*: 1 / 1
+*AVAX*: 1.000 / *SNAILS*: 1
+`0x3f`
+*SLIME*: 2 / 2.000
+*WAVAX*: 2 / 2
+*AVAX*: 2.000 / *SNAILS*: 2'''
+        )

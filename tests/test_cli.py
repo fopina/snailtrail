@@ -1,3 +1,5 @@
+import contextlib
+import io
 import tempfile
 from unittest import TestCase, mock
 
@@ -235,3 +237,21 @@ class TestBot(TestCase):
         self.cli.notifier.notify.reset_mock()
         self.cli._bot_coefficent()
         self.cli.notifier.notify.assert_called_once_with('Coefficent drop to *1.0000* (from *3*)')
+
+    def test_balance(self):
+        self.cli.args.claim = False
+        self.cli.args.send = None
+        self.cli.client.web3.claimable_slime.return_value = 1
+        self.cli.client.web3.balance_of_slime.return_value = 1
+        self.cli.client.web3.claimable_wavax.return_value = 1
+        self.cli.client.web3.balance_of_wavax.return_value = 1
+        self.cli.client.web3.get_balance.return_value = 1
+        self.cli.client.web3.balance_of_snails.return_value = 1
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.assertIsNone(self.cli.cmd_balance())
+        self.assertEqual(f.getvalue(), '''\
+SLIME: 1 / 1.000
+WAVAX: 1 / 1
+AVAX: 1.000 / SNAILS: 1
+''')
