@@ -883,8 +883,33 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
+
+        agg = '.'
+        if self.args.agg and self.args.agg < len(races):
+            aggs = []
+            for i in range(0, len(races), self.args.agg):
+                w = races[i : i + self.args.agg]
+                aggs.append(sum(x[4] for x in w) / len(w))
+            aggs_c = []
+            for i in range(len(aggs) - 1):
+                if aggs[i] > aggs[i + 1]:
+                    c = Fore.GREEN
+                elif aggs[i] < aggs[i + 1]:
+                    c = Fore.RED
+                else:
+                    c = ''
+                aggs_c.append(f'{c}{aggs[i]}{Fore.RESET}')
+            aggs_c.append(str(aggs[-1]))
+            agg = f': {"/".join(aggs_c)}'
+
         total_rewards = sum(x[4] for x in races)
-        print(f"{snail.name_id} - {len(races)} total missions, average {total_rewards / len(races)} reward.")
+        if self.args.limit and len(races) == self.args.limit:
+            c = Fore.GREEN
+        else:
+            c = Fore.YELLOW
+        print(
+            f"{snail.name_id} - {len(races)} total missions, average {c}{total_rewards / len(races):.2f}{Fore.RESET} reward{agg}"
+        )
 
     def _join_race(self, join_arg: RaceJoin):
         try:

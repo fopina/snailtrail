@@ -142,6 +142,7 @@ def build_parser():
     pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
     pm.add_argument('-l', '--limit', type=int, help='Limit history to X missions')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get mission history for SNAIL_ID (use 0 for ALL)')
+    pm.add_argument('--agg', type=int, help='Aggregate history to X entries')
 
     pm = subparsers.add_parser('bot')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
