@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-from datetime import timedelta, datetime, timezone
-from pathlib import Path
 import logging
 import os
-import time
-from colorama import Fore
-import configargparse
+from pathlib import Path
 
+import configargparse
+from colorama import Fore
 from snail import proxy
-from . import tgbot, cli, tempconfigparser
+
+from . import cli, multicli, tempconfigparser, tgbot
 
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 
@@ -264,8 +263,7 @@ def build_parser():
 def main(argv=None):
     p = build_parser()
     args = p.parse_args(argv)
-    if not args.wallet:
-        args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug('debug enabled')
@@ -282,7 +280,8 @@ def main(argv=None):
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
 
-    clis: list[cli.CLI] = []
+    if not args.wallet:
+        args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
     wallets = args.wallet
     if args.account is not None:
         if args.account >= len(args.wallet):
@@ -293,48 +292,12 @@ def main(argv=None):
             return 1
         wallets = [args.wallet[args.account]]
 
-    first_one = True if len(wallets) > 1 else None
-    for w in wallets:
-        c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
-        first_one = False
-        args.notify.register_cli(c)
-        clis.append(c)
-
-    if args.cmd == 'bot':
-        for c in clis:
-            c.load_bot_settings()
-
-        # this cmd is special as it should loop infinitely
-        args.notify.start_polling()
-
-        cli_waits = {}
-        try:
-            clis[0].cmd_bot_greet()
-            while True:
-                now = datetime.now(tz=timezone.utc)
-                for c in clis:
-                    if c.owner in cli_waits and now < cli_waits[c.owner]:
-                        continue
-                    w = c.cmd_bot_tick()
-                    cli_waits[c.owner] = now + timedelta(seconds=w)
-                wf = min(list(cli_waits.values()))
-                time.sleep((wf - now).total_seconds())
-        except KeyboardInterrupt:
-            logger.info('Stopping...')
-        finally:
-            args.notify.stop_polling()
-            if args.proxy is None:
-                p.stop()
-    else:
-        try:
-            for c in clis:
-                r = c.run()
-                if r is False:
-                    # do not process any other clis
-                    break
-        finally:
-            if args.proxy is None:
-                p.stop()
+    cli = multicli.MultiCLI(wallets=wallets, proxy_url=proxy_url, args=args)
+    try:
+        cli.run()
+    finally:
+        if args.proxy is None:
+            p.stop()
 
 
 if __name__ == '__main__':

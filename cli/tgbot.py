@@ -5,7 +5,7 @@ from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 import logging
 
-from .cli import CLI, client
+from . import cli
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ def bot_auth(func):
             return func(notifier, update, context)
         except Exception as e:
             logger.exception('error caught')
-            update.message.reply_markdown(f'''error occurred, check logs
+            update.message.reply_markdown(
+                f'''error occurred, check logs
 ```
 {escape_markdown(str(e))}
 ```
@@ -41,7 +42,7 @@ def bot_auth(func):
 
 
 class Notifier:
-    clis: Dict[str, CLI]
+    clis: Dict[str, 'cli.CLI']
 
     def __init__(self, token, chat_id, settings_list=None):
         self.__token = token
@@ -68,14 +69,14 @@ class Notifier:
             self.updater = None
 
     @property
-    def any_cli(self) -> CLI:
+    def any_cli(self) -> 'cli.CLI':
         return list(self.clis.values())[0]
 
     @property
     def multi_cli(self) -> Boolean:
         return len(self.clis) > 1
 
-    def tag_with_wallet(self, cli: CLI, output: Optional[list] = None):
+    def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.multi_cli:
             return ''
         m = f'`{cli.masked_wallet}`'
@@ -270,14 +271,18 @@ class Notifier:
             totals[0] += cs + bs
             totals[1] += cw + bw + ba
             totals[2] += bn
-            msg.append(f'''*SLIME*: {cs} / {bs:.3f}
+            msg.append(
+                f'''*SLIME*: {cs} / {bs:.3f}
 *WAVAX*: {cw} / {bw}
-*AVAX*: {ba:.3f} / *SNAILS*: {bn}''')
+*AVAX*: {ba:.3f} / *SNAILS*: {bn}'''
+            )
         if self.multi_cli:
-            msg.append(f'''`Total`
+            msg.append(
+                f'''`Total`
 *SLIME*: {totals[0]:.3f}
 *AVAX*: {totals[1]:.3f}
-*SNAILS*: {totals[2]}''')
+*SNAILS*: {totals[2]}'''
+            )
         update.message.reply_markdown('\n'.join(msg))
 
     @bot_auth
