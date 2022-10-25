@@ -25,7 +25,8 @@ class CachedSnailHistory:
         self.cli = cli
         self._cache = {}
 
-    def __race_stats(self, snail_id, race):
+    @staticmethod
+    def race_stats(snail_id, race):
         for p, i in enumerate(race.results):
             if i['token_id'] == snail_id:
                 break
@@ -78,11 +79,7 @@ class CachedSnailHistory:
             500: [],
         }
 
-        for race in (
-            race
-            for league in client.League
-            for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'league': league})
-        ):
+        for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'category': 3}):
             races_per_price[int(race.race_type)].append(race)
 
         for race_type, history_races in races_per_price.items():
@@ -90,7 +87,7 @@ class CachedSnailHistory:
             races = []
             total = 0
             for race in history_races:
-                time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
+                time_on_first, time_on_third, p = self.race_stats(snail_id, race)
                 if time_on_first is None:
                     continue
                 if p < 4:
@@ -117,7 +114,7 @@ class CachedSnailHistory:
             # do not update anything as cache already expired
             return False
 
-        time_on_first, time_on_third, p = self.__race_stats(snail_id, race)
+        time_on_first, time_on_third, p = self.race_stats(snail_id, race)
         if time_on_first is None:
             return False
 
@@ -569,27 +566,37 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 logger.error('only last spot available, use --last-spot')
             except client.ClientError:
                 logger.exception('unexpected joinMission error')
-        else:
-            # list missions
-            snails = None
-            for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
-                athletes = len(x.athletes)
-                if x.participation:
-                    color = Fore.LIGHTBLACK_EX
-                elif athletes == 9:
-                    color = Fore.RED
-                else:
-                    color = Fore.GREEN
-                c = f'{color}{x} - {athletes}{Fore.RESET}'
-                if snails is None:
-                    # delayed loading of snails to use first race adaptatios (we don't want to look like a bot!)
-                    snails = list(
-                        self.client.iterate_my_snails_for_missions(self.owner, adaptations=[c.id for c in x.conditions])
-                    )
-                candidates = self.find_candidates(x, snails)
-                if candidates:
-                    c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
-                print(c)
+            return
+
+        if self.args.history is not None:
+            if self.args.history == 0:
+                for s in self.my_snails.values():
+                    self._history_missions(s)
+                return True
+            else:
+                self._history_missions(Snail({'id': self.args.history}))
+                return False
+
+        # list missions
+        snails = None
+        for x in self.client.iterate_mission_races(filters={'owner': self.owner}):
+            athletes = len(x.athletes)
+            if x.participation:
+                color = Fore.LIGHTBLACK_EX
+            elif athletes == 9:
+                color = Fore.RED
+            else:
+                color = Fore.GREEN
+            c = f'{color}{x} - {athletes}{Fore.RESET}'
+            if snails is None:
+                # delayed loading of snails to use first race adaptatios (we don't want to look like a bot!)
+                snails = list(
+                    self.client.iterate_my_snails_for_missions(self.owner, adaptations=[c.id for c in x.conditions])
+                )
+            candidates = self.find_candidates(x, snails)
+            if candidates:
+                c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+            print(c)
 
     def cmd_snails(self):
         if self.args.sort == 'stats':
@@ -863,6 +870,21 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             )
         else:
             logger.warning(f'Nothing for {snail.name_id}')
+
+    def _history_missions(self, snail):
+        total = 0
+        races = []
+        for race in self.client.iterate_race_history(filters={'token_id': snail.id, 'category': 2}):
+            time_on_first, time_on_third, p = CachedSnailHistory.race_stats(snail.id, race)
+            if time_on_first is None:
+                continue
+            reward = race.rewards['final_distribution'][p - 1]
+            races.append((race, p, time_on_first, time_on_third, reward))
+            total += 1
+            if self.args.limit and total >= self.args.limit:
+                break
+        total_rewards = sum(x[4] for x in races)
+        print(f"{snail.name_id} - {len(races)} total missions, average {total_rewards / len(races)} reward.")
 
     def _join_race(self, join_arg: RaceJoin):
         try:

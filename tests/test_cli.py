@@ -102,7 +102,6 @@ class TestBot(TestCase):
 
     def test_cached_snail_history(self):
         self.cli.client.gql.get_race_history.side_effect = [
-            # gold league
             {
                 'races': [
                     {
@@ -125,12 +124,10 @@ class TestBot(TestCase):
                 ],
                 'count': 1,
             },
-            # platinum league
-            {'races': [], 'count': 0},
         ]
         r = self.cli._snail_history.get(1, 50)
         self.assertEqual(r[1][27], [1, 0, 0, 1])
-        self.assertEqual(self.cli.client.gql.get_race_history.call_count, 2)
+        self.assertEqual(self.cli.client.gql.get_race_history.call_count, 1)
 
         self.cli.client.gql.get_race_history.reset_mock()
         r = self.cli._snail_history.get(1, 50)

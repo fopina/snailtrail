@@ -428,20 +428,19 @@ class Client(requests.Session):
                     status
                     athletes
                     race_type
+                    rewards {
+                    final_distribution
+                    }
                     results {
                     token_id
                     time
-                    __typename
                     }
                     track
                     prize_pool
                     starts_at
-                    __typename
                 }
                 count
-                __typename
                 }
-                __typename
             }
             }
             """,

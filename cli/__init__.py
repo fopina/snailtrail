@@ -140,6 +140,8 @@ def build_parser():
     pm = subparsers.add_parser('missions')
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
     pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
+    pm.add_argument('-l', '--limit', type=int, help='Limit history to X missions')
+    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get mission history for SNAIL_ID (use 0 for ALL)')
 
     pm = subparsers.add_parser('bot')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
