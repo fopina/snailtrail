@@ -258,11 +258,26 @@ class Notifier:
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         msg = []
+        totals = [0, 0, 0]
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
-            msg.append(f'''*SLIME*: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}
-*WAVAX*: {c.client.web3.claimable_wavax()} / {c.client.web3.balance_of_wavax()}
-*AVAX*: {c.client.web3.get_balance():.3f} / *SNAILS*: {c.client.web3.balance_of_snails()}''')
+            cs = c.client.web3.claimable_slime()
+            bs = c.client.web3.balance_of_slime()
+            cw = c.client.web3.claimable_wavax()
+            bw = c.client.web3.balance_of_wavax()
+            ba = c.client.web3.get_balance()
+            bn = c.client.web3.balance_of_snails()
+            totals[0] += cs + bs
+            totals[1] += cw + bw + ba
+            totals[2] += bn
+            msg.append(f'''*SLIME*: {cs} / {bs:.3f}
+*WAVAX*: {cw} / {bw}
+*AVAX*: {ba:.3f} / *SNAILS*: {bn}''')
+        if self.multi_cli:
+            msg.append(f'''`Total`
+*SLIME*: {totals[0]:.3f}
+*AVAX*: {totals[1]:.3f}
+*SNAILS*: {totals[2]}''')
         update.message.reply_markdown('\n'.join(msg))
 
     @bot_auth

@@ -188,5 +188,9 @@ class Test(TestCase):
 `0x3f`
 *SLIME*: 2 / 2.000
 *WAVAX*: 2 / 2
-*AVAX*: 2.000 / *SNAILS*: 2'''
+*AVAX*: 2.000 / *SNAILS*: 2
+`Total`
+*SLIME*: 6.000
+*AVAX*: 9.000
+*SNAILS*: 3'''
         )
