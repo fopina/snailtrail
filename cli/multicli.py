@@ -3,6 +3,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from typing import List
+from colorama import Fore
 
 from . import cli
 
@@ -32,6 +33,10 @@ class MultiCLI:
             args.notify.register_cli(c)
             self.clis.append(c)
 
+    @property
+    def is_multi(self) -> bool:
+        return len(self.clis) > 1
+
     def cmd_bot(self):
         for c in self.clis:
             c.load_bot_settings()
@@ -56,12 +61,45 @@ class MultiCLI:
         finally:
             self.args.notify.stop_polling()
 
+    def cmd_balance(self):
+        if self.args.claim or self.args.send is not None:
+            return False
+        totals = [0, 0, 0]
+
+        for c in self.clis:
+            cs = c.client.web3.claimable_slime()
+            bs = c.client.web3.balance_of_slime()
+            cw = c.client.web3.claimable_wavax()
+            bw = c.client.web3.balance_of_wavax()
+            ba = c.client.web3.get_balance()
+            bn = c.client.web3.balance_of_snails()
+            totals[0] += cs + bs
+            totals[1] += cw + bw + ba
+            totals[2] += bn
+            print(f'{Fore.CYAN}== {c.masked_wallet}{Fore.RESET} ==')
+            print(
+                f'''\
+SLIME: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}
+WAVAX: {c.client.web3.claimable_wavax()} / {c.client.web3.balance_of_wavax()}
+AVAX: {c.client.web3.get_balance():.3f} / SNAILS: {c.client.web3.balance_of_snails()}'''
+            )
+        print(f'{Fore.CYAN}== TOTAL{Fore.RESET} ==')
+        print(
+            f'''\
+SLIME: {totals[0]:.3f}
+AVAX: {totals[1]:.3f}
+SNAILS: {totals[2]}'''
+        )
+
     def run(self):
         if not self.args.cmd:
             return
-        m = getattr(self, f'cmd_{self.args.cmd}', None)
-        if m is not None:
-            return m()
+        if self.is_multi:
+            m = getattr(self, f'cmd_{self.args.cmd}', None)
+            if m is not None:
+                r = m()
+                if r is not False:
+                    return r
 
         for c in self.clis:
             r = c.run()

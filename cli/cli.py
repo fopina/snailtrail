@@ -442,10 +442,12 @@ class CLI:
             sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
             print(f'{sent} SLIME sent')
         else:
-            print(f'''\
+            print(
+                f'''\
 SLIME: {self.client.web3.claimable_slime()} / {self.client.web3.balance_of_slime():.3f}
 WAVAX: {self.client.web3.claimable_wavax()} / {self.client.web3.balance_of_wavax()}
-AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_of_snails()}''')
+AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_of_snails()}'''
+            )
 
     def _bot_marketplace(self):
         d = self.client.marketplace_stats()
@@ -473,10 +475,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         self._notify_coefficent = coef
 
     def cmd_bot(self):
+        self.load_bot_settings()
         self.cmd_bot_greet()
-        while True:
-            w = self.cmd_bot_tick()
-            time.sleep(w)
+        self.args.notify.start_polling()
+        try:
+            while True:
+                w = self.cmd_bot_tick()
+                time.sleep(w)
+        finally:
+            self.args.notify.stop_polling()
 
     def cmd_bot_greet(self):
         msg = f'👋  Running *v{VERSION}*'
