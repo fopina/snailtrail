@@ -133,14 +133,13 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.update.callback_query.edit_message_reply_markup.assert_not_called()
-        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*')
+        self.assertEqual(self.update.callback_query.edit_message_reply_markup.call_args_list[0][0][0], '*Sending to 0x2f*')
         self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
+            self.update.callback_query.edit_message_reply_markup.call_args_list[1][0][0],
             '*Sending to 0x2f*\n0x3f: sending 3e-18',
         )
         self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[2][0][0],
+            self.update.callback_query.edit_message_reply_markup.call_args_list[2][0][0],
             '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME',
         )
 

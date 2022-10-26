@@ -188,7 +188,7 @@ class Notifier:
             return
 
         extra_text = [f'*Sending to {cli.masked_wallet}*']
-        query.edit_message_text('\n'.join(extra_text))
+        query.edit_message_reply_markup('\n'.join(extra_text))
         for c in self.clis.values():
             if cli.owner == c.owner:
                 continue
@@ -197,11 +197,11 @@ class Notifier:
                 extra_text.append(f'{c.masked_wallet}: Nothing to send')
             else:
                 extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
-                query.edit_message_text('\n'.join(extra_text))
+                query.edit_message_reply_markup('\n'.join(extra_text))
                 r = c.client.web3.transfer_slime(cli.owner, bal)
                 sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
                 extra_text[-1] = f'{c.masked_wallet}: sent {sent} SLIME'
-            query.edit_message_text('\n'.join(extra_text))
+            query.edit_message_reply_markup('\n'.join(extra_text))
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
