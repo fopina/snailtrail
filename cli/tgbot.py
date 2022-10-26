@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional, Tuple
-from xmlrpc.client import Boolean
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -73,7 +72,7 @@ class Notifier:
         return list(self.clis.values())[0]
 
     @property
-    def multi_cli(self) -> Boolean:
+    def multi_cli(self) -> bool:
         return len(self.clis) > 1
 
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
@@ -165,7 +164,7 @@ class Notifier:
                 else:
                     extra_text[-1] = f'claim failed for {cli.masked_wallet}'
                     logger.error('error claiming: %s', r)
-            except client.web3client.exceptions.ContractLogicError as e:
+            except cli.client.web3client.exceptions.ContractLogicError as e:
                 extra_text[-1] = f'claim failed for {cli.masked_wallet}: {e}'
                 logger.exception('error claiming')
             query.edit_message_text('\n'.join(extra_text))

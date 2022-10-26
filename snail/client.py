@@ -144,7 +144,7 @@ class Client:
             ),
             gql_payload['payload']['size'],
             [
-                (x['race_id'], x['race_type'], x['owners'], x['results'])
+                (x['race_id'], x['race_type'], x['owners'], list(map(int, x['rewards_wei'])))
                 for x in gql_payload['payload']['completed_races']
             ],
             gql_payload['payload']['timeout'],
@@ -174,8 +174,11 @@ class Client:
         if r.get('status') != 1:
             raise ClientError('unknown status', r)
 
-        m = [(x['race_id'], x['race_type'], x['owners'], x['results']) for x in r['payload']['completed_races']]
-        return r, self.web3.join_competitive_mission(
+        m = [
+            (x['race_id'], x['race_type'], x['owners'], list(map(int, x['rewards_wei'])))
+            for x in r['payload']['completed_races']
+        ]
+        return r, self.web3.join_competitive_race(
             (
                 r['payload']['race_id'],
                 r['payload']['token_id'],

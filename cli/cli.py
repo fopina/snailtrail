@@ -941,7 +941,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 self._history_races(Snail({'id': self.args.history}))
             return
         if self.args.join:
-            self._join_race(self.args.join)
+            try:
+                self._join_race(self.args.join)
+                return False
+            except client.gqlclient.APIError as e:
+                if str(e) != 'Racer is not the active holder of the snail.':
+                    raise
             return
         self._open_races()
 

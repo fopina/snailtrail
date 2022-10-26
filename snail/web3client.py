@@ -109,10 +109,10 @@ class Client:
             **kwargs,
         )
 
-    def join_competitive_mission(
+    def join_competitive_race(
         self,
         race_info: tuple[int, int, str, int, int],
-        results: tuple[int, list[str]],
+        results: tuple[tuple[int, list[str]]],
         timeout: int,
         salt: int,
         signature: str,
@@ -173,7 +173,6 @@ class Client:
         >>> o.sign_race_join('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
-        # TODO: SIGN!!! and join with graphql
         keccak_hash = keccak.new(digest_bits=256)
         keccak_hash.update(
             snail_id.to_bytes(32, "big") + race_id.to_bytes(32, "big") + bytes.fromhex(owner.replace("0x", ""))
