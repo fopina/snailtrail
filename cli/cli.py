@@ -1008,7 +1008,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         }
         for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
             print(
-                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee}{Fore.RESET}'
+                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
             )
         return True
 

@@ -21,6 +21,60 @@ class Gender(Enum):
         return '❓'
 
 
+class Family(Enum):
+    """
+    Mapping taken directly from game JS
+    (search for `Garden = 1` to refresh mapping)
+
+    >>> s = Family.GARDEN
+    >>> s.name
+    'GARDEN'
+    >>> str(s)
+    'Garden'
+    >>> repr(s)
+    "<Family.GARDEN: (1, 'G')>"
+    >>> str(Family.from_str('garden'))
+    'Garden'
+    >>> str(Family.from_id(2))
+    'Helix'
+    >>> str(Family.from_gene('X'))
+    'Atlantis'
+    """
+
+    GARDEN = 1, 'G'
+    HELIX = 2, 'H'
+    MILK = 3, 'M'
+    AGATE = 4, 'A'
+    ATLANTIS = 5, 'X'
+
+    def __str__(self) -> str:
+        return self.name.capitalize()
+
+    @property
+    def id(self):
+        return self.value[0]
+
+    @property
+    def gene(self):
+        return self.value[1]
+
+    @classmethod
+    def from_id(cls, id: int):
+        for i in cls:
+            if id == i.id:
+                return i
+
+    @classmethod
+    def from_gene(cls, gene: str):
+        for i in cls:
+            if gene == i.gene:
+                return i
+
+    @classmethod
+    def from_str(cls, id: str):
+        return cls[id.upper()]
+
+
 class Adaptation(Enum):
     """
     Mapping taken directly from game JS
@@ -135,6 +189,10 @@ class Snail(AttrDict):
     def genome_str(self):
         if self.genome:
             return ''.join(self.genome)
+
+    @property
+    def family(self):
+        return Family.from_str(self['family'])
 
     @property
     def level(self):

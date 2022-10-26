@@ -243,7 +243,7 @@ class Notifier:
                 '🐌  %s\n%s\n🍆  *%s* 🏁 %s 🎫 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
-                    escmv2(f"lv {snail.level} - {snail.family} {snail.gender.emoji()} {snail.klass} {snail.purity}"),
+                    escmv2(f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"),
                     self._breed_status_markdown(snail.breed_status),
                     escmv2(self._queueable_at(snail)),
                     escmv2(str(snail.stats['mission_tickets'])),
