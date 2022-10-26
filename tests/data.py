@@ -230,3 +230,42 @@ GQL_MISSION_RACES = {
     ],
     '__typename': 'Races',
 }
+
+GQL_FINISHED_RACES = {
+    'own': [
+        {
+            'id': 169311,
+            'conditions': ['Mountain', 'Cold', 'Slide'],
+            'distance': 50,
+            'results': [
+                {'token_id': 1161},
+                {'token_id': 1946},
+                {'token_id': 9104},
+                {'token_id': 2266},
+                {'token_id': 7655},
+                {'token_id': 8003},
+                {'token_id': 8803},
+                {'token_id': 8267},
+                {'token_id': 9408},
+            ],
+            'rewards': {
+                'final_distribution': [
+                    6,
+                    5,
+                    4,
+                    2,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+
+                ],
+            },
+            'track': 'Hockenheimring',
+            'participation': False,
+            '__typename': 'Race',
+        },
+    ],
+    '__typename': 'Races',
+}

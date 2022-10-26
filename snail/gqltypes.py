@@ -280,20 +280,6 @@ class Race(AttrDict):
         return self.distance == 'Mega Run'
 
     @property
-    def is_mega(self):
-        """
-        >>> s = Race({'distance': 57})
-        >>> s.is_mega
-        False
-        >>> s = Race({'distance': 'Mega Run'})
-        >>> s.is_mega
-        True
-        >>> str(s)
-        'None (#None): Mega Run'
-        """
-        return self.distance == 'Mega Run'
-
-    @property
     def is_competitive(self):
         """
         >>> s = Race({'distance': 'Mega Run'})

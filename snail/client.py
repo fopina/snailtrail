@@ -1,6 +1,7 @@
-from typing import Generator, Iterable
 from enum import Enum
-from . import gqlclient, web3client, gqltypes
+from typing import Generator
+
+from . import gqlclient, gqltypes, web3client
 
 
 class League(int, Enum):
@@ -73,17 +74,17 @@ class Client:
             if max_calls and calls >= max_calls:
                 break
 
-    def iterate_all_genes_marketplace(self, filters={}):
+    def iterate_all_genes_marketplace(self, filters={}) -> Generator[gqltypes.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_all_genes_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_all_snails_marketplace(self, filters={}):
+    def iterate_all_snails_marketplace(self, filters={}) -> Generator[gqltypes.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_all_snails_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_all_snails(self, filters={}, more_stats=False) -> Iterable[gqltypes.Snail]:
+    def iterate_all_snails(self, filters={}, more_stats=False) -> Generator[gqltypes.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_all_snails,
             'snails',
@@ -114,12 +115,12 @@ class Client:
             max_calls=max_calls,
         )
 
-    def iterate_onboarding_races(self, filters={}):
+    def iterate_onboarding_races(self, filters={}) -> Generator[gqltypes.Race, None, None]:
         yield from self._iterate_pages(
             self.gql.get_onboarding_races, 'all', klass=gqltypes.Race, kwargs={'filters': filters}
         )
 
-    def iterate_finished_races(self, filters={}, own=False, max_calls=None):
+    def iterate_finished_races(self, filters={}, own=False, max_calls=None) -> Generator[gqltypes.Race, None, None]:
         k = 'own' if own else 'all'
         yield from self._iterate_pages(
             self.gql.get_finished_races,
@@ -129,7 +130,7 @@ class Client:
             max_calls=max_calls,
         )
 
-    def iterate_race_history(self, filters={}):
+    def iterate_race_history(self, filters={}) -> Generator[gqltypes.Race, None, None]:
         yield from self._iterate_pages(
             self.gql.get_race_history, 'races', klass=gqltypes.Race, kwargs={'filters': filters}
         )

@@ -749,29 +749,37 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if not race.is_mission and not self.args.races_over:
                 continue
 
+            found = False
             for p, i in enumerate(race['results']):
                 if i['token_id'] in self.my_snails:
+                    found = True
                     snail = self.my_snails[i['token_id']]
-                    break
-            else:
-                snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
-            p += 1
-            if p > 3:
-                e = '💩'
-            else:
-                e = '🥇🥈🥉'[p - 1]
-            if len(race.rewards['final_distribution']) >= p:
-                reward = race.rewards['final_distribution'][p - 1]
-            else:
-                reward = 0
+                    p += 1
+                    if p > 3:
+                        e = '💩'
+                    else:
+                        e = '🥇🥈🥉'[p - 1]
+                    if len(race.rewards['final_distribution']) >= p:
+                        reward = race.rewards['final_distribution'][p - 1]
+                    else:
+                        reward = 0
 
-            msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
-            if race.is_competitive and self.args.race_stats:
-                self._snail_history.update(snail, race)
-                msg += ' ' + self.race_stats_text(snail, race)
-            logger.info(msg)
-            if not race.is_mission:
-                self.notifier.notify(msg, silent=True)
+                    msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
+                    if race.is_competitive and self.args.race_stats:
+                        self._snail_history.update(snail, race)
+                        msg += ' ' + self.race_stats_text(snail, race)
+                    logger.info(msg)
+                    if not race.is_mission:
+                        self.notifier.notify(msg)
+                    if not race.is_mega:
+                        # no point looking for more snails
+                        break
+
+            if not found:
+                snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
+                msg = f"{e} {snail.name_id} in {race.track}, for {race.distance}"
+                logger.info(msg)
+                self.notifier.notify(msg)
         if first_run and not self._notified_races_over:
             # HACK ALERT: add random value just to make sure next run is not "first_run"
             self._notified_races_over.add(1)

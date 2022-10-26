@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import io
 import tempfile
 from unittest import TestCase, mock
@@ -250,8 +251,36 @@ class TestBot(TestCase):
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.assertIsNone(self.cli.cmd_balance())
-        self.assertEqual(f.getvalue(), '''\
+        self.assertEqual(
+            f.getvalue(),
+            '''\
 SLIME: 1 / 1.000
 WAVAX: 1 / 1
 AVAX: 1.000 / SNAILS: 1
-''')
+''',
+        )
+
+    def test_find_races_over(self):
+        self.cli.args.first_run_over = True
+        self.cli.args.races_over = True
+        self.cli.client.gql.get_finished_races.return_value = data.GQL_FINISHED_RACES
+        self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
+        self.cli.find_races_over()
+        # called just for first snail found, on non-mega, as there can only be one
+        self.cli.notifier.notify.assert_called_once_with('🥉 Snail #9104 number 3 in Hockenheimring, for 50, reward 4')
+
+        self.cli.notifier.notify.reset_mock()
+        mega_race = copy.deepcopy(data.GQL_FINISHED_RACES)
+        mega_race['own'][0]['distance'] = 'Mega Run'
+        mega_race['own'][0]['id'] = 999
+        self.cli.client.gql.get_finished_races.return_value = mega_race
+        self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
+        self.cli.find_races_over()
+        # called for both owned snails in the mega race, as these can have multiple at same time
+        self.assertEqual(
+            self.cli.notifier.notify.call_args_list,
+            [
+                mock.call('🥉 Snail #9104 number 3 in Hockenheimring, for Mega Run, reward 4'),
+                mock.call('💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0'),
+            ],
+        )
