@@ -202,6 +202,8 @@ class CLI:
         if not self.notifier._settings_list:
             return
         data = {x.dest: getattr(self.args, x.dest) for x in self.notifier._settings_list}
+        # FIXME: make this cleaner/more generic
+        data['mission_chat_id'] = self.args.mission_chat_id
         settings_file.write_text(json.dumps(data))
 
     @cached_property_with_ttl(600)
@@ -271,7 +273,7 @@ class CLI:
             or len(self._notify_mission_data['text'].encode()) > 4000
             or passed.total_seconds() > 12600
         ):
-            msg = self.notifier.notify(message, silent=True)
+            msg = self.notifier.notify(message, silent=True, chat_id=self.args.mission_chat_id)
             self._notify_mission_data = {'msg': msg, 'text': message, 'start': self._now()}
             return
 

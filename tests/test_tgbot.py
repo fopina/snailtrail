@@ -38,7 +38,8 @@ class Test(TestCase):
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
 /reloadsnails - Reset snails cache
-/settings - Toggle bot settings'''
+/settings - Toggle bot settings
+/usethisformissions - Use this chat for mission join notifications'''
         )
 
     def test_settings(self):
@@ -133,7 +134,9 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.assertEqual(self.update.callback_query.edit_message_reply_markup.call_args_list[0][0][0], '*Sending to 0x2f*')
+        self.assertEqual(
+            self.update.callback_query.edit_message_reply_markup.call_args_list[0][0][0], '*Sending to 0x2f*'
+        )
         self.assertEqual(
             self.update.callback_query.edit_message_reply_markup.call_args_list[1][0][0],
             '*Sending to 0x2f*\n0x3f: sending 3e-18',

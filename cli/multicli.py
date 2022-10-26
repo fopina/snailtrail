@@ -38,8 +38,8 @@ class MultiCLI:
         return len(self.clis) > 1
 
     def cmd_bot(self):
-        for c in self.clis:
-            c.load_bot_settings()
+        c = self.clis[0]
+        c.load_bot_settings()
 
         # this cmd is special as it should loop infinitely
         self.args.notify.start_polling()

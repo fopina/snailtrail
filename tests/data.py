@@ -259,7 +259,6 @@ GQL_FINISHED_RACES = {
                     0,
                     0,
                     0,
-
                 ],
             },
             'track': 'Hockenheimring',

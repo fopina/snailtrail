@@ -115,6 +115,12 @@ def build_parser():
         help='Poll Telegram Bot API for incoming messages/commands',
     )
     parser.add_argument(
+        '--tg-bot-owner',
+        type=int,
+        metavar='CHAT_ID',
+        help='Telegram bot will only reply to this chat id (defaults to chat_id in --notify)',
+    )
+    parser.add_argument(
         '--rate-limit',
         type=int,
         metavar='SECONDS',
@@ -145,6 +151,9 @@ def build_parser():
 
     pm = subparsers.add_parser('bot')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
+    pm.add_argument(
+        '--mission-chat-id', type=int, help='Notification chat id to be used only for mission join notifications'
+    )
     pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
     pm.add_argument(
         '-b',
@@ -279,6 +288,9 @@ def main(argv=None):
         p.start()
         logger.info('proxy ready on %s', p.url())
         proxy_url = p.url()
+
+    if args.tg_bot_owner is not None:
+        args.notifier.owner_chat_id = args.tg_bot_owner
 
     if not args.wallet:
         args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]

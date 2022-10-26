@@ -15,7 +15,7 @@ def escmv2(*a, **b):
 
 def bot_auth(func):
     def wrapper_func(notifier, update: Update, context: CallbackContext):
-        if not notifier.chat_id or update.effective_user['id'] != notifier.chat_id:
+        if not notifier.owner_chat_id or update.effective_user['id'] != notifier.owner_chat_id:
             logger.error(
                 '%s %s (%s / %d) not in allow list',
                 update.effective_user['first_name'],
@@ -43,11 +43,15 @@ def bot_auth(func):
 class Notifier:
     clis: Dict[str, 'cli.CLI']
 
-    def __init__(self, token, chat_id, settings_list=None):
+    def __init__(self, token, chat_id, owner_chat_id=None, settings_list=None):
         self.__token = token
         self.chat_id = chat_id
         self.clis = {}
         self._settings_list = settings_list
+        if owner_chat_id is None:
+            self.owner_chat_id = self.chat_id
+        else:
+            self.owner_chat_id = owner_chat_id
 
         if token:
             self.updater = Updater(self.__token)
@@ -63,6 +67,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
+            dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
             dispatcher.add_handler(CommandHandler("help", self.cmd_help))
         else:
             self.updater = None
@@ -242,7 +247,9 @@ class Notifier:
                 '🐌  %s\n%s\n🍆  *%s* 🏁 %s 🎫 %s'
                 % (
                     f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
-                    escmv2(f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"),
+                    escmv2(
+                        f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"
+                    ),
                     self._breed_status_markdown(snail.breed_status),
                     escmv2(self._queueable_at(snail)),
                     escmv2(str(snail.stats['mission_tickets'])),
@@ -392,6 +399,21 @@ class Notifier:
         )
         update.message.reply_markdown('Toggle settings', reply_markup=InlineKeyboardMarkup(keyboard))
 
+    @bot_auth
+    def cmd_usethisformissions(self, update: Update, context: CallbackContext) -> None:
+        """
+        Use this chat for mission join notifications
+        """
+        _cli = self.any_cli
+        oid = _cli.args.mission_chat_id or '-'
+        _cli.args.mission_chat_id = update.message.chat.id
+        msg = f'Changed `mission-chat-id` from `{oid}` to `{update.message.chat.id}`'
+        update.message.reply_markdown(f'{msg} (this one)')
+        if update.message.chat.id != self.chat_id:
+            # also notify main chat
+            self.notify(msg)
+        _cli.save_bot_settings()
+
     def idle(self):
         if self.updater:
             self.updater.idle()
@@ -437,6 +459,7 @@ class Notifier:
         silent: bool = False,
         edit: dict[str] = None,
         actions: List[Tuple[str]] = None,
+        chat_id: int = None,
     ):
         """Use this method to send text messages
 
@@ -457,7 +480,9 @@ class Notifier:
             :class:`telegram.error.TelegramError`
 
         """
-        if self.updater and self.chat_id:
+        if chat_id is None:
+            chat_id = self.chat_id
+        if self.updater and chat_id:
             if edit is None:
                 if actions:
                     keyboard = [[InlineKeyboardButton(x[0], callback_data=x[1])] for x in actions]
@@ -465,7 +490,7 @@ class Notifier:
                 else:
                     reply_markup = None
                 return self.updater.bot.send_message(
-                    self.chat_id, message, parse_mode=format, disable_notification=silent, reply_markup=reply_markup
+                    chat_id, message, parse_mode=format, disable_notification=silent, reply_markup=reply_markup
                 )
             else:
                 return self.updater.bot.edit_message_text(

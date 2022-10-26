@@ -27,7 +27,7 @@ class APIError(Exception):
 
 
 class RaceAlreadyFullAPIError(APIError):
-    """ Specific type for "Race is already full" """
+    """Specific type for "Race is already full" """
 
 
 class Client(requests.Session):
@@ -202,7 +202,8 @@ class Client(requests.Session):
         )['marketplace_promise']
 
     def get_all_snails(self, offset: int = 0, filters={}, more_stats=False):
-        more_stats_query = """
+        more_stats_query = (
+            """
         more_stats(seasons: [1]) {
             id
             name
@@ -229,7 +230,10 @@ class Client(requests.Session):
             }
             }
         }
-        """ if more_stats else ''
+        """
+            if more_stats
+            else ''
+        )
         return self.query(
             "getAllSnail",
             {
@@ -270,7 +274,8 @@ class Client(requests.Session):
                     }
                 }
             }
-            """ % (more_stats_query,),
+            """
+            % (more_stats_query,),
         )['snails_promise']
 
     def get_mission_races(self, offset=0, limit=20, filters={}):
