@@ -135,14 +135,14 @@ class Test(TestCase):
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.assertEqual(
-            self.update.callback_query.edit_message_reply_markup.call_args_list[0][0][0], '*Sending to 0x2f*'
+            self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*'
         )
         self.assertEqual(
-            self.update.callback_query.edit_message_reply_markup.call_args_list[1][0][0],
+            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
             '*Sending to 0x2f*\n0x3f: sending 3e-18',
         )
         self.assertEqual(
-            self.update.callback_query.edit_message_reply_markup.call_args_list[2][0][0],
+            self.update.callback_query.edit_message_text.call_args_list[2][0][0],
             '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME',
         )
 
@@ -154,11 +154,18 @@ class Test(TestCase):
         self.cli.client.web3.get_balance.return_value = 1
         self.cli.client.web3.balance_of_snails.return_value = 1
         self.bot.cmd_balance(self.update, self.context)
-        self.update.message.reply_markdown.assert_called_once_with(
-            '''\
+        self.update.message.reply_markdown.assert_called_once_with('Loading balances...')
+        self.assertEqual(
+            self.update.message.reply_markdown.return_value.edit_text.call_args_list,
+            [
+                mock.call(text='...Loading...', parse_mode='Markdown'),
+                mock.call(
+                    text='''\
 *SLIME*: 1 / 1.000
 *WAVAX*: 1 / 1
-*AVAX*: 1.000 / *SNAILS*: 1'''
+*AVAX*: 1.000 / *SNAILS*: 1''',
+                    parse_mode='Markdown'),
+            ]
         )
 
     def test_cmd_balance_multi(self):
@@ -181,8 +188,13 @@ class Test(TestCase):
         cli2.client.web3.get_balance.return_value = 2
         cli2.client.web3.balance_of_snails.return_value = 2
         self.bot.cmd_balance(self.update, self.context)
-        self.update.message.reply_markdown.assert_called_once_with(
-            '''\
+        self.update.message.reply_markdown.assert_called_once_with('Loading balances...')
+        reply = self.update.message.reply_markdown.return_value
+        self.assertEqual(len(reply.edit_text.call_args_list), 5)
+        self.assertEqual(
+            reply.edit_text.call_args_list[-1],
+            mock.call(
+                text='''\
 `0x2f`
 *SLIME*: 1 / 1.000
 *WAVAX*: 1 / 1
@@ -194,5 +206,7 @@ class Test(TestCase):
 `Total`
 *SLIME*: 6.000
 *AVAX*: 9.000
-*SNAILS*: 3'''
+*SNAILS*: 3''',
+                parse_mode='Markdown',
+            )
         )

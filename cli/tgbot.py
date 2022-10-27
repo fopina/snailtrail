@@ -193,7 +193,7 @@ class Notifier:
             return
 
         extra_text = [f'*Sending to {cli.masked_wallet}*']
-        query.edit_message_reply_markup('\n'.join(extra_text))
+        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
         for c in self.clis.values():
             if cli.owner == c.owner:
                 continue
@@ -202,11 +202,11 @@ class Notifier:
                 extra_text.append(f'{c.masked_wallet}: Nothing to send')
             else:
                 extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
-                query.edit_message_reply_markup('\n'.join(extra_text))
+                query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
                 r = c.client.web3.transfer_slime(cli.owner, bal)
                 sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
                 extra_text[-1] = f'{c.masked_wallet}: sent {sent} SLIME'
-            query.edit_message_reply_markup('\n'.join(extra_text))
+            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
@@ -266,8 +266,11 @@ class Notifier:
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         msg = []
         totals = [0, 0, 0]
+        m = update.message.reply_markdown('Loading balances...')
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
+            msg.append('...Loading...')
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
             cs = c.client.web3.claimable_slime()
             bs = c.client.web3.balance_of_slime()
             cw = c.client.web3.claimable_wavax()
@@ -277,11 +280,13 @@ class Notifier:
             totals[0] += cs + bs
             totals[1] += cw + bw + ba
             totals[2] += bn
-            msg.append(
-                f'''*SLIME*: {cs} / {bs:.3f}
+            msg[
+                -1
+            ] = f'''*SLIME*: {cs} / {bs:.3f}
 *WAVAX*: {cw} / {bw}
 *AVAX*: {ba:.3f} / *SNAILS*: {bn}'''
-            )
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
         if self.multi_cli:
             msg.append(
                 f'''`Total`
@@ -289,7 +294,7 @@ class Notifier:
 *AVAX*: {totals[1]:.3f}
 *SNAILS*: {totals[2]}'''
             )
-        update.message.reply_markdown('\n'.join(msg))
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth
     def cmd_claim(self, update: Update, context: CallbackContext) -> None:
