@@ -122,7 +122,7 @@ def build_parser():
     )
     parser.add_argument(
         '--rate-limit',
-        type=int,
+        type=float,
         metavar='SECONDS',
         help='Limit GraphQL to one per SECONDS, to avoid getting blocked',
     )
