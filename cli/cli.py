@@ -391,7 +391,10 @@ class CLI:
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
-                self.notifier.notify(f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}')
+                self.notifier.notify(
+                    f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}',
+                    chat_id=self.args.mission_chat_id,
+                )
             except client.gqlclient.APIError as e:
                 # handle re-join timeout errors
                 msg = str(e)
