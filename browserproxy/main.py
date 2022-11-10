@@ -55,11 +55,12 @@ class MyServer(BaseHTTPRequestHandler):
                     body: {post_body}
                     }}
                 );
-                return [r.status, await r.text()];
+                return [r.status, await r.text(), ...r.headers];
                 '''
             )
             self.send_response(data[0])
-            self.send_header("Content-type", "application/json")
+            for h in data[2:]:
+                self.send_header(h[0], h[1])
             self.end_headers()
             self.wfile.write(bytes(data[1], "utf-8"))
         except Exception as e:
