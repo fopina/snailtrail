@@ -60,6 +60,8 @@ class MyServer(BaseHTTPRequestHandler):
             )
             self.send_response(data[0])
             for h in data[2:]:
+                if h[0].lower() == 'content-encoding':
+                    continue
                 self.send_header(h[0], h[1])
             self.end_headers()
             self.wfile.write(bytes(data[1], "utf-8"))
