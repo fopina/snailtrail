@@ -37,6 +37,8 @@ class Test(TestCase):
 /swapsend - Send all slime to one account (for single swaps)
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
+/racereview - Review all races to join (that were already notified)
+/racepending - View pending races (that you joined)
 /reloadsnails - Reset snails cache
 /settings - Toggle bot settings
 /usethisformissions - Use this chat for mission join notifications'''

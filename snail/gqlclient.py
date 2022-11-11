@@ -340,6 +340,7 @@ class Client(requests.Session):
                         track
                         athletes
                         participation
+                        schedules_at
                         __typename
                     }
                     own {
@@ -355,6 +356,7 @@ class Client(requests.Session):
                         track
                         athletes
                         participation
+                        schedules_at
                         __typename
                     }
                     __typename

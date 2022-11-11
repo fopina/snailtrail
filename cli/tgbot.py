@@ -66,6 +66,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
+            dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
@@ -429,6 +430,29 @@ class Notifier:
 
         for c in self.clis.values():
             c.find_races(check_notified=False)
+
+    @bot_auth
+    def cmd_race_pending(self, update: Update, context: CallbackContext) -> None:
+        """
+        View pending races (that you joined)
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+
+        m = update.message.reply_markdown('Loading...')
+        msg = []
+        for c in self.clis.values():
+            self.tag_with_wallet(c, msg)
+            msg.append('...Loading...')
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            no_races = True
+            for r in c.client.iterate_onboarding_races(own=True, filters={'owner': c.owner}):
+                msg.insert(-1, f'{r.track} (#{r.id}): {len(r.athletes)} athletes scheduled for {r.schedules_at}')
+                no_races = False
+            if no_races:
+                msg = msg[:-2]
+            else:
+                msg = msg[:-1]
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     def idle(self):
         if self.updater:

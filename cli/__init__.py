@@ -266,6 +266,7 @@ def build_parser():
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID (use 0 for ALL)')
     pm.add_argument('-p', '--price', type=int, help='Filter for less or equal to PRICE')
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
+    pm.add_argument('--pending', action='store_true', help='Get YOUR pending races (joined but not yet started)')
     return parser
 
 

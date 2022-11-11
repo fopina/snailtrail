@@ -818,6 +818,33 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
 
+    def _open_races(self):
+        for league in client.League:
+            snails, races = self.find_races_in_league(league)
+            logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
+            if not snails:
+                continue
+            for race in races:
+                if self.args.price and int(race.race_type) > self.args.price:
+                    continue
+                if race.participation:
+                    color = Fore.LIGHTBLACK_EX
+                else:
+                    color = Fore.GREEN
+                if self.args.verbose:
+                    for k in ('__typename', 'starts_at', 'league'):
+                        del race[k]
+                    x_str = str(race)
+                else:
+                    x_str = f"{race.track} (#{race.id}): {race.distance}m for {race.race_type} entry"
+
+                candidates = race['candidates']
+                if candidates:
+                    c = f' - candidates: {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+                else:
+                    c = ''
+                print(f'{color}{x_str}{Fore.RESET}{c}')
+
     def _finished_races(self):
         total_cr = 0
         total = 0
@@ -939,6 +966,10 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def cmd_races(self):
         if self.args.finished:
             self._finished_races()
+            return
+        if self.args.pending:
+            for r in self.client.iterate_onboarding_races(own=True, filters={'owner': self.owner}):
+                print(f'{r.track} (#{r.id}): {len(r.athletes)} athletes scheduled for {r.schedules_at}')
             return
         if self.args.history is not None:
             if self.args.history == 0:

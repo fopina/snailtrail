@@ -115,9 +115,10 @@ class Client:
             max_calls=max_calls,
         )
 
-    def iterate_onboarding_races(self, filters={}) -> Generator[gqltypes.Race, None, None]:
+    def iterate_onboarding_races(self, own=False, filters={}) -> Generator[gqltypes.Race, None, None]:
+        k = 'own' if own else 'all'
         yield from self._iterate_pages(
-            self.gql.get_onboarding_races, 'all', klass=gqltypes.Race, kwargs={'filters': filters}
+            self.gql.get_onboarding_races, k, klass=gqltypes.Race, kwargs={'filters': filters}
         )
 
     def iterate_finished_races(self, filters={}, own=False, max_calls=None) -> Generator[gqltypes.Race, None, None]:
