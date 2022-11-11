@@ -134,9 +134,7 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*'
-        )
+        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*')
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[1][0][0],
             '*Sending to 0x2f*\n0x3f: sending 3e-18',
@@ -164,8 +162,9 @@ class Test(TestCase):
 *SLIME*: 1 / 1.000
 *WAVAX*: 1 / 1
 *AVAX*: 1.000 / *SNAILS*: 1''',
-                    parse_mode='Markdown'),
-            ]
+                    parse_mode='Markdown',
+                ),
+            ],
         )
 
     def test_cmd_balance_multi(self):
@@ -208,5 +207,5 @@ class Test(TestCase):
 *AVAX*: 9.000
 *SNAILS*: 3''',
                 parse_mode='Markdown',
-            )
+            ),
         )

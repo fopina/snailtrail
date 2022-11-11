@@ -689,11 +689,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             return ''
         return '`' + '.'.join(map(str, self._snail_history.get_all(snail)[1][race.distance])) + '`'
 
-    def find_races(self):
+    def find_races(self, check_notified=True):
+        first_run = not self._notified_races and not self.args.first_run_over
         for league in client.League:
             _, races = self.find_races_in_league(league)
             for race in races:
-                if race.id in self._notified_races:
+                if check_notified and race.id in self._notified_races:
                     # notify only once...
                     continue
                 if self.args.race_price and int(race.race_type) > self.args.race_price:
@@ -703,38 +704,39 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                     # already joined
                     continue
                 if race['candidates']:
-                    # report on just 1 match, but use only snails with 2 adaptations (stronger)
-                    cands = [
-                        cand
-                        for cand in race['candidates']
-                        if cand[0] >= self.args.race_matches and len(cand[1].adaptations) > 1
-                    ]
-                    if not cands:
-                        continue
-                    candidate_list = ','.join(
-                        f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[1], race)}" for cand in cands
-                    )
-                    msg = f"🏎️  Race {race} matched {candidate_list}"
-                    if self.args.races_join:
-                        join_actions = None
-                        try:
-                            self.client.join_competitive_races(cands[0][1].id, race.id, self.owner)
-                            msg += '\nJOINED ✅'
-                        except Exception:
-                            logger.exception('failed to join race')
-                            msg += '\nFAILED to join ❌'
-                    else:
-                        join_actions = [
-                            (
-                                f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}',
-                                f'joinrace {self.owner} {cand[1].id} {race.id}',
-                            )
-                            for cand in cands
-                        ] + [
-                            ('🏳️ Skip', 'joinrace'),
+                    if not first_run:
+                        # report on just required minimum matches, but use only snails with 2 adaptations (stronger)
+                        cands = [
+                            cand
+                            for cand in race['candidates']
+                            if cand[0] >= self.args.race_matches and len(cand[1].adaptations) > 1
                         ]
-                    logger.info(msg)
-                    self.notifier.notify(msg, actions=join_actions)
+                        if not cands:
+                            continue
+                        candidate_list = ','.join(
+                            f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[1], race)}" for cand in cands
+                        )
+                        msg = f"🏎️  Race {race} matched {candidate_list}"
+                        if self.args.races_join:
+                            join_actions = None
+                            try:
+                                self.client.join_competitive_races(cands[0][1].id, race.id, self.owner)
+                                msg += '\nJOINED ✅'
+                            except Exception:
+                                logger.exception('failed to join race')
+                                msg += '\nFAILED to join ❌'
+                        else:
+                            join_actions = [
+                                (
+                                    f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}',
+                                    f'joinrace {self.owner} {cand[1].id} {race.id}',
+                                )
+                                for cand in cands
+                            ] + [
+                                ('🏳️ Skip', 'joinrace'),
+                            ]
+                        logger.info(msg)
+                        self.notifier.notify(msg, actions=join_actions)
                     self._notified_races.add(race['id'])
 
     def find_races_over(self):

@@ -65,6 +65,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("swapsend", self.cmd_swapsend))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
+            dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
@@ -418,6 +419,16 @@ class Notifier:
             # also notify main chat
             self.notify(msg)
         _cli.save_bot_settings()
+
+    @bot_auth
+    def cmd_race_review(self, update: Update, context: CallbackContext) -> None:
+        """
+        Review all races to join (that were already notified)
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+
+        for c in self.clis.values():
+            c.find_races(check_notified=False)
 
     def idle(self):
         if self.updater:
