@@ -452,7 +452,10 @@ class Notifier:
                 msg = msg[:-2]
             else:
                 msg = msg[:-1]
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            if msg:
+                m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+        if not msg:
+            m.edit_text(text='None pending', parse_mode='Markdown')
 
     def idle(self):
         if self.updater:
