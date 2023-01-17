@@ -299,7 +299,7 @@ class CLI:
             else:
                 if closest is None or to_queue < closest:
                     closest = to_queue
-                logger.info(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
+                logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
         return queueable, closest
 
     def join_missions(self):
