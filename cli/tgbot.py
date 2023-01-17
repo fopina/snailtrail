@@ -244,21 +244,23 @@ class Notifier:
                 s['queueable_at'] = queues.get(s.id).get('queueable_at')
             all_snails.extend(it)
 
-        update.message.reply_markdown_v2(
-            '\n'.join(
-                '🐌  %s\n%s\n🍆  *%s* 🏁 %s 🎫 %s'
-                % (
-                    f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
-                    escmv2(
-                        f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"
-                    ),
-                    self._breed_status_markdown(snail.breed_status),
-                    escmv2(self._queueable_at(snail)),
-                    escmv2(str(snail.stats['mission_tickets'])),
+        # split into blocks of 50 snails due to message size limit of 4k (100 snails already error)
+        for partly in range(0, len(all_snails), 50):
+            update.message.reply_markdown_v2(
+                '\n'.join(
+                    '🐌  %s\n%s\n🍆  *%s* 🏁 %s 🎫 %s'
+                    % (
+                        f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
+                        escmv2(
+                            f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"
+                        ),
+                        self._breed_status_markdown(snail.breed_status),
+                        escmv2(self._queueable_at(snail)),
+                        escmv2(str(snail.stats['mission_tickets'])),
+                    )
+                    for snail in all_snails[partly : partly + 50]
                 )
-                for snail in all_snails
             )
-        )
 
     @bot_auth
     def cmd_balance(self, update: Update, context: CallbackContext) -> None:
