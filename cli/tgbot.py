@@ -147,13 +147,15 @@ class Notifier:
             query.edit_message_reply_markup()
             return
         owner, snail_id, race_id = opts[0].split(' ')
-        cli = self.clis[owner]
         try:
+            cli = self.clis[owner]
             r, _ = cli.client.join_competitive_races(int(snail_id), int(race_id), cli.owner)
             query.edit_message_text(query.message.text + '\n✅  Race joined')
         except Exception as e:
             logger.exception('unexpected joinRace error')
-            query.edit_message_text(query.message.text + f'\n❌ Race FAILED to join: {e}')
+            query.edit_message_text(
+                query.message.text + f'\n❌ Race FAILED to join: {e}', reply_markup=query.message.reply_markup
+            )
 
     def handle_buttons_claim(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process claim buttons"""
