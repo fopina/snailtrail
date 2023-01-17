@@ -638,6 +638,8 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 it.sort(key=lambda x: x.level)
             elif self.args.sort == 'stats':
                 it.sort(key=lambda x: x.tmp_stat_top3)
+            elif self.args.sort == 'pur':
+                it.sort(key=lambda x: x.purity)
         for snail in it:
             if self.args.sort == 'stats':
                 print(
