@@ -282,11 +282,11 @@ class Notifier:
             totals[0] += cs + bs
             totals[1] += cw + bw + ba
             totals[2] += bn
+            wstr = f'*WAVAX*: {cw} / {bw}\n' if cw + bw else ''
             msg[
                 -1
             ] = f'''*SLIME*: {cs} / {bs:.3f}
-*WAVAX*: {cw} / {bw}
-*AVAX*: {ba:.3f} / *SNAILS*: {bn}'''
+{wstr}*AVAX*: {ba:.3f} / *SNAILS*: {bn}'''
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
         if self.multi_cli:
