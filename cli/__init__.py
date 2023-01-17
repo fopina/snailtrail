@@ -139,6 +139,7 @@ def build_parser():
         type=int,
         help='Use single account (if multiple accounts in config) - 0-index of the wallet array (in config)',
     )
+    parser.add_argument('--no-colors', action='store_true', help='Disable colors in output')
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
@@ -273,6 +274,11 @@ def build_parser():
 def main(argv=None):
     p = build_parser()
     args = p.parse_args(argv)
+
+    if args.no_colors:
+        from colorama import init
+
+        init(strip=True)
 
     if args.debug:
         logger.setLevel(logging.DEBUG)
