@@ -8,7 +8,7 @@ RUN go mod download
 
 ADD . /go/src/app
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION} -X main.date=$(date '+%FT%T.%N%:z')" -o /gotlsproxy
+RUN CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=${VERSION}" -o /gotlsproxy
 
 FROM scratch
 
