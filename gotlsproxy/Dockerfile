@@ -18,4 +18,4 @@ ARG VERSION=dev
 LABEL version="${VERSION}"
 
 ENTRYPOINT [ "/gotlsproxy" ]
-CMD [ "-listenAddress", ":8888" ]
+CMD [ "-bind", ":8888" ]
