@@ -38,3 +38,11 @@ browserpub:
 				  -t fopina/random:snailtrail-browser-$(shell git log --oneline . | wc -l | tr -d ' ') \
 				  -t fopina/random:snailtrail-browser \
 				  --push browserproxy
+
+gotlspub:
+	docker buildx build \
+	              --platform linux/amd64,linux/arm64 \
+				  --build-arg VERSION=$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-gotls-$(shell git log --oneline . | wc -l | tr -d ' ') \
+				  -t fopina/random:snailtrail-gotls \
+				  --push gotlsproxy
