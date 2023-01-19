@@ -1057,19 +1057,21 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             )
         return True
 
-    def cmd_incubate_sim_report(self, results):
+    def cmd_incubate_sim_report(self, results, indent=0):
         families, purities, total = results
-        return ' --- '.join(
-            [
-                ' / '.join(
-                    f'{Fore.GREEN}{f[0]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}' for f in families[::-1]
-                ),
-                ' / '.join(
-                    f'{Fore.GREEN}{f[0][0]}{f[0][1]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}'
-                    for f in purities[-1:-5:-1]
-                ),
-            ]
+        family_odds = ' / '.join(
+            f'{Fore.GREEN}{f[0]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}' for f in families[::-1]
         )
+        top_odds = ' / '.join(
+            f'{Fore.GREEN}{f[0][0]}{f[0][1]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}'
+            for f in purities[-1:-5:-1]
+        )
+        top_purities = ' / '.join(
+            f'{Fore.GREEN}{f[0][0]}{f[0][1]} {Fore.YELLOW}{f[1]*100/total:0.2f}%{Fore.RESET}'
+            for f in sorted(purities, key=lambda x: x[0][1], reverse=True)[:5]
+        )
+        indent_str = ' ' * indent
+        return f'\n{indent_str}'.join([family_odds, top_odds, top_purities])
 
     def cmd_incubate_sim(self):
         pc = self.client.web3.get_current_coefficent()
@@ -1136,9 +1138,10 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for sim, snail1, snail2, fee in sorted(
             snail_fees, key=lambda x: (1 / Snail.GENE_FEES[x[0][0][0][0]], x[0][0][0][1])
         ):
-            print(
-                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee:0.2f}{Fore.RESET}: {self.cmd_incubate_sim_report(sim)}'
-            )
+            prefix = f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee:0.2f}{Fore.RESET}: '
+            # remove 30 for the coloring bytes
+            indent = len(prefix) - 30
+            print(f'{prefix}{self.cmd_incubate_sim_report(sim, indent=indent)}')
         return ret
 
     def run(self):
