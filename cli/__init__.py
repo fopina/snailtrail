@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import atexit
 import logging
 import os
 from pathlib import Path
@@ -64,6 +65,10 @@ class StoreRaceJoin(configargparse.argparse.Action):
         setattr(namespace, self.dest, cli.RaceJoin(*values))
 
 
+class DefaultOption(str):
+    pass
+
+
 class StoreBotConfig(configargparse.argparse._StoreAction):
     def __call__(self, parser, namespace, values, option_string=None):
         bot = tgbot.Notifier(FileOrString(values[0]), FileOrInt(values[1]), None)
@@ -82,6 +87,7 @@ def build_parser():
         default_config_files=['./main.conf', '~/.snailbot.conf'],
         args_for_setting_config_path=['-c', '--config'],
         args_for_writing_out_config_file=['--output-config'],
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         '--wallet',
@@ -96,9 +102,16 @@ def build_parser():
         default='https://api.avax.network/ext/bc/C/rpc',
         help='web3 http endpoint (value or path to file with value)',
     )
-    parser.add_argument('--proxy', help='Use this mitmproxy instead of starting one')
+    parser.add_argument('--proxy', help='Use this proxy for graphql (recommended: mitmproxy, burp)')
     parser.add_argument(
-        '--graphql-endpoint', help='Snailtrail graphql endpoint', default='https://api.snailtrail.art/graphql/'
+        '--graphql-endpoint',
+        help='Snailtrail graphql endpoint',
+        default=DefaultOption('https://api.snailtrail.art/graphql/'),
+    )
+    parser.add_argument(
+        '--gotls-bin',
+        default=Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy',
+        help='Path to gotlsproxy binary to use',
     )
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
     parser.add_argument(
@@ -283,18 +296,19 @@ def main(argv=None):
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug('debug enabled')
-    if args.proxy is not None:
-        proxy_url = args.proxy
-    else:
+
+    # if no proxy is set and using official graphql, start gotlsproxy
+    if not args.proxy and isinstance(args.graphql_endpoint, DefaultOption):
         logger.info('starting proxy')
         use_upstream_proxy = os.getenv('http_proxy') or os.getenv('https_proxy')
         if use_upstream_proxy:
             use_upstream_proxy = use_upstream_proxy.split('://')[-1]
             logger.warning('(upstream proxy %s)', use_upstream_proxy)
-        p = proxy.Proxy(upstream_proxy=use_upstream_proxy)
+        p = proxy.Proxy(args.gotls_bin, upstream_proxy=use_upstream_proxy)
         p.start()
+        atexit.register(p.stop)
         logger.info('proxy ready on %s', p.url())
-        proxy_url = p.url()
+        args.graphql_endpoint = p.url()
 
     if args.tg_bot_owner is not None:
         args.notifier.owner_chat_id = args.tg_bot_owner
@@ -311,12 +325,8 @@ def main(argv=None):
             return 1
         wallets = [args.wallet[args.account]]
 
-    cli = multicli.MultiCLI(wallets=wallets, proxy_url=proxy_url, args=args)
-    try:
-        cli.run()
-    finally:
-        if args.proxy is None:
-            p.stop()
+    cli = multicli.MultiCLI(wallets=wallets, proxy_url=args.proxy, args=args)
+    cli.run()
 
 
 if __name__ == '__main__':

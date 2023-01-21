@@ -1,6 +1,5 @@
 requests==2.27.1
 web3==5.29.2
-mitmproxy==8.1.0
 
 # for CLI
 colorama==0.4.4

@@ -78,7 +78,7 @@ class Client(requests.Session):
                 "http": proxy,
                 "https": proxy,
             }
-            # TODO: fetch mitmproxy CA and use it
+            # ignore certificates, as either burp or mitmproxy are expected...
             self.verify = False
         self.rate_limiter = rate_limiter
         self._last_query = 0

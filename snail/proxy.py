@@ -1,10 +1,7 @@
 import time
-from multiprocessing import Process
+import subprocess
 
 import requests
-from mitmproxy.tools import main
-
-requests.packages.urllib3.disable_warnings()
 
 
 def _free_port():
@@ -18,7 +15,8 @@ def _free_port():
 
 
 class Proxy:
-    def __init__(self, quiet=True, port=None, upstream_proxy=None):
+    def __init__(self, binary, quiet=True, port=None, upstream_proxy=None):
+        self._binary = binary
         self._quiet = quiet
         self._port = port if port else _free_port()
         self._upstream = upstream_proxy
@@ -28,19 +26,22 @@ class Proxy:
         return f'http://127.0.0.1:{self._port}'
 
     def start(self, wait_for_ready=True):
-        args = ['--listen-port', str(self._port)]
-        if self._quiet:
-            args.append('-q')
+        if not self._binary.is_file():
+            raise Exception(
+                'could not find gotls binary, build it (from gotlsproxy) or download binaries from https://github.com/snailhikers/gotlsproxy/releases/latest',
+                self._binary,
+            )
+        args = [self._binary, '--bind', f':{self._port}']
+        # FIXME: implement upstream proxy
         if self._upstream:
             args.extend(['--mode', f'upstream:{self._upstream}'])
-        self._process = Process(target=main.mitmdump, args=(args,), daemon=True)
-        self._process.start()
+        self._process = subprocess.Popen(args)
         if wait_for_ready:
             for _ in range(50):
                 try:
-                    requests.get('http://1.1.1.1', proxies={'https': self.url(), 'http': self.url()}, verify=False)
+                    requests.get(self.url())
                     break
-                except requests.exceptions.ProxyError:
+                except requests.exceptions.ConnectionError:
                     time.sleep(0.1)
             else:
                 raise Exception('proxy not starting')
