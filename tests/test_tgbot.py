@@ -107,7 +107,8 @@ class Test(TestCase):
     def test_handle_buttons_swapsend(self):
         self.cli.client.web3.balance_of_slime = lambda raw=True: 1
         self.cli.client.web3.get_balance = lambda: 2
-        self.cli.client.web3.transfer_slime = lambda a, b: {'logs': [{'data': '0x1'}]}
+        self.cli.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x1'}]}
+        self.cli.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {'logs': [{'data': '0x1'}]}
         cli2 = mock.MagicMock(
             masked_wallet='0x3f',
             owner='0x3fff',
@@ -115,7 +116,8 @@ class Test(TestCase):
         )
         cli2.client.web3.balance_of_slime = lambda raw=True: 3
         cli2.client.web3.get_balance = lambda: 4
-        cli2.client.web3.transfer_slime = lambda a, b: {'logs': [{'data': '0x3'}]}
+        cli2.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x3'}]}
+        cli2.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {'logs': [{'data': '0x3'}]}
         self.bot.register_cli(cli2)
 
         self.update.callback_query = mock.MagicMock(data='swapsend')
@@ -136,13 +138,10 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 4)
         self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*')
         self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
-            '*Sending to 0x2f*\n0x3f: sending 3e-18',
-        )
-        self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[2][0][0],
+            self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
             '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME',
         )
 

@@ -161,22 +161,21 @@ class Notifier:
         """Process claim buttons"""
         query = update.callback_query
         extra_text = []
+        hash_queue = []
+        final_status = {}
 
-        def _claim(cli):
-            extra_text.append(f'claiming from {cli.masked_wallet}...')
+        def _claim(_cli: 'cli.CLI'):
+            extra_text.append(f'claiming from {_cli.masked_wallet}...')
             query.edit_message_text('\n'.join(extra_text))
             try:
-                r = cli.client.web3.claim_rewards()
-                if r.get('status') == 1:
-                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
-                    extra_text[-1] = f'claimed {bal} from {cli.masked_wallet}'
-                else:
-                    extra_text[-1] = f'claim failed for {cli.masked_wallet}'
-                    logger.error('error claiming: %s', r)
+                h = _cli.client.web3.claim_rewards(wait_for_transaction_receipt=False)
+                final_status[_cli.masked_wallet] = None
+                hash_queue.append((_cli, h))
             except cli.client.web3client.exceptions.ContractLogicError as e:
-                extra_text[-1] = f'claim failed for {cli.masked_wallet}: {e}'
+                extra_text[-1] = f'claim FAILED for {_cli.masked_wallet}: {e}'
+                query.edit_message_text('\n'.join(extra_text))
+                final_status[_cli.masked_wallet] = extra_text[-1]
                 logger.exception('error claiming')
-            query.edit_message_text('\n'.join(extra_text))
 
         if not opts:
             # claim every account
@@ -184,6 +183,25 @@ class Notifier:
                 _claim(c)
         else:
             _claim(self.clis[opts[0]])
+
+        # check every receipt
+        for _cli, hash in hash_queue:
+            try:
+                r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+                if r.get('status') == 1:
+                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    extra_text.append(f'claimed {bal} from {_cli.masked_wallet}')
+                else:
+                    extra_text.append(f'claim FAILED for {_cli.masked_wallet}')
+                    logger.error('error claiming: %s', r)
+            except cli.client.web3client.exceptions.ContractLogicError as e:
+                extra_text.append(f'claim FAILED for {_cli.masked_wallet}: {e}')
+                logger.exception('error claiming')
+            final_status[_cli.masked_wallet] = extra_text[-1]
+            query.edit_message_text('\n'.join(extra_text))
+
+        # clean up message
+        query.edit_message_text('\n'.join(final_status.values()))
 
     def handle_buttons_swapsend(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process swapsend buttons"""
@@ -196,8 +214,14 @@ class Notifier:
             query.edit_message_reply_markup()
             return
 
+        hash_queue = []
+        final_status = {}
+
         extra_text = [f'*Sending to {cli.masked_wallet}*']
+        final_status['_'] = extra_text[-1]
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+
+        # submit transactions
         for c in self.clis.values():
             if cli.owner == c.owner:
                 continue
@@ -207,10 +231,20 @@ class Notifier:
             else:
                 extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
                 query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-                r = c.client.web3.transfer_slime(cli.owner, bal)
-                sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
-                extra_text[-1] = f'{c.masked_wallet}: sent {sent} SLIME'
+                h = c.client.web3.transfer_slime(cli.owner, bal, wait_for_transaction_receipt=False)
+                final_status[c.masked_wallet] = None
+                hash_queue.append((c, h))
+
+        # wait for receipts
+        for c, hash in hash_queue:
+            r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+            sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+            extra_text.append(f'{c.masked_wallet}: sent {sent} SLIME')
             query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+            final_status[c.masked_wallet] = extra_text[-1]
+
+        # clean up message
+        query.edit_message_text('\n'.join(final_status.values()), parse_mode='Markdown')
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:

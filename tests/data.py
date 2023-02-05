@@ -1,3 +1,149 @@
+from hexbytes import HexBytes
+from web3.datastructures import AttributeDict
+
+# example of a transaction hash returned by web.eth `send_raw_transaction`
+TX_HASH = b'\xd0\x16\xbf\xcba\xc1\x1d\xfb\xe5+C\xaa\xd7\xf7l\x9am\x00OQ\x92\x0eL\xfb\x1d*\x81\xaee\x8b\xf4\xc7'
+
+# example of a "transaction receipt" returned by `wait_for_transaction_receipt`
+
+# receipt for TX_HASH above
+TX_RECEIPT_1 = AttributeDict(
+    {
+        'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+        'blockNumber': 25864677,
+        'contractAddress': None,
+        'cumulativeGasUsed': 459624,
+        'effectiveGasPrice': 25000000000,
+        'from': '0xd991975e1C72E43C5702ced3230dA484442F195a',
+        'gasUsed': 88511,
+        'logs': [
+            AttributeDict(
+                {
+                    'address': '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8',
+                    'topics': [
+                        HexBytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),
+                        HexBytes('0x000000000000000000000000450324d8c9a7abf3b1626d590cf4beb48366d3b8'),
+                        HexBytes('0x00000000000000000000000058b699642f2a4b91dd10800ef852427b719db1f0'),
+                    ],
+                    'data': '0x000000000000000000000000000000000000000000045bac3bf97a30d24b0000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0xd016bfcb61c11dfbe52b43aad7f76c9a6d004f51920e4cfb1d2a81ae658bf4c7'),
+                    'transactionIndex': 1,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 9,
+                    'removed': False,
+                }
+            ),
+            AttributeDict(
+                {
+                    'address': '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8',
+                    'topics': [
+                        HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                        HexBytes('0x000000000000000000000000450324d8c9a7abf3b1626d590cf4beb48366d3b8'),
+                        HexBytes('0x000000000000000000000000d991975e1c72e43c5702ced3230da484442f195a'),
+                    ],
+                    'data': '0x00000000000000000000000000000000000000000000001d6fa387100d1c0000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0xd016bfcb61c11dfbe52b43aad7f76c9a6d004f51920e4cfb1d2a81ae658bf4c7'),
+                    'transactionIndex': 1,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 10,
+                    'removed': False,
+                }
+            ),
+            AttributeDict(
+                {
+                    'address': '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0',
+                    'topics': [HexBytes('0x5ff025b21b33bb30a2582ff811cb9c5cf9804a5aaa375929b8b910383ec31d22')],
+                    'data': '0x000000000000000000000000d991975e1c72e43c5702ced3230da484442f195a00000000000000000000000000000000000000000000001d6fa387100d1c0000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0xd016bfcb61c11dfbe52b43aad7f76c9a6d004f51920e4cfb1d2a81ae658bf4c7'),
+                    'transactionIndex': 1,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 11,
+                    'removed': False,
+                }
+            ),
+        ],
+        'logsBloom': HexBytes(
+            '0x00000000000000000000000000000000000010000004000000000000000000000000000000000200000008000002000000000000000000000000000000200000000000000000000000008008000000000000000000000000000000000000000000000000000000000000080000040000000000000000000001000010000000000004000000000000000000000000000000000000000000000000000000000000020008000000000000000000000000000000000000000000000000000000000000010006000000000000000000000001000000000004000000000800020000000010000000000000000000000000000000000010000000000000000000000000'
+        ),
+        'status': 1,
+        'to': '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0',
+        'transactionHash': HexBytes('0xd016bfcb61c11dfbe52b43aad7f76c9a6d004f51920e4cfb1d2a81ae658bf4c7'),
+        'transactionIndex': 1,
+        'type': '0x2',
+    }
+)
+TX_RECEIPT_2 = AttributeDict(
+    {
+        'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+        'blockNumber': 25864677,
+        'contractAddress': None,
+        'cumulativeGasUsed': 548135,
+        'effectiveGasPrice': 25000000000,
+        'from': '0xccBc66c9Dea9dFeAE0e57370Ee5974bed117bB35',
+        'gasUsed': 88511,
+        'logs': [
+            AttributeDict(
+                {
+                    'address': '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8',
+                    'topics': [
+                        HexBytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),
+                        HexBytes('0x000000000000000000000000450324d8c9a7abf3b1626d590cf4beb48366d3b8'),
+                        HexBytes('0x00000000000000000000000058b699642f2a4b91dd10800ef852427b719db1f0'),
+                    ],
+                    'data': '0x000000000000000000000000000000000000000000045b8ea2b3cf05cf030000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0x5200f9d11a93c68788623e1536f93fd2192b9e3b97b5cfb7223383c84ac7430a'),
+                    'transactionIndex': 2,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 12,
+                    'removed': False,
+                }
+            ),
+            AttributeDict(
+                {
+                    'address': '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8',
+                    'topics': [
+                        HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                        HexBytes('0x000000000000000000000000450324d8c9a7abf3b1626d590cf4beb48366d3b8'),
+                        HexBytes('0x000000000000000000000000ccbc66c9dea9dfeae0e57370ee5974bed117bb35'),
+                    ],
+                    'data': '0x00000000000000000000000000000000000000000000001d9945ab2b03480000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0x5200f9d11a93c68788623e1536f93fd2192b9e3b97b5cfb7223383c84ac7430a'),
+                    'transactionIndex': 2,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 13,
+                    'removed': False,
+                }
+            ),
+            AttributeDict(
+                {
+                    'address': '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0',
+                    'topics': [HexBytes('0x5ff025b21b33bb30a2582ff811cb9c5cf9804a5aaa375929b8b910383ec31d22')],
+                    'data': '0x000000000000000000000000ccbc66c9dea9dfeae0e57370ee5974bed117bb3500000000000000000000000000000000000000000000001d9945ab2b03480000',
+                    'blockNumber': 25864677,
+                    'transactionHash': HexBytes('0x5200f9d11a93c68788623e1536f93fd2192b9e3b97b5cfb7223383c84ac7430a'),
+                    'transactionIndex': 2,
+                    'blockHash': HexBytes('0x3604afa3e4db41132181795a5e7c41900ec4c7ef737bce7405371bf62b157867'),
+                    'logIndex': 14,
+                    'removed': False,
+                }
+            ),
+        ],
+        'logsBloom': HexBytes(
+            '0x00000000000000000000000000000000000010000004000000000000000000000000000000000200000008000002000000000000800000000000000000200000000000000000000000008008000000000000000000000000000000000000000000000000000000004000080000040000000000000000000001000010000000000004000000020000000000000000000000000000000000000000000000000000020008000000000000000000000000000000000000000000000000000000000000010002000000000000000000000001000000000000000000000000020000000010000000000000000000000000000000000010000000000000000000000000'
+        ),
+        'status': 1,
+        'to': '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0',
+        'transactionHash': HexBytes('0x5200f9d11a93c68788623e1536f93fd2192b9e3b97b5cfb7223383c84ac7430a'),
+        'transactionIndex': 2,
+        'type': '0x2',
+    }
+)
+
 GQL_MISSION_SNAILS = {
     'snails': [
         {
