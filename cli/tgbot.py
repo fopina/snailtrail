@@ -85,7 +85,7 @@ class Notifier:
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.multi_cli:
             return ''
-        m = f'`{cli.masked_wallet}`'
+        m = f'`{cli.name}`'
         if output is not None:
             output.append(m)
         return m
@@ -165,16 +165,16 @@ class Notifier:
         final_status = {}
 
         def _claim(_cli: 'cli.CLI'):
-            extra_text.append(f'claiming from {_cli.masked_wallet}...')
+            extra_text.append(f'claiming from {_cli.name}...')
             query.edit_message_text('\n'.join(extra_text))
             try:
                 h = _cli.client.web3.claim_rewards(wait_for_transaction_receipt=False)
-                final_status[_cli.masked_wallet] = None
+                final_status[_cli.name] = None
                 hash_queue.append((_cli, h))
             except cli.client.web3client.exceptions.ContractLogicError as e:
-                extra_text[-1] = f'claim FAILED for {_cli.masked_wallet}: {e}'
+                extra_text[-1] = f'claim FAILED for {_cli.name}: {e}'
                 query.edit_message_text('\n'.join(extra_text))
-                final_status[_cli.masked_wallet] = extra_text[-1]
+                final_status[_cli.name] = extra_text[-1]
                 logger.exception('error claiming')
 
         if not opts:
@@ -190,14 +190,14 @@ class Notifier:
                 r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                 if r.get('status') == 1:
                     bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
-                    extra_text.append(f'claimed {bal} from {_cli.masked_wallet}')
+                    extra_text.append(f'claimed {bal} from {_cli.name}')
                 else:
-                    extra_text.append(f'claim FAILED for {_cli.masked_wallet}')
+                    extra_text.append(f'claim FAILED for {_cli.name}')
                     logger.error('error claiming: %s', r)
             except cli.client.web3client.exceptions.ContractLogicError as e:
-                extra_text.append(f'claim FAILED for {_cli.masked_wallet}: {e}')
+                extra_text.append(f'claim FAILED for {_cli.name}: {e}')
                 logger.exception('error claiming')
-            final_status[_cli.masked_wallet] = extra_text[-1]
+            final_status[_cli.name] = extra_text[-1]
             query.edit_message_text('\n'.join(extra_text))
 
         # clean up message
@@ -217,7 +217,7 @@ class Notifier:
         hash_queue = []
         final_status = {}
 
-        extra_text = [f'*Sending to {cli.masked_wallet}*']
+        extra_text = [f'*Sending to {cli.name}*']
         final_status['_'] = extra_text[-1]
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
 
@@ -227,21 +227,21 @@ class Notifier:
                 continue
             bal = c.client.web3.balance_of_slime(raw=True)
             if not bal:
-                extra_text.append(f'{c.masked_wallet}: Nothing to send')
+                extra_text.append(f'{c.name}: Nothing to send')
             else:
-                extra_text.append(f'{c.masked_wallet}: sending {bal / 1000000000000000000}')
+                extra_text.append(f'{c.name}: sending {bal / 1000000000000000000}')
                 query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
                 h = c.client.web3.transfer_slime(cli.owner, bal, wait_for_transaction_receipt=False)
-                final_status[c.masked_wallet] = None
+                final_status[c.name] = None
                 hash_queue.append((c, h))
 
         # wait for receipts
         for c, hash in hash_queue:
             r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
             sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
-            extra_text.append(f'{c.masked_wallet}: sent {sent} SLIME')
+            extra_text.append(f'{c.name}: sent {sent} SLIME')
             query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-            final_status[c.masked_wallet] = extra_text[-1]
+            final_status[c.name] = extra_text[-1]
 
         # clean up message
         query.edit_message_text('\n'.join(final_status.values()), parse_mode='Markdown')
@@ -347,7 +347,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.masked_wallet}: {c.client.web3.claimable_slime()}',
+                        f'💰 {c.name}: {c.client.web3.claimable_slime()}',
                         callback_data=f'claim {c.owner}',
                     )
                 ]
@@ -368,7 +368,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.masked_wallet}: {c.client.web3.balance_of_slime():0.2f} / {c.client.web3.get_balance():0.2f}',
+                        f'💰 {c.name}: {c.client.web3.balance_of_slime():0.2f} / {c.client.web3.get_balance():0.2f}',
                         callback_data=f'swapsend {c.owner}',
                     )
                 ]

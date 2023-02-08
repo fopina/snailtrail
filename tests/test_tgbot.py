@@ -9,9 +9,9 @@ class Test(TestCase):
         self.user = User(999999999, 'John', False, 'Valium', 'jval')
         self.cli = mock.MagicMock(
             args=mock.MagicMock(wtv=False),
-            masked_wallet='0x2f',
             owner='0x2fff',
         )
+        self.cli.name = '0x2f'
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
         self.bot._settings_list = [mock.MagicMock(dest='wtv', help='Whatever')]
         self.bot.register_cli(self.cli)
@@ -81,10 +81,10 @@ class Test(TestCase):
         self.cli.client.web3.balance_of_slime = lambda: 1
         self.cli.client.web3.get_balance = lambda: 2
         cli2 = mock.MagicMock(
-            masked_wallet='0x3f',
             owner='0x3fff',
             args=mock.MagicMock(wtv=False),
         )
+        cli2.name = '0x3f'
         cli2.client.web3.balance_of_slime = lambda: 3
         cli2.client.web3.get_balance = lambda: 4
         self.bot.register_cli(cli2)
@@ -110,10 +110,10 @@ class Test(TestCase):
         self.cli.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x1'}]}
         self.cli.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {'logs': [{'data': '0x1'}]}
         cli2 = mock.MagicMock(
-            masked_wallet='0x3f',
             owner='0x3fff',
             args=mock.MagicMock(wtv=False),
         )
+        cli2.name = '0x3f'
         cli2.client.web3.balance_of_slime = lambda raw=True: 3
         cli2.client.web3.get_balance = lambda: 4
         cli2.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x3'}]}
@@ -170,10 +170,10 @@ class Test(TestCase):
 
     def test_cmd_balance_multi(self):
         cli2 = mock.MagicMock(
-            masked_wallet='0x3f',
             owner='0x3fff',
             args=mock.MagicMock(wtv=False),
         )
+        cli2.name = '0x3f'
         self.bot.register_cli(cli2)
         self.cli.client.web3.claimable_slime.return_value = 1
         self.cli.client.web3.balance_of_slime.return_value = 1

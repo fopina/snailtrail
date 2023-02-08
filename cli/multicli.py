@@ -27,8 +27,10 @@ class MultiCLI:
         self.args = args
 
         first_one = True if len(wallets) > 1 else None
-        for w in wallets:
-            c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
+        for _ind, w in enumerate(wallets):
+            c = cli.CLI(
+                w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint, name=str(_ind + 1)
+            )
             first_one = False
             args.notify.register_cli(c)
             self.clis.append(c)
@@ -76,7 +78,7 @@ class MultiCLI:
             totals[0] += cs + bs
             totals[1] += cw + bw + ba
             totals[2] += bn
-            print(f'{Fore.CYAN}== {c.masked_wallet}{Fore.RESET} ==')
+            print(f'{Fore.CYAN}== {c.name}{Fore.RESET} ==')
             print(
                 f'''\
 SLIME: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}

@@ -136,6 +136,7 @@ class CLI:
         args: argparse.Namespace,
         main_one: Optional[Boolean] = None,
         graphql_endpoint: Optional[str] = None,
+        name: str = None,
     ):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
@@ -147,6 +148,7 @@ class CLI:
         self.args = args
         self.owner = wallet.address
         self.main_one = main_one
+        self._name = name
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
@@ -178,6 +180,12 @@ class CLI:
         if len(self.owner) < 20:
             return self.owner
         return f'{self.owner[:5]}...{self.owner[-3:]}'
+
+    @cached_property
+    def name(self):
+        if not self._name:
+            return self.masked_wallet
+        return f'{self._name} ({self.masked_wallet})'
 
     @property
     def report_as_main(self):
@@ -1148,5 +1156,5 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         if not self.args.cmd:
             return
         if self.main_one is not None:
-            print(f'{Fore.CYAN}== {self.masked_wallet}{Fore.RESET} ==')
+            print(f'{Fore.CYAN}== {self.name}{Fore.RESET} ==')
         return getattr(self, f'cmd_{self.args.cmd}')()
