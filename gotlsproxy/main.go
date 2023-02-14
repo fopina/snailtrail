@@ -37,6 +37,7 @@ func hello(w http.ResponseWriter, req *http.Request) {
 		Headers: map[string]string{
 			"Accept":       "application/json",
 			"Content-Type": "application/json",
+			"Auth":         req.Header.Get("Auth"),
 		},
 		Timeout: timeout,
 	}, "POST")
