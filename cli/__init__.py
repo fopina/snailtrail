@@ -177,6 +177,12 @@ def build_parser():
         help='If auto, these snail ids should always take last spots for missions (boost)',
     )
     pm.add_argument(
+        '--minimum-tickets',
+        type=int,
+        default=0,
+        help='Any snail with less tickets than this will only join on last spots',
+    )
+    pm.add_argument(
         '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
     )
     pm.add_argument(

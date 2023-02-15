@@ -320,7 +320,7 @@ class CLI:
         if self.args.fair:
             # add snails with negative tickets to "boosted" to re-use logic
             for s in queueable:
-                if s.stats['mission_tickets'] < 0:
+                if s.stats['mission_tickets'] < self.args.minimum_tickets:
                     boosted.add(s.id)
 
         for race in missions:
