@@ -142,7 +142,7 @@ class Test(TestCase):
         self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], '*Sending to 0x2f*')
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
-            '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME',
+            '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME\n*Total sent*: 3e-18',
         )
 
     def test_cmd_balance(self):

@@ -184,12 +184,14 @@ class Notifier:
         else:
             _claim(self.clis[opts[0]])
 
+        total_claimed = 0
         # check every receipt
         for _cli, hash in hash_queue:
             try:
                 r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                 if r.get('status') == 1:
                     bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    total_claimed += bal
                     extra_text.append(f'claimed {bal} from {_cli.name}')
                 else:
                     extra_text.append(f'claim FAILED for {_cli.name}')
@@ -201,7 +203,10 @@ class Notifier:
             query.edit_message_text('\n'.join(extra_text))
 
         # clean up message
-        query.edit_message_text('\n'.join(final_status.values()))
+        query.edit_message_text(
+            '\n'.join(list(final_status.values()) + [f'*Total claimed*: {total_claimed}']),
+            parse_mode='Markdown',
+        )
 
     def handle_buttons_swapsend(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process swapsend buttons"""
@@ -235,16 +240,21 @@ class Notifier:
                 final_status[c.name] = None
                 hash_queue.append((c, h))
 
+        total_sent = 0
         # wait for receipts
         for c, hash in hash_queue:
             r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
             sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+            total_sent += sent
             extra_text.append(f'{c.name}: sent {sent} SLIME')
             query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
             final_status[c.name] = extra_text[-1]
 
         # clean up message
-        query.edit_message_text('\n'.join(final_status.values()), parse_mode='Markdown')
+        query.edit_message_text(
+            '\n'.join(list(final_status.values()) + [f'*Total sent*: {total_sent}']),
+            parse_mode='Markdown',
+        )
 
     @bot_auth
     def cmd_start(self, update: Update, context: CallbackContext) -> None:
