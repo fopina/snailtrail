@@ -295,6 +295,14 @@ def main(argv=None):
         from colorama import init
 
         init(strip=True)
+
+        # FIXME: colorama strip fails in logging...!
+        # monkeypatch Fore
+        class FakeFore:
+            def __getattribute__(self, __name: str):
+                return ''
+
+        Fore.__class__ = FakeFore
     else:
         logging.addLevelName(logging.WARNING, f'{Fore.YELLOW}{logging.getLevelName(logging.WARNING)}{Fore.RESET}')
         logging.addLevelName(logging.ERROR, f'{Fore.RED}{logging.getLevelName(logging.ERROR)}{Fore.RESET}')
