@@ -409,7 +409,7 @@ class CLI:
                 if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
                     raise
                 logger.exception('re-join as last error for %s', snail.name_id)
-                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=int(msg[58:].split(' ', 1)[0]))
+                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=float(msg[58:].split(' ', 1)[0]))
             except client.web3client.exceptions.ContractLogicError as e:
                 if 'Race already submitted' in str(e):
                     logger.error('Too late for the race, try next one')
