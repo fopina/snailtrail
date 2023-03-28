@@ -1006,6 +1006,49 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         print(self.client.web3.get_current_coefficent())
         return False
 
+    def cmd_incubate_fee_lazy_plan(self, snail_fees):
+        # lazy planning, only useful with many-to-many snails
+        final_pairs = []
+        sorted_pairs = sorted(snail_fees, key=lambda x: x[0])
+        used = set()
+        while True:
+            # pick a male
+            s_count = {}
+            male = None
+            for _, snail1, snail2 in sorted_pairs:
+                def _s(s):
+                    if s not in used:
+                        s_count[s] = s_count.get(s, 0) + 1
+                        if s_count[s] > 2:
+                            return True
+                if _s(snail1):
+                    male = snail1
+                    break
+                if _s(snail2):
+                    male = snail2
+                    break
+            if male is None:
+                # no male found
+                break
+            # find 3 pairs
+            p = 0
+            for fee, snail1, snail2 in sorted_pairs:
+                if snail1 == male:
+                    female = snail2
+                elif snail2 == male:
+                    female = snail1
+                else:
+                    continue
+                if female in used:
+                    continue
+                p += 1
+                used.add(male)
+                used.add(female)
+                final_pairs.append((fee, male, female))
+                if p >= 3:
+                    break
+        return final_pairs
+
     def cmd_incubate_fee(self):
         pc = self.client.web3.get_current_coefficent()
         argc = len(self.args.fee)
@@ -1059,10 +1102,17 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             Gender.FEMALE: Fore.MAGENTA,
             Gender.UNDEFINED: Fore.YELLOW,
         }
-        for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
-            print(
-                f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
-            )
+        if self.args.plan:
+            # lazy planning, only useful with many-to-many snails                    
+            for fee, snail1, snail2 in self.cmd_incubate_fee_lazy_plan(snail_fees):
+                print(
+                    f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                )
+        else:
+            for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
+                print(
+                    f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                )
         return True
 
     def cmd_incubate_sim_report(self, results, indent=0):

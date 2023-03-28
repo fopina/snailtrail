@@ -164,6 +164,9 @@ class Snail(AttrDict):
         'G': 2,
     }
 
+    def __hash__(self):
+        return self.id
+
     @property
     def name_id(self):
         pr = self.name or f'#{self.id}'

@@ -267,6 +267,7 @@ def build_parser():
     )
     pm.add_argument('-G', '--gene-family', type=int, help='filter gene market by this family (5 is Atlantis)')
     pm.add_argument('-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW')
+    pm.add_argument('--plan', action='store_true', help='Lazy (suboptimal) planning for cheapest breeds (only for `-bf`)')
 
     pm = subparsers.add_parser('rename')
     pm.add_argument('snail', type=int, help='snail')
