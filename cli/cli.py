@@ -349,6 +349,8 @@ class CLI:
             logger.info(
                 f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
+
+            tx = None
             try:
                 if self.args.cheap and snail.id in boosted:
                     # join without allowing last spot to capture payload
@@ -359,7 +361,7 @@ class CLI:
                     except client.RequiresTransactionClientError as e:
                         r = e.args[1]
                         if r['payload']['size'] == 0:
-                            self.client.rejoin_mission_races(r)
+                            tx = self.client.rejoin_mission_races(r)
                         else:
                             # add snail to cooldown, use 90 for now - check future logs if they still get locked
                             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
@@ -375,7 +377,7 @@ class CLI:
                         continue
                 else:
                     try:
-                        r, _ = self.client.join_mission_races(
+                        r, tx = self.client.join_mission_races(
                             snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
                         )
                     except client.RequiresTransactionClientError as e:
@@ -388,14 +390,15 @@ class CLI:
                         if self.args.cheap and not r['payload']['size'] == 0:
                             raise
 
-                        self.client.rejoin_mission_races(r)
+                        tx = self.client.rejoin_mission_races(r)
 
                 msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
                 if r.get('status') == 0:
-                    logger.info(f'{msg} - {r["message"]}')
+                    logger.info(f'{msg}')
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
-                    logger.info(f'{msg} LAST SPOT - {r["message"]}')
+                    fee = tx['cumulativeGasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+                    logger.info(f'{msg} LAST SPOT - fee: {fee}')
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
@@ -409,7 +412,9 @@ class CLI:
                 if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
                     raise
                 logger.exception('re-join as last error for %s', snail.name_id)
-                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=float(msg[58:].split(' ', 1)[0]))
+                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(
+                    seconds=float(msg[58:].split(' ', 1)[0])
+                )
             except client.web3client.exceptions.ContractLogicError as e:
                 if 'Race already submitted' in str(e):
                     logger.error('Too late for the race, try next one')
@@ -1024,11 +1029,13 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             s_count = {}
             male = None
             for _, snail1, snail2 in sorted_pairs:
+
                 def _s(s):
                     if s not in used:
                         s_count[s] = s_count.get(s, 0) + 1
                         if s_count[s] > 2:
                             return True
+
                 if _s(snail1):
                     male = snail1
                     break
@@ -1111,7 +1118,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             Gender.UNDEFINED: Fore.YELLOW,
         }
         if self.args.plan:
-            # lazy planning, only useful with many-to-many snails                    
+            # lazy planning, only useful with many-to-many snails
             for fee, snail1, snail2 in self.cmd_incubate_fee_lazy_plan(snail_fees):
                 print(
                     f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
