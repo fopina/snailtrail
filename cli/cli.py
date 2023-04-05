@@ -736,6 +736,14 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                                 logger.exception('failed to join race')
                                 msg += '\nFAILED to join ❌'
                         else:
+                            # TODO: reformat join message race
+                            # * stats on different line
+                            # * on top of stats for the race distance, show overall stats as well (on any distance)
+                            # * date from last stat
+                            # * use more_stats endpoint from server instead of getting all history?
+                            #   * can we have stats per distance on that endpoint?
+                            # ----
+                            # (if this code is ever used again - competitives suck!)
                             join_actions = [
                                 (
                                     f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}',
