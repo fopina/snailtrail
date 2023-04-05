@@ -400,7 +400,7 @@ class CLI:
                     fee = tx['cumulativeGasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
                     logger.info(f'{msg} LAST SPOT - fee: {fee}')
                     # FIXME: delete after debugging tx price
-                    logger.info(json.dumps(tx))
+                    logger.info(tx)
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
                 logger.exception('failed to join mission')
