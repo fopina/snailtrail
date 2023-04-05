@@ -28,13 +28,14 @@ class Proxy:
     def start(self, wait_for_ready=True):
         if not self._binary.is_file():
             raise Exception(
-                'could not find gotls binary, build it (from gotlsproxy) or download binaries from https://github.com/snailhikers/gotlsproxy/releases/latest',
+                'could not find gotls binary, build it (from gotlsproxy) or download binaries from https://github.com/fopina/gotlsproxy/releases/latest',
                 self._binary,
             )
         args = [self._binary, '--bind', f':{self._port}']
         # FIXME: implement upstream proxy
         if self._upstream:
             args.extend(['--mode', f'upstream:{self._upstream}'])
+        args.append('https://api.snailtrail.art/graphql/')
         self._process = subprocess.Popen(args)
         if wait_for_ready:
             for _ in range(50):
