@@ -35,6 +35,14 @@ class MultiCLI:
             args.notify.register_cli(c)
             self.clis.append(c)
 
+        # get proper profile info
+        profiles = [c.owner for c in self.clis]
+        data = self.clis[0].client.gql.profile(profiles)
+        for i, c in enumerate(self.clis):
+            u = data[f'profile{i}']['username']
+            if u[:5] != c.owner[:5]:
+                c._name = str(i + 1) + ' ' + u
+
     @property
     def is_multi(self) -> bool:
         return len(self.clis) > 1
