@@ -101,6 +101,20 @@ AVAX: {totals[1]:.3f}
 SNAILS: {totals[2]}'''
         )
 
+    def cmd_incubate(self):
+        if self.args.fee is not None and self.args.plan:
+            snails = []
+            for c in self.clis:
+                _, ss = c.run()
+                snails.extend((x1, x2, x3, c) for x1, x2, x3 in ss)
+            print(f'\n{Fore.GREEN}== FULL PLAN =={Fore.RESET}')
+            for fee, snail1, snail2, c in sorted(snails, key=lambda x: x[0]):
+                print(
+                    f'{c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                )
+            return
+        return False
+
     def run(self):
         if not self.args.cmd:
             return

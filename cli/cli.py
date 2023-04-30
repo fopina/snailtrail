@@ -20,6 +20,13 @@ from .types import RaceJoin, Wallet
 logger = logging.getLogger(__name__)
 
 
+GENDER_COLORS = {
+    Gender.MALE: Fore.BLUE,
+    Gender.FEMALE: Fore.MAGENTA,
+    Gender.UNDEFINED: Fore.YELLOW,
+}
+
+
 class CachedSnailHistory:
     def __init__(self, cli: 'CLI'):
         self.cli = cli
@@ -1112,21 +1119,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                         fee = snails[si1].incubation_fee(snails[si2], pc=pc)
                         snail_fees.append((fee, snails[si1], snails[si2]))
 
-        colors = {
-            Gender.MALE: Fore.BLUE,
-            Gender.FEMALE: Fore.MAGENTA,
-            Gender.UNDEFINED: Fore.YELLOW,
-        }
         if self.args.plan:
             # lazy planning, only useful with many-to-many snails
-            for fee, snail1, snail2 in self.cmd_incubate_fee_lazy_plan(snail_fees):
+            snails = self.cmd_incubate_fee_lazy_plan(snail_fees)
+            for fee, snail1, snail2 in snails:
                 print(
-                    f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
+            return True, snails
         else:
             for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
                 print(
-                    f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
         return True
 
@@ -1221,5 +1225,5 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         if not self.args.cmd:
             return
         if self.main_one is not None:
-            print(f'{Fore.CYAN}== {self.name}{Fore.RESET} ==')
+            print(f'{Fore.CYAN}== {self.name} =={Fore.RESET}')
         return getattr(self, f'cmd_{self.args.cmd}')()
