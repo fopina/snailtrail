@@ -284,3 +284,27 @@ AVAX: 1.000 / SNAILS: 1
                 mock.call('💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0'),
             ],
         )
+
+    def test_incubate_lazy_plan(self):
+        self.cli.args.first_run_over = True
+        self.cli.args.races_over = True
+        self.cli.client.gql.get_finished_races.return_value = data.GQL_FINISHED_RACES
+        self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
+        r = self.cli.cmd_incubate_fee_lazy_plan(data.TYPED_SNAIL_FEES)
+        self.assertEqual(
+            [(f, x1.id, x2.id) for f, x1, x2 in r],
+            [
+                (988.9882025935879, 15253, 14315),
+                (997.4410932140458, 15253, 15254),
+                (1146.2119681341069, 15253, 11663),
+                (1432.4831971469516, 11665, 11724),
+                (1455.5877648428702, 11665, 11789),
+                (1461.504788277191, 11665, 11824),
+                (1497.0069288831148, 12426, 13678),
+                (1515.6032882481222, 12426, 11263),
+                (1532.79083250972, 12426, 10519),
+                (1538.4260929233587, 11823, 11825),
+                (1562.094186660641, 11823, 11829),
+                (1573.9282335292824, 11823, 10204),
+            ],
+        )

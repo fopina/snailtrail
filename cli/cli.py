@@ -1028,14 +1028,14 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             # pick a male
             s_count = {}
             male = None
+
+            def _s(s):
+                if s not in used:
+                    s_count[s] = s_count.get(s, 0) + 1
+                    if s_count[s] > 2:
+                        return True
+
             for _, snail1, snail2 in sorted_pairs:
-
-                def _s(s):
-                    if s not in used:
-                        s_count[s] = s_count.get(s, 0) + 1
-                        if s_count[s] > 2:
-                            return True
-
                 if _s(snail1):
                     male = snail1
                     break
@@ -1045,6 +1045,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if male is None:
                 # no male found
                 break
+            used.add(male)
             # find 3 pairs
             p = 0
             for fee, snail1, snail2 in sorted_pairs:
@@ -1057,7 +1058,6 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 if female in used:
                     continue
                 p += 1
-                used.add(male)
                 used.add(female)
                 final_pairs.append((fee, male, female))
                 if p >= 3:
