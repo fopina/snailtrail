@@ -712,6 +712,73 @@ class Client(requests.Session):
             """,
         )['marketplace_stats_promise']
 
+    def tournament(self, address):
+        return self.query(
+            "tournament_promise",
+            {
+                "address": address,
+            },
+            '''
+            query tournament_promise($tournament_id: Int, $address: String) {
+                tournament_promise(tournament_id: $tournament_id, address: $address) {
+                    ... on Problem {
+                    problem
+                    }
+                    ... on Tournament {
+                    id
+                    current_week
+                    name
+                    current_day
+                    guild_count
+                    weeks {
+                        starts_at
+                        team_select_ends_at
+                        ends_at
+                        week
+                        days {
+                        races {
+                            id
+                        }
+                        family
+                        race_date
+                        order
+                        result {
+                            entries {
+                            snail {
+                                id
+                                name
+                                family
+                                adaptations
+                                purity
+                            }
+                            guild {
+                                name
+                                id
+                            }
+                            points
+                            timer
+                            order
+                            race_id
+                            }
+                        }
+                        }
+                        conditions
+                        distance
+                        guild_count
+                    }
+                    prize_pool {
+                        id
+                        name
+                        symbol
+                        amount
+                    }
+                    scheduled_at
+                    }
+                }
+            }
+            ''',
+        )['tournament_promise']
+
     def profile(self, addresses: list[str]):
         query = ''
         vars = []

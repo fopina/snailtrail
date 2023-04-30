@@ -143,7 +143,7 @@ class CLI:
         args: argparse.Namespace,
         main_one: Optional[Boolean] = None,
         graphql_endpoint: Optional[str] = None,
-        name: str = None,
+        profile: dict = None,
     ):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
@@ -155,7 +155,7 @@ class CLI:
         self.args = args
         self.owner = wallet.address
         self.main_one = main_one
-        self._name = name
+        self._profile = profile
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
@@ -190,9 +190,18 @@ class CLI:
 
     @cached_property
     def name(self):
-        if not self._name:
-            return self.masked_wallet
-        return f'{self._name} ({self.masked_wallet})'
+        if self._profile:
+            _name = str(self._profile['_i'])
+            u = self._profile['username']
+            if u[:5] != self.owner[:5]:
+                _name += f' {u}'
+            return f'{_name} ({self.masked_wallet})'
+        return self.masked_wallet
+
+    @property
+    def profile_guild(self):
+        if self._profile['guild']:
+            return self._profile['guild']['name']
 
     @property
     def report_as_main(self):
@@ -515,6 +524,39 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         if not self.args.tg_bot:
             msg += ' `(non-interactive)`'
         self.notifier.notify(msg)
+
+    def cmd_tournament(self, data=None):
+        if data is None:
+            data = self.client.gql.tournament(self.owner)
+            print(f"Name: {data['name']}")
+            print(f"Day: {data['current_day']}")
+            print(f"Registered guilds: {data['guild_count']}")
+            assert len(data['prize_pool']) == 1
+            print(f"Prize: {data['prize_pool'][0]['amount']} {data['prize_pool'][0]['symbol']}")
+            for week in data['weeks']:
+                print(f"\nWeek {week['week']}")
+                print(f"Conditions: {week['conditions']}")
+                print(f"Distance: {week['distance']}")
+                print(f"Registered guilds: {week['guild_count']}")
+        if self.args.stats:
+            # only print stats
+            return False
+
+        # FIXME: change to CURRENT WEEK - need to see after first week how to spot current week
+        print(f'{Fore.GREEN}For week 1{Fore.RESET}')
+        snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+        candidates = self.find_candidates(Race(data['weeks'][0]), snails)
+        per_family = {}
+        for score, snail in candidates:
+            if snail.family not in per_family:
+                per_family[snail.family] = []
+            per_family[snail.family].append((score, snail))
+
+        for family, snails in per_family.items():
+            print(f'{Fore.BLUE}{family}{Fore.RESET}')
+            for score, snail in snails:
+                print(score, snail.name, snail.adaptations, snail.purity)
+        return True, per_family, data
 
     def cmd_bot_tick(self):
         try:

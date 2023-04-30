@@ -287,6 +287,9 @@ def build_parser():
     pm.add_argument('-p', '--price', type=int, help='Filter for less or equal to PRICE')
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
     pm.add_argument('--pending', action='store_true', help='Get YOUR pending races (joined but not yet started)')
+
+    pm = subparsers.add_parser('tournament')
+    pm.add_argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     return parser
 
 
@@ -335,13 +338,14 @@ def main(argv=None):
         args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
     wallets = args.wallet
     if args.account is not None:
-        if args.account >= len(args.wallet):
+        if args.account < 1 or args.account > len(args.wallet):
             logger.error(
-                'you have %d wallets, --account must be less than that, because it is the 0-index of the wallet...',
+                'you have %d wallets, --account must be between 1 and %d',
+                len(args.wallet),
                 len(args.wallet),
             )
             return 1
-        wallets = [args.wallet[args.account]]
+        wallets = [args.wallet[args.account - 1]]
 
     cli = multicli.MultiCLI(wallets=wallets, proxy_url=args.proxy, args=args)
     cli.run()

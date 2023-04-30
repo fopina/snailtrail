@@ -2,6 +2,7 @@ import argparse
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 from typing import List
 from colorama import Fore
 
@@ -27,10 +28,8 @@ class MultiCLI:
         self.args = args
 
         first_one = True if len(wallets) > 1 else None
-        for _ind, w in enumerate(wallets):
-            c = cli.CLI(
-                w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint, name=str(_ind + 1)
-            )
+        for w in wallets:
+            c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
             first_one = False
             args.notify.register_cli(c)
             self.clis.append(c)
@@ -39,9 +38,8 @@ class MultiCLI:
         profiles = [c.owner for c in self.clis]
         data = self.clis[0].client.gql.profile(profiles)
         for i, c in enumerate(self.clis):
-            u = data[f'profile{i}']['username']
-            if u[:5] != c.owner[:5]:
-                c._name = str(i + 1) + ' ' + u
+            c._profile = data[f'profile{i}']
+            c._profile['_i'] = i + 1
 
     @property
     def is_multi(self) -> bool:
@@ -114,6 +112,27 @@ SNAILS: {totals[2]}'''
                 )
             return
         return False
+
+    def cmd_tournament(self):
+        if self.args.stats:
+            return False
+        all_snails = defaultdict(list)
+        data = None
+        for c in self.clis:
+            print(f'{Fore.CYAN}== {c.name} =={Fore.RESET}')
+            _, res, data = c.cmd_tournament(data=data)
+            for family, snails in res.items():
+                for score, snail in snails:
+                    all_snails[family].append((score, snail, c))
+
+        print(f'\n{Fore.GREEN}ALL for week 1{Fore.RESET}')
+        for family, snails in all_snails.items():
+            print(f'{Fore.BLUE}{family}{Fore.RESET}')
+            snails.sort(key=lambda x: x[0], reverse=True)
+            for score, snail, c in snails:
+                print(
+                    f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
+                )
 
     def run(self):
         if not self.args.cmd:
