@@ -813,3 +813,63 @@ class Client(requests.Session):
                 query,
             ),
         )
+
+    def guild_details(self, guild_id, member=None):
+        if member:
+            reward_query = (
+                '''
+            reward(address: "%s") {
+                has_reward
+                next_reward_at
+                amount
+            }
+            '''
+                % member
+            )
+        else:
+            reward_query = ''
+
+        query = '''
+        query research_center_reward($guild_id: Int!) {
+            guild_promise(guild_id: $guild_id) {
+                ... on Problem {
+                    problem
+                }
+                ... on Guild {
+                    treasury {
+                        resources {
+                            id
+                            symbol
+                            amount
+                        }
+                    }
+                    research {
+                        buildings {
+                            id
+                            name
+                            type
+                            %s
+                        }
+                        stats {
+                            worker_count
+                            tomato_ph
+                        }
+                    }
+                    stats {
+                        snail_count
+                        member_count
+                        level
+                    }
+                }
+            }
+        }
+        ''' % (
+            reward_query,
+        )
+        return self.query(
+            "research_center_reward",
+            {
+                "guild_id": guild_id,
+            },
+            query,
+        )['guild_promise']

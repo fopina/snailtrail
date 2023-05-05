@@ -134,6 +134,43 @@ SNAILS: {totals[2]}'''
                     f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
                 )
 
+    def cmd_guild(self):
+        if self.args.verbose:
+
+            def _m(c):
+                d = c.run()
+                if d:
+                    return d[1]
+
+        else:
+
+            def _m(c):
+                return c._cmd_guild_data()
+
+        guilds = {}
+        for c in self.clis:
+            data = _m(c)
+            if data:
+                if c.profile_guild not in guilds:
+                    guilds[c.profile_guild] = data
+                    guilds[c.profile_guild]['members'] = []
+                guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
+
+        for k, data in guilds.items():
+            print(f'{Fore.CYAN}== Guild: {k} =={Fore.RESET}')
+            print(f'Level: {data["level"]}')
+            _ph = data["tomato_ph"]
+            _m = f'Tomato: {data["tomato"]}'
+            if _ph:
+                _m += f' ({Fore.GREEN}{_ph} ph{Fore.RESET})'
+            print(_m)
+            print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
+            for m in data['members']:
+                _m = f' - {m[0]}'
+                if m[1]:
+                    _m += f' ({Fore.GREEN}{m[1]} TMT{Fore.RESET})'
+                print(_m)
+
     def run(self):
         if not self.args.cmd:
             return

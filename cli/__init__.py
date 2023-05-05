@@ -290,6 +290,14 @@ def build_parser():
 
     pm = subparsers.add_parser('tournament')
     pm.add_argument('-s', '--stats', action='store_true', help='Print only tournament stats')
+
+    pm = subparsers.add_parser('guild')
+    pm.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='Display details for every account (otherwise just overall summary)',
+    )
     return parser
 
 

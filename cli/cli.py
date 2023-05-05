@@ -725,6 +725,38 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def cmd_rename(self):
         self.rename_snail()
 
+    def _cmd_guild_data(self):
+        if not self.profile_guild:
+            return
+        data = self.client.gql.guild_details(self._profile['guild']['id'], member=self.owner)
+        cleaned_data = {}
+        for b in data['research']['buildings']:
+            if b['type'] == 'SINK':
+                if b['reward'] and b['reward']['has_reward']:
+                    cleaned_data['sink_reward'] = b['reward']['amount']
+                else:
+                    cleaned_data['sink_reward'] = 0
+                break
+        for b in data['treasury']['resources']:
+            if b['id'] == 'PRIMARY':
+                cleaned_data['tomato'] = b['amount']
+                break
+        cleaned_data.update(data['research']['stats'])
+        cleaned_data.update(data['stats'])
+        return cleaned_data
+
+    def cmd_guild(self):
+        data = self._cmd_guild_data()
+        if not data:
+            print('No guild')
+            return
+        print(f'Guild: {self.profile_guild} - lv {data["level"]}')
+        print(f'Tomato: {data["tomato"]} ({data["tomato"]} ph)')
+        print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
+        if data['sink_reward']:
+            print(f"{data['sink_reward']} TMT to claim")
+        return True, data
+
     def find_candidates(self, race, snails):
         candidates = []
         conditions = set(race.conditions)
