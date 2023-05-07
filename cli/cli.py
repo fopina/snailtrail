@@ -542,10 +542,10 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             # only print stats
             return False
 
-        # FIXME: change to CURRENT WEEK - need to see after first week how to spot current week
-        print(f'{Fore.GREEN}For week 1{Fore.RESET}')
+        week_pos = self.args.week - 1
+        print(f'{Fore.GREEN}For week {self.args.week}{Fore.RESET}')
         snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
-        candidates = self.find_candidates(Race(data['weeks'][0]), snails)
+        candidates = self.find_candidates(Race(data['weeks'][week_pos]), snails)
         per_family = {}
         for score, snail in candidates:
             if snail.family not in per_family:
