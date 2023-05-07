@@ -290,7 +290,7 @@ def build_parser():
 
     pm = subparsers.add_parser('tournament')
     pm.add_argument('-s', '--stats', action='store_true', help='Print only tournament stats')
-    pm.add_argument('-w', '--week', type=int, default=1, help='Week to check')
+    pm.add_argument('-w', '--week', type=int, help='Week to check (default to current week)')
 
     pm = subparsers.add_parser('guild')
     pm.add_argument(

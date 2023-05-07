@@ -542,10 +542,19 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             # only print stats
             return False
 
-        week_pos = self.args.week - 1
-        print(f'{Fore.GREEN}For week {self.args.week}{Fore.RESET}')
+        if self.args.week is None:
+            week_pos = data['current_week']
+        else:
+            week_pos = self.args.week
+
+        for week in data['weeks']:
+            if week['week'] == week_pos:
+                break
+        else:
+            raise Exception(f'week {week_pos} not found')
+        print(f'{Fore.GREEN}For week {week_pos}{Fore.RESET}')
         snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
-        candidates = self.find_candidates(Race(data['weeks'][week_pos]), snails)
+        candidates = self.find_candidates(Race(week), snails)
         per_family = {}
         for score, snail in candidates:
             if snail.family not in per_family:
