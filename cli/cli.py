@@ -897,7 +897,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
             if not found:
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
-                msg = f"{e} {snail.name_id} in {race.track}, for {race.distance}"
+                msg = f"⁉️ {snail.name_id} in {race.track}, for {race.distance}"
                 logger.info(msg)
                 self.notifier.notify(msg)
         if first_run and not self._notified_races_over:

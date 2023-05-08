@@ -125,7 +125,7 @@ SNAILS: {totals[2]}'''
                 for score, snail in snails:
                     all_snails[family].append((score, snail, c))
 
-        print(f'\n{Fore.GREEN}ALL for week 1{Fore.RESET}')
+        print(f'\n{Fore.GREEN}Summary for all{Fore.RESET}')
         for family, snails in all_snails.items():
             print(f'{Fore.BLUE}{family}{Fore.RESET}')
             snails.sort(key=lambda x: x[0], reverse=True)
