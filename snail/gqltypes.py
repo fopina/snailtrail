@@ -352,10 +352,24 @@ class Race(AttrDict):
         >>> str(s)
         'None (#None): 57m None 🪙'
         """
-        return type(self.distance) == int or self.distance.isdigit()
+        return self.league != 'Tournament' and (type(self.distance) == int or self.distance.isdigit())
+
+    @property
+    def is_tournament(self):
+        """
+        >>> s = Race({'distance': 57})
+        >>> s.is_tournament
+        False
+        >>> s = Race({'distance': 57, 'league': 'Tournament'})
+        >>> s.is_tournament
+        True
+        >>> str(s)
+        'None (#None): 57m None 🪙'
+        """
+        return self.league == 'Tournament'
 
     def __str__(self):
-        if self.is_competitive:
+        if self.is_competitive or self.is_tournament:
             return f"{self.track} (#{self.id}): {self.distance}m {self.race_type} 🪙"
         return f"{self.track} (#{self.id}): {self.distance}"
 

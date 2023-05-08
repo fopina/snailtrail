@@ -128,12 +128,12 @@ class TestBot(TestCase):
                 'count': 1,
             },
         ]
-        r = self.cli._snail_history.get(1, 50)
+        r = self.cli._snail_history.get(1)
         self.assertEqual(r[1][27], [1, 0, 0, 1])
         self.assertEqual(self.cli.client.gql.get_race_history.call_count, 1)
 
         self.cli.client.gql.get_race_history.reset_mock()
-        r = self.cli._snail_history.get(1, 50)
+        r = self.cli._snail_history.get(1)
         self.assertEqual(r[1][10], [0, 0, 0, 0])
         # already cached, API not called
         self.cli.client.gql.get_race_history.assert_not_called()
@@ -161,7 +161,7 @@ class TestBot(TestCase):
             ),
         )
         self.assertTrue(r)
-        r = self.cli._snail_history.get(1, 50)
+        r = self.cli._snail_history.get(1)
         self.assertEqual(r[1][27], [1, 1, 0, 2])
         # already cached (and updated), API not called
         self.cli.client.gql.get_race_history.assert_not_called()
@@ -189,9 +189,7 @@ class TestBot(TestCase):
             ),
         )
         self.assertTrue(r)
-        r = self.cli._snail_history.get(1, 50)
-        self.assertEqual(r[1][10], [0, 1, 0, 1])
-        r = self.cli._snail_history.get_all(1)
+        r = self.cli._snail_history.get(1)
         self.assertEqual(r[1][10], [0, 1, 0, 1])
         # already cached (and updated), API not called
         self.cli.client.gql.get_race_history.assert_not_called()
@@ -220,9 +218,7 @@ class TestBot(TestCase):
         )
         # cache miss, not updated
         self.assertTrue(r)
-        r = self.cli._snail_history.get(1, 100)
-        self.assertEqual(r[1][10], [0, 1, 0, 1])
-        r = self.cli._snail_history.get_all(1)
+        r = self.cli._snail_history.get(1)
         self.assertEqual(r[1][10], [0, 2, 0, 2])
         # cached, API not called
         self.cli.client.gql.get_race_history.assert_not_called()

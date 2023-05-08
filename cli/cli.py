@@ -45,33 +45,14 @@ class CachedSnailHistory:
         p += 1
         return time_on_first, time_on_third, p
 
-    def get_all(self, snail_id: Union[int, Snail], limit=None):
-        if isinstance(snail_id, Snail):
-            snail_id = snail_id.id
-        # trigger any caching
-        self.get(snail_id, 50, limit=limit)
-        races = []
-        stats = defaultdict(lambda: [0, 0, 0, 0])
-        for k, v in self._cache.items():
-            if (k[0], k[2]) != (snail_id, limit):
-                continue
-            r, s = v[0]
-            races.extend(r)
-            for k1, v1 in s.items():
-                for i in range(4):
-                    stats[k1][i] += v1[i]
-        return races, stats
-
-    def get(self, snail_id: Union[int, Snail], price: Union[int, Race], limit=None):
+    def get(self, snail_id: Union[int, Snail], limit=None):
         """
         Return snail race history plus a stats summary
         """
-        if isinstance(price, Race):
-            price = int(price.race_type)
         if isinstance(snail_id, Snail):
             snail_id = snail_id.id
         # FIXME: make this prettier with a TTLed lru_cache
-        key = (snail_id, price, limit)
+        key = (snail_id, limit)
         data, last_update = self._cache.get(key, (None, 0))
         _now = time.time()
         # re-fetch only once per 30min
@@ -79,42 +60,31 @@ class CachedSnailHistory:
         if _now - last_update < 1800:
             return data
 
-        races_per_price = {
-            50: [],
-            100: [],
-            200: [],
-            500: [],
-        }
+        races = []
+        stats = defaultdict(lambda: [0, 0, 0, 0])
+        total = 0
 
         for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'category': 3}):
-            races_per_price[int(race.race_type)].append(race)
+            time_on_first, time_on_third, p = self.race_stats(snail_id, race)
+            if time_on_first is None:
+                continue
+            if p < 4:
+                stats[race.distance][p - 1] += 1
+            stats[race.distance][3] += 1
+            races.append((race, p, time_on_first, time_on_third))
+            total += 1
+            if limit and total >= limit:
+                break
 
-        for race_type, history_races in races_per_price.items():
-            stats = defaultdict(lambda: [0, 0, 0, 0])
-            races = []
-            total = 0
-            for race in history_races:
-                time_on_first, time_on_third, p = self.race_stats(snail_id, race)
-                if time_on_first is None:
-                    continue
-                if p < 4:
-                    stats[race.distance][p - 1] += 1
-                stats[race.distance][3] += 1
-                races.append((race, p, time_on_first, time_on_third))
-                total += 1
-                if limit and total >= limit:
-                    break
-
-            data = (races, stats)
-            self._cache[(snail_id, race_type, limit)] = (data, _now)
+        data = (races, stats)
+        self._cache[(snail_id, limit)] = (data, _now)
         return self._cache[key][0]
 
     def update(self, snail_id: Union[int, Snail], race: Race, limit=None):
-        price = int(race.race_type)
         if isinstance(snail_id, Snail):
             snail_id = snail_id.id
 
-        key = (snail_id, price, limit)
+        key = (snail_id, limit)
         data, last_update = self._cache.get(key, (None, 0))
         _now = time.time()
         if _now - last_update >= 1800:
@@ -792,7 +762,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def race_stats_text(self, snail, race):
         if not self.args.race_stats:
             return ''
-        return '`' + '.'.join(map(str, self._snail_history.get_all(snail)[1][race.distance])) + '`'
+        return '`' + '.'.join(map(str, self._snail_history.get(snail)[1][race.distance])) + '`'
 
     def find_races(self, check_notified=True):
         first_run = not self._notified_races and not self.args.first_run_over
@@ -966,7 +936,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             for league in client.League
             for race in self.client.iterate_finished_races(filters={'owner': self.owner, 'league': league}, own=True)
         ):
-            if self.args.price and int(race.race_type) > self.args.price:
+            if self.args.price and race.is_competitive and int(race.race_type) > self.args.price:
                 continue
             for p, i in enumerate(race['results']):
                 if i['token_id'] in self.my_snails:
@@ -975,19 +945,23 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             else:
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
             p += 1
-            fee = int(race.prize_pool) / 9
-            if p == 1:
-                c = Fore.GREEN
-                cr = fee * 4
-            elif p == 2:
-                c = Fore.YELLOW
-                cr = fee * 1.5
-            elif p == 3:
-                c = Fore.LIGHTRED_EX
-                cr = fee * 0.5
+            if race.is_tournament:
+                c = Fore.LIGHTYELLOW_EX
+                cr = 0
             else:
-                c = Fore.RED
-                cr = 0 - fee
+                fee = int(race.prize_pool) / 9
+                if p == 1:
+                    c = Fore.GREEN
+                    cr = fee * 4
+                elif p == 2:
+                    c = Fore.YELLOW
+                    cr = fee * 1.5
+                elif p == 3:
+                    c = Fore.LIGHTRED_EX
+                    cr = fee * 0.5
+                else:
+                    c = Fore.RED
+                    cr = 0 - fee
             total_cr += cr
             print(f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
             total += 1
@@ -999,7 +973,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def _history_races(self, snail):
         total_cr = 0
         total = 0
-        races, stats = self._snail_history.get(snail, self.args.price, self.args.limit)
+        races, stats = self._snail_history.get(snail, self.args.limit)
         for race_data in races:
             race, p, time_on_first, time_on_third = race_data
             fee = int(race.prize_pool) / 9

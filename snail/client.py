@@ -7,6 +7,7 @@ from . import gqlclient, gqltypes, web3client
 class League(int, Enum):
     GOLD = 5
     PLATINUM = 6
+    TOURNAMENT = 10
 
 
 class ClientError(Exception):
