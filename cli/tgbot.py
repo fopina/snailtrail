@@ -333,16 +333,16 @@ class Notifier:
             wstr = f'*WAVAX*: {cw} / {bw}\n' if cw + bw else ''
             msg[
                 -1
-            ] = f'''*SLIME*: {cs} / {bs:.3f}
-{wstr}*AVAX*: {ba:.3f} / *SNAILS*: {bn}'''
+            ] = f'''🧪 {cs} / {bs:.3f}
+{wstr}🔺 {ba:.3f} / 🐌 {bn}'''
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
         if self.multi_cli:
             msg.append(
                 f'''`Total`
-*SLIME*: {totals[0]:.3f}
-*AVAX*: {totals[1]:.3f}
-*SNAILS*: {totals[2]}'''
+🧪 {totals[0]:.3f}
+🔺 {totals[1]:.3f}
+🐌 {totals[2]}'''
             )
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 

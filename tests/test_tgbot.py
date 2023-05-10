@@ -160,9 +160,9 @@ class Test(TestCase):
                 mock.call(text='...Loading...', parse_mode='Markdown'),
                 mock.call(
                     text='''\
-*SLIME*: 1 / 1.000
+🧪 1 / 1.000
 *WAVAX*: 1 / 1
-*AVAX*: 1.000 / *SNAILS*: 1''',
+🔺 1.000 / 🐌 1''',
                     parse_mode='Markdown',
                 ),
             ],
@@ -196,17 +196,17 @@ class Test(TestCase):
             mock.call(
                 text='''\
 `0x2f`
-*SLIME*: 1 / 1.000
+🧪 1 / 1.000
 *WAVAX*: 1 / 1
-*AVAX*: 1.000 / *SNAILS*: 1
+🔺 1.000 / 🐌 1
 `0x3f`
-*SLIME*: 2 / 2.000
+🧪 2 / 2.000
 *WAVAX*: 2 / 2
-*AVAX*: 2.000 / *SNAILS*: 2
+🔺 2.000 / 🐌 2
 `Total`
-*SLIME*: 6.000
-*AVAX*: 9.000
-*SNAILS*: 3''',
+🧪 6.000
+🔺 9.000
+🐌 3''',
                 parse_mode='Markdown',
             ),
         )
