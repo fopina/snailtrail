@@ -816,6 +816,14 @@ class Client(requests.Session):
 
     def guild_details(self, guild_id, member=None):
         if member:
+            membership_query = (
+                '''
+            membership(address: "%s") {
+                rank
+            }
+            '''
+                % member
+            )
             reward_query = (
                 '''
             reward(address: "%s") {
@@ -827,7 +835,7 @@ class Client(requests.Session):
                 % member
             )
         else:
-            reward_query = ''
+            reward_query = membership_query = ''
 
         query = '''
         query research_center_reward($guild_id: Int!) {
@@ -836,6 +844,7 @@ class Client(requests.Session):
                     problem
                 }
                 ... on Guild {
+                    %s
                     treasury {
                         resources {
                             id
@@ -864,6 +873,7 @@ class Client(requests.Session):
             }
         }
         ''' % (
+            membership_query,
             reward_query,
         )
         return self.query(

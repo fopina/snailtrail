@@ -30,15 +30,16 @@ class Test(TestCase):
     def test_help(self):
         self.bot.cmd_help(self.update, self.context)
         self.update.message.reply_text.assert_called_once_with(
-            '''/stats - My snails stats
-/nextmission - Show time to next daily mission
+            '''/nextmission - Show time to next daily mission
 /balance - Current balance (snail count, avax, slime)
+/guild - Guild stats and balance
 /claim - Claim rewards
 /swapsend - Send all slime to one account (for single swaps)
 /incubate - Show current incubation coefficent
 /market - Show marketplace stats - volume, floors and highs
 /racereview - Review all races to join (that were already notified)
 /racepending - View pending races (that you joined)
+/stats - My snails stats
 /reloadsnails - Reset snails cache
 /settings - Toggle bot settings
 /usethisformissions - Use this chat for mission join notifications'''
