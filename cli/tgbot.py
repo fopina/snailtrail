@@ -58,15 +58,16 @@ class Notifier:
             dispatcher = self.updater.dispatcher
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
             dispatcher.add_handler(CallbackQueryHandler(self.handle_buttons))
-            dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
+            dispatcher.add_handler(CommandHandler("guild", self.cmd_guild))
             dispatcher.add_handler(CommandHandler("claim", self.cmd_claim))
             dispatcher.add_handler(CommandHandler("swapsend", self.cmd_swapsend))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
             dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
+            dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
@@ -345,6 +346,41 @@ class Notifier:
 🐌 {totals[2]}'''
             )
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_guild(self, update: Update, context: CallbackContext) -> None:
+        """
+        Guild stats and balance
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        m = update.message.reply_markdown('Loading details...')
+
+        msg = []
+        guilds = {}
+
+        for c in self.clis.values():
+            data = c._cmd_guild_data()
+            if data:
+                if c.profile_guild not in guilds:
+                    guilds[c.profile_guild] = data
+                    guilds[c.profile_guild]['members'] = []
+                guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
+
+        for k, data in guilds.items():
+            msg.append(f'`Guild: {k}`')
+            msg.append(f'💪 {data["level"]}')
+            _ph = data["tomato_ph"]
+            _m = f'🍅 {data["tomato"]}'
+            if _ph:
+                _m += f' ⏲️ {_ph}'
+            msg.append(_m)
+            msg.append(f'👥 {data["member_count"]} 🐌 {data["snail_count"]}')
+            for _m in data['members']:
+                if _m[1]:
+                    msg.append(f'*{_m[0]}* 🍅 {_m[1]}')
+            msg.append('')
+
+        m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth
     def cmd_claim(self, update: Update, context: CallbackContext) -> None:
