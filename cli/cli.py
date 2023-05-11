@@ -142,6 +142,7 @@ class CLI:
         self._notify_mission_data = None
         self._notify_marketplace = {}
         self._notify_coefficent = None
+        self._notify_tournament = None
         self._next_mission = None
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
@@ -149,6 +150,13 @@ class CLI:
     @staticmethod
     def _now():
         return datetime.now(tz=timezone.utc)
+
+    @cached_property
+    def guild_leader(self):
+        if self._profile and self._profile['guild']:
+            data = self.client.gql.guild_details(self._profile['guild']['id'], member=self.owner)
+            return data['membership']['rank'] == 'LEADER'
+        return False
 
     @cached_property
     def masked_wallet(self):
@@ -537,6 +545,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 print(score, snail.name, snail.adaptations, snail.purity)
         return True, per_family, data
 
+    def _bot_tournament(self):
+        data = self.client.gql.tournament_guild_stats(self.owner)['leaderboard']['my_guild']
+        if self._notify_tournament is not None:
+            if self._notify_tournament != data:
+                msg = f'{self.profile_guild} changed from `{self._notify_tournament}` to `{data}`'
+                self.notifier.notify(msg)
+                logger.info(msg)
+        self._notify_tournament = data
+
     def cmd_bot_tick(self):
         try:
             w = self.args.wait
@@ -563,6 +580,13 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
                 if self.args.coefficent and self.report_as_main:
                     self._bot_coefficent()
+
+                if self.args.tournament:
+                    self._bot_tournament()
+
+                if self.args.tournament_leader:
+                    if self.guild_leader:
+                        self._bot_tournament()
 
             logger.debug('waiting %d seconds', w)
             return w

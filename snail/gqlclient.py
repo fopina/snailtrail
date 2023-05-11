@@ -883,3 +883,27 @@ class Client(requests.Session):
             },
             query,
         )['guild_promise']
+
+    def tournament_guild_stats(self, member, tournament_id=None):
+        return self.query(
+            "tournamentMyGuildLeaderboard",
+            {
+                "tournament_id": tournament_id,
+                "address": member,
+            },
+            '''
+            query tournamentMyGuildLeaderboard($tournament_id: Int, $address: String) {
+                tournament_promise(tournament_id: $tournament_id, address: $address) {
+                    ... on Tournament {
+                    id
+                    leaderboard(cursor: 0) {
+                        my_guild {
+                        order
+                        points
+                        }
+                    }
+                    }
+                }
+            }
+            ''',
+        )['tournament_promise']
