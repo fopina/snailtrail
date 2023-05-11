@@ -542,7 +542,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for family, snails in per_family.items():
             print(f'{Fore.BLUE}{family}{Fore.RESET}')
             for score, snail in snails:
-                print(score, snail.name, snail.adaptations, snail.purity)
+                print(f'{score}: {snail.name} {snail.adaptations} P{snail.purity} L{snail.level}')
         return True, per_family, data
 
     def _bot_tournament(self):
