@@ -584,10 +584,6 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 if self.args.tournament:
                     self._bot_tournament()
 
-                if self.args.tournament_leader:
-                    if self.guild_leader:
-                        self._bot_tournament()
-
             logger.debug('waiting %d seconds', w)
             return w
         except client.gqlclient.requests.exceptions.HTTPError as e:

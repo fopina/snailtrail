@@ -46,6 +46,14 @@ class MultiCLI:
         return len(self.clis) > 1
 
     def cmd_bot(self):
+        if self.args.tournament:
+            # disable check in all accounts with repeated guilds
+            # no need to notify wins for the same guild :D
+            guilds = set()
+            for c in self.clis:
+                if c.profile_guild and c.profile_guild in guilds:
+                    c._bot_tournament = lambda: None
+                guilds.add(c.profile_guild)
         c = self.clis[0]
         c.load_bot_settings()
 
