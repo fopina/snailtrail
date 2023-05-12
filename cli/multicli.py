@@ -179,9 +179,31 @@ SNAILS: {totals[2]}'''
                     _m += f' ({Fore.GREEN}{m[1]} TMT{Fore.RESET})'
                 print(_m)
 
+    def cmd_utils(self):
+        """
+        This is a multicli cmd only, not implmemented in cli ("per wallet")
+        """
+        sa = defaultdict(list)
+        for c in self.clis:
+            for _, snail in c.my_snails.items():
+                k = tuple(sorted(x.id for x in snail.adaptations))
+                sa[k].append((c, snail))
+        ordered = sorted(((k, len(v)) for k, v in sa.items()), key=lambda x: x[1])
+        for k, _ in ordered:
+            v = sa[k]
+            if len(k) != 3 and not self.args.all:
+                continue
+            if len(v) == 1 and not self.args.all:
+                continue
+            adapt = v[0][1].adaptations
+            print(f'{adapt} ({len(v)}):')
+            for c, snail in v:
+                print(f'  {snail.name} {c.name}')
+
     def run(self):
         if not self.args.cmd:
             return
+
         if self.is_multi:
             m = getattr(self, f'cmd_{self.args.cmd}', None)
             if m is not None:

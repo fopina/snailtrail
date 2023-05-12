@@ -147,20 +147,21 @@ def build_parser():
         '-a',
         '--account',
         type=int,
-        help='Use single account (if multiple accounts in config) - 0-index of the wallet array (in config)',
+        action='append',
+        help='Use subset of accounts (if multiple accounts in config) - 0-index of the wallet array (in config)',
     )
     parser.add_argument('--no-colors', action='store_true', help='Disable colors in output')
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
-    pm = subparsers.add_parser('missions')
+    pm = subparsers.add_parser('missions', help='Mission related stuff')
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
     pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
     pm.add_argument('-l', '--limit', type=int, help='Limit history to X missions')
     pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get mission history for SNAIL_ID (use 0 for ALL)')
     pm.add_argument('--agg', type=int, help='Aggregate history to X entries')
 
-    pm = subparsers.add_parser('bot')
+    pm = subparsers.add_parser('bot', help='THE THING!')
     pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     pm.add_argument(
         '--mission-chat-id', type=int, help='Notification chat id to be used only for mission join notifications'
@@ -237,16 +238,16 @@ def build_parser():
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
     )
 
-    pm = subparsers.add_parser('snails')
+    pm = subparsers.add_parser('snails', help='Snail shit')
     pm.add_argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
 
-    pm = subparsers.add_parser('market')
+    pm = subparsers.add_parser('market', help='Find bargains and matches in the market')
     pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
     pm.add_argument('-g', '--genes', action='store_true', help='search genes marketplace')
     pm.add_argument('-p', '--price', type=float, default=1, help='price limit for search')
     pm.add_argument('--stats', action='store_true', help='marketplace stats')
 
-    pm = subparsers.add_parser('incubate')
+    pm = subparsers.add_parser('incubate', help='Incubation fees and breed plannign')
     pm.add_argument(
         '-f',
         '--fee',
@@ -272,15 +273,15 @@ def build_parser():
         '--plan', action='store_true', help='Lazy (suboptimal) planning for cheapest breeds (only for `-bf`)'
     )
 
-    pm = subparsers.add_parser('rename')
+    pm = subparsers.add_parser('rename', help='Rename a snail')
     pm.add_argument('snail', type=int, help='snail')
     pm.add_argument('name', help='new name')
 
-    pm = subparsers.add_parser('balance')
+    pm = subparsers.add_parser('balance', help='Check wallet balances for all the tokens')
     pm.add_argument('-c', '--claim', action='store_true', help='Claim rewards')
     pm.add_argument('-s', '--send', type=int, metavar='account', help='Transfer slime to this account')
 
-    pm = subparsers.add_parser('races')
+    pm = subparsers.add_parser('races', help='Race details (not missions)')
     pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
     pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
     pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
@@ -289,16 +290,24 @@ def build_parser():
     pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
     pm.add_argument('--pending', action='store_true', help='Get YOUR pending races (joined but not yet started)')
 
-    pm = subparsers.add_parser('tournament')
+    pm = subparsers.add_parser('tournament', help='Tournament info')
     pm.add_argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     pm.add_argument('-w', '--week', type=int, help='Week to check (default to current week)')
 
-    pm = subparsers.add_parser('guild')
+    pm = subparsers.add_parser('guild', help='Guilds overview')
     pm.add_argument(
         '-v',
         '--verbose',
         action='store_true',
         help='Display details for every account (otherwise just overall summary)',
+    )
+    pm = subparsers.add_parser('utils', help='Random set of utilities')
+    utils_parsers = pm.add_subparsers(title='util command', dest='util_cmd')
+    pmm = utils_parsers.add_parser('duplicates', help='Find snails with same adaptations')
+    pmm.add_argument(
+        '--all',
+        action='store_true',
+        help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
     )
     return parser
 
@@ -306,6 +315,10 @@ def build_parser():
 def main(argv=None):
     p = build_parser()
     args = p.parse_args(argv)
+    if not args.cmd:
+        p.error('choose a command')
+    if args.cmd == 'utils' and not args.util_cmd:
+        p.error('choose an "utils" sub-command')
 
     if args.no_colors:
         from colorama import init
@@ -348,14 +361,16 @@ def main(argv=None):
         args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
     wallets = args.wallet
     if args.account is not None:
-        if args.account < 1 or args.account > len(args.wallet):
-            logger.error(
-                'you have %d wallets, --account must be between 1 and %d',
-                len(args.wallet),
-                len(args.wallet),
-            )
-            return 1
-        wallets = [args.wallet[args.account - 1]]
+        wallets = []
+        for account in args.account:
+            if account < 1 or account > len(args.wallet):
+                logger.error(
+                    'you have %d wallets, --account must be between 1 and %d',
+                    len(args.wallet),
+                    len(args.wallet),
+                )
+                return 1
+            wallets.append(args.wallet[account - 1])
 
     cli = multicli.MultiCLI(wallets=wallets, proxy_url=args.proxy, args=args)
     cli.run()
