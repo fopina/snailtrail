@@ -728,6 +728,16 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
 
+    def cmd_inventory(self):
+        type_group = defaultdict(list)
+        for item in self.client.iterate_inventory(self.owner):
+            type_group[item.type_id].append(item)
+        for _, v in type_group.items():
+            f = v[0]
+            for f2 in v[1:]:
+                assert f.name == f2.name
+            print(f'{f.name}: {len(v)}')
+
     def cmd_market(self):
         if self.args.stats:
             d = self.client.marketplace_stats()

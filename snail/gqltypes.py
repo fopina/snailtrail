@@ -387,6 +387,12 @@ class Race(AttrDict):
             return list(map(Adaptation.from_str, self['conditions']))
 
 
+class InventoryItem(AttrDict):
+    """
+    Items returned by inventory_promise
+    """
+
+
 def _parse_datetime(date_str):
     return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
 

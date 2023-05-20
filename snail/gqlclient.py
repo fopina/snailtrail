@@ -909,3 +909,50 @@ class Client(requests.Session):
             }
             ''',
         )['tournament_promise']
+
+    def get_inventory(
+        self,
+        address,
+        limit=24,
+        offset=0,
+    ):
+        return self.query(
+            "inventory_promise",
+            {
+                "address": address,
+                "filters": {"flag": "ALL"},
+                "limit": limit,
+                "offset": offset,
+            },
+            """
+            query inventory_promise(
+            $address: String!
+            $limit: Int
+            $offset: Int
+            $filters: InventoryFilters
+            ) {
+            inventory_promise(
+                address: $address
+                limit: $limit
+                offset: $offset
+                filters: $filters
+            ) {
+                ... on Problem {
+                problem
+                }
+                ... on Inventory {
+                count
+                items {
+                    id
+                    type_id
+                    name
+                    description
+                    count
+                    expires_at
+                    coef
+                }
+                }
+            }
+            }
+            """,
+        )['inventory_promise']
