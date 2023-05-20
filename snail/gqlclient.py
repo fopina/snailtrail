@@ -255,6 +255,8 @@ class Client(requests.Session):
                         genome
                         klass
                         family
+                        work_boost
+                        slime_boost
                         purity
                         breeding {
                         breed_detail {

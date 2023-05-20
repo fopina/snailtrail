@@ -1,148 +1,5 @@
-input RaceFilters {
-  owner: String
-  league: Int
-  status: [Int]
-  id: [Int]
-}
-
-input RaceHistoryFilters {
-  token_id: Int!
-  category: Int
-  league: Int
-  distance: Int
-  adaptations: [Int]
-}
-
-input VisualFilters {
-  eyes: Int
-  eye_sockets: Int
-  mouth: Int
-  head: Int
-  nostrils: Int
-  form: Int
-  shell: Int
-  bottom: Int
-  top: Int
-  back: Int
-  side: Int
-}
-
-input SnailFilters {
-  id: [Int]
-  family: Int
-  klass: Int
-  generation: Int
-  adaptations: [Int]
-  purity: Int
-  parent_male: Int
-  parent_female: Int
-  visuals: VisualFilters
-  stats: StatFilters
-  stat_season: Int
-  owner: String
-  gender: Int
-  name: String
-  status: Int
-}
-
-input StatFilters {
-  elo: RangeFilter
-  level: RangeFilter
-  tickets: RangeFilter
-  races: RangeFilter
-  slime_boost: RangeFilter
-  purity: RangeFilter
-  generation: RangeFilter
-}
-
-input RangeFilter {
-  min: Int
-  max: Int
-}
-
-input IncubateParams {
-  owner: String!
-  item_id: Int
-  market_price_wei: String
-  nonce: Int!
-  fid: Int!
-  mid: Int!
-  use_scroll: Boolean
-}
-
-input JoinRaceParams {
-  token_id: Int!
-  race_id: Int!
-  address: String!
-  signature: String!
-}
-
-input BuyItemParams {
-  item_id: Int!
-  address: String!
-  count: Int = 1
-  payload: ExtraParams
-}
-
-input ExtraParams {
-  token_id: Int
-  name: String
-  use_scroll: Boolean
-}
-
-input ProfileParams {
-  username: String
-  collection_id: Int
-  image_id: Int
-  twitter: String
-  address: String!
-}
-
-input MicrowaveParams {
-  address: String!
-  token_ids: [Int!]!
-  signature: String!
-  use_scroll: Boolean
-}
-
-input PressureParams {
-  token_id: Int
-  items: [ItemParams!]!
-  address: String!
-  signature: String!
-}
-
-input ChangeAdaptationParams {
-  token_id: Int!
-  slot: Int!
-  address: String!
-}
-
-input ItemParams {
-  id: Int!
-  count: Int!
-}
-
-input InventoryFilters {
-  item_type: Int
-  status: [Int]
-  flag: ViewFlag
-  family: Int
-}
-
-enum ViewFlag {
-  ALL
-  COOKING
-  MIXING
-}
-
 type Query {
-  snails_promise(
-    limit: Int
-    offset: Int
-    order: Int
-    filters: SnailFilters
-  ): SnailPromise!
+  filler_promise: Int
   gene_market_promise(
     limit: Int
     offset: Int
@@ -156,9 +13,36 @@ type Query {
     filters: SnailFilters
   ): SnailPromise!
   marketplace_stats_promise(market: Int): MarketplaceStatsPromise!
-  snail_promise(token_id: Int!): SnailPromise!
   rarity_promise: RarityPromise!
   statics_promise: StaticsPromise!
+  snails_promise(
+    limit: Int
+    offset: Int
+    order: Int
+    filters: SnailFilters
+  ): SnailPromise!
+  snail_promise(token_id: Int!): SnailPromise!
+  my_snails_promise(
+    owner: String!
+    gender: Int
+    limit: Int
+    offset: Int
+    filters: SnailFilters
+  ): MySnailsPromise
+  my_snails_ranked_promise(
+    owner: String!
+    league: Int!
+    adaptations: [Int]
+    limit: Int
+    offset: Int
+  ): MySnailsPromise
+  my_snails_mission_promise(
+    owner: String!
+    adaptations: [Int]
+    limit: Int
+    offset: Int
+  ): MySnailsPromise
+  name_status_promise(name: String!): NameStatusPromise!
   races_promise(limit: Int, offset: Int, filters: RaceFilters): RacePromise!
   onboarding_races_promise(
     limit: Int
@@ -190,215 +74,163 @@ type Query {
     offset: Int
     filters: RaceHistoryFilters
   ): RacePromise!
-  simulation_promise(female: Int!, male: Int!): SimulationPromise!
-  my_snails_promise(
-    owner: String!
-    gender: Int
-    limit: Int
-    offset: Int
-    filters: SnailFilters
-  ): MySnailsPromise
-  my_snails_ranked_promise(
-    owner: String!
-    league: Int!
-    adaptations: [Int]
-    limit: Int
-    offset: Int
-  ): MySnailsPromise
-  my_snails_mission_promise(
-    owner: String!
-    adaptations: [Int]
-    limit: Int
-    offset: Int
-  ): MySnailsPromise
   race_schedule_promise: RaceSchedulePromise
-  incubate_promise(params: IncubateParams): IncubatePromise!
-  whitelist_promise(address: String!): WhitelistPromise!
-  name_status_promise(name: String!): NameStatusPromise!
   race_participants_promise(race_id: Int!): SnailPromise!
   race_dashboard_promise: RaceDashboardPromise!
   shop_items_promise: ShopItemsPromise!
   profile_promise(address: String!): ProfilePromise!
-  microwave_promise(params: MicrowaveParams): MicrowavePromise!
   inventory_promise(
     address: String!
     limit: Int
     offset: Int
     filters: InventoryFilters
   ): InventoryPromise!
+  simulation_promise(female: Int!, male: Int!): SimulationPromise!
+  incubate_promise(params: IncubateParams): IncubatePromise!
+  microwave_promise(params: MicrowaveParams): MicrowavePromise!
   pressure_simulation_promise(params: PressureParams): PressurePromise!
+  laboratory_promise: LaboratoryPromise!
+  analytics_promise(params: AnalyticsFilter): AnalyticsPromise!
+  whitelist_promise(address: String!): WhitelistPromise!
+
+  # Get a proposal
+  proposal_promise(proposal_id: Int!): ProposalPromise!
+
+  # Discover guilds
+  guilds_promise(
+    limit: Int
+    offset: Int
+    order: GuildOrder
+    filters: GuildFilters
+  ): GuildPromise!
+
+  # View a single guild by id
+  guild_promise(guild_id: Int!): GuildPromise!
+
+  # Gets user's guild. Requires authentication
+  my_guild_promise: GuildPromise!
+
+  # Generate temporary flag for guild.
+  guild_flag_promise(params: GuildFlagParams): String!
+  notification_promise: NotificationPromise
+
+  # Get tournaments
+  tournaments_promise(
+    cursor: Int
+    filters: TournamentFilters
+  ): TournamentPromise
+
+  # Get tournament, returns latest if id not provided
+  tournament_promise(tournament_id: Int, address: String): TournamentPromise
+
+  # Get snails eligible for the tournament week
+  tournament_snails_promise(
+    family: Family!
+    limit: Int
+    offset: Int
+    filters: SnailFilters
+  ): SnailPromise
+  reports_promise(cursor: Int, params: AnalyticsFilter!): ReportsPromise!
 }
 
 type Mutation {
+  filler_promise: Int
   join_mission_promise(params: JoinRaceParams): JoinRacePromise
   join_competitive_promise(params: JoinRaceParams): JoinRacePromise
   join_mega_race_promise(params: JoinRaceParams): JoinRacePromise
   buy_shop_item_promise(params: BuyItemParams): BuyItemPromise
   update_profile_promise(params: ProfileParams): BasicResponse
+  claim_gift_promise(gift_type: GiftType!): BasicResponse
   apply_pressure_promise(params: PressureParams): PressurePromise
   change_adaptation_promise(params: ChangeAdaptationParams): BasicResponse
+  update_governance_promise(
+    guild_id: Int!
+    params: GovernanceParams!
+  ): GenericPromise!
+
+  # Register a vote for proposal
+  register_vote_promise(proposal_id: Int!, vote: Ballot!): GenericPromise!
+  create_guild_promise(params: GuildParams!): GenericPromise!
+  update_guild_info_promise(
+    guild_id: Int!
+    params: GuildParams!
+  ): GenericPromise!
+
+  # Upgrade a building, count=1 except for the Fridge
+  upgrade_building_promise(
+    guild_id: Int!
+    building: BuildingType!
+    count: Int = 1
+  ): GenericPromise
+
+  # Send snails to work! (or not)
+  send_workers_promise(guild_id: Int!, token_ids: [Int]): GenericPromise
+
+  # Claim workers production
+  collect_primary_promise(guild_id: Int!): GenericPromise
+
+  # Claim building reward
+  claim_building_reward_promise(
+    guild_id: Int!
+    building: BuildingType
+  ): BuildingRewardPromise
+
+  # Resume workers with the new guild
+  resume_workers_promise: GenericPromise
+
+  # Add/Remove/Promote/Demote user actions can be performed.
+  update_roster_promise(guild_id: Int!, params: RosterParams!): GenericPromise!
+
+  # Creates an application for a guild.
+  join_guild_promise(guild_id: Int!): GenericPromise!
+
+  # User can leave a guild.
+  leave_guild_promise(guild_id: Int!, successor: Int): GenericPromise!
+
+  # User can revoke their guild applications.
+  revoke_application_promise(guild_ids: [Int!]!): GenericPromise!
+
+  # A manager rank can reject guild applications.
+  reject_application_promise(member_ids: [Int!]!): GenericPromise!
+
+  # Select team for tournament
+  select_team_promise(guild_id: Int, params: TeamParams): GenericPromise
+  send_guild_message_promise(params: SendGuildMessageParams!): GenericPromise!
+  send_reaction_promise(params: SendReactionParams!): GenericPromise!
+  report_message_promise(params: ReportMessageParams!): GenericPromise!
+  review_report_promise(params: ReviewReportParams!): GenericPromise!
+  delete_message_promise(params: DeleteMessageParams!): GenericPromise!
+}
+
+union BasicResponse = Response | Problem
+
+type Response {
+  success: Boolean!
 }
 
 type Problem {
   problem: [String!]
 }
 
-union SnailPromise = Snails | Snail | Problem
+type PageInfo {
+  has_next_page: Boolean
+  end_cursor: String
+}
 
-union RarityPromise = Rarity | Problem
+enum Token {
+  SLIME
+  WAVAX
+  AVAX
+  NONE
+  USDC
+}
 
-union StaticsPromise = Statics | Problem
-
-union RacePromise = Race | Races | RaceHistory | Problem
-
-union SimulationPromise = Simulation | Problem
-
-union MySnailsPromise = Snails | Problem
-
-union RaceSchedulePromise = RaceSchedule | Problem
-
-union IncubatePromise = Incubate | Problem
-
-union Stat = MeanStat | CounterStat
-
-union JoinRacePromise = JoinRaceResponse | Problem
-
-union JoinPayload = MissionPayload | CompetitivePayload | MegaRacePayload
-
-union WhitelistPromise = WhitelistStatus | Problem
-
-union NameStatusPromise = NameStatus | Problem
+enum AchievementType {
+  PLAYER
+  GUILD
+}
 
 union MarketplaceStatsPromise = MarketplaceStats | Problem
-
-union RaceDashboardPromise = RaceDashboardResponse | Problem
-
-union BuyItemPromise = BuyItemResponse | Problem
-
-union ShopItemsPromise = ShopItemsResponse | Problem
-
-union ProfilePromise = Profile | Problem
-
-union BasicResponse = Response | Problem
-
-union MicrowavePromise = GenericResponse | Problem
-
-union GenericPayload = MicrowavePayload
-
-union InventoryPromise = Inventory | Problem
-
-union PressurePromise = Pressure | Problem
-
-type Pressure {
-  snail: Snail
-  items: [Int]!
-  changes: [Change]!
-}
-
-type Change {
-  name: String
-  description: String
-  src: Int
-  src_type: Int
-  _from: String
-  _to: String
-}
-
-type GenericResponse {
-  status: Int!
-  message: String
-  payload: GenericPayload
-  signature: String
-}
-
-type MicrowavePayload {
-  owner: String!
-  order_id: Int!
-  size: Int!
-  token_ids: [Int]!
-  timeout: Int!
-  salt: Int!
-  coef: Float!
-  fee_wei: String!
-  fee_details: [String!]!
-}
-
-type Response {
-  success: Boolean!
-}
-
-type Profile {
-  address: String!
-  username: String
-  image: String
-  avatar: Avatar
-  avatar_options: [Avatar]
-  twitter: String
-  favorite_snails: [Int]
-  stats: ProfileStats
-}
-
-type Avatar {
-  name: String
-  image_id: Int
-  collection_id: Int
-  url: String
-}
-
-type ProfileStats {
-  total_races: Int
-  snails: Int
-  earned_slime: Float
-  earned_avax: Float
-  sold: Int
-  sold_amount: Float
-  bought: Int
-  bought_amount: Float
-  bred: Int
-  burned: Int
-  minted: Int
-}
-
-type Inventory {
-  count: Int
-  items: [InventoryItem]
-}
-
-type InventoryItem {
-  id: Int
-  type_id: Int
-  name: String
-  description: String
-  coef: Float
-  count: Int
-  status: Int
-  expires_at: String
-}
-
-type ShopItemsResponse {
-  items: [ShopItem]
-}
-
-type ShopItem {
-  id: Int
-  name: String
-  price: Float
-  currency: Int
-}
-
-type RaceDashboardResponse {
-  dashboard: RaceDashboardStats
-}
-
-type RaceDashboardStats {
-  mission: RaceStats
-  competitive: RaceStats
-  mega_race: RaceStats
-}
-
-type RaceStats {
-  active: Int!
-}
 
 type MarketplaceStats {
   volume: Float!
@@ -412,82 +244,90 @@ type MarketStat {
   value: Float
 }
 
+union RarityPromise = Rarity | Problem
+
+union StaticsPromise = Statics | Problem
+
+type Rarity {
+  rarity: [Attribute]
+}
+
+type Attribute {
+  trait_type: String!
+  value: String!
+  id: Int!
+  count: Int
+  percentage: Float
+}
+
+type Statics {
+  traits: [TraitType]
+}
+
+type TraitType {
+  name: String!
+  id: Int!
+  options: [Attribute]
+}
+
+union SnailPromise = Snails | Snail | Problem
+
+union MySnailsPromise = Snails | Problem
+
+union NameStatusPromise = NameStatus | Problem
+
+input VisualFilters {
+  eyes: Int
+  eye_sockets: Int
+  mouth: Int
+  head: Int
+  nostrils: Int
+  form: Int
+  shell: Int
+  bottom: Int
+  top: Int
+  back: Int
+  side: Int
+}
+
+input SnailFilters {
+  id: [Int]
+  family: Int
+  klass: Int
+  generation: Int
+  adaptations: [Int]
+  purity: Int
+  parent_male: Int
+  parent_female: Int
+  visuals: VisualFilters
+  stats: StatFilters
+  stat_season: Int
+  owner: String
+  gender: Int
+  name: String
+  status: Int
+  breedable: BreedingStatus
+}
+
+input StatFilters {
+  elo: RangeFilter
+  level: RangeFilter
+  tickets: RangeFilter
+  races: RangeFilter
+  slime_boost: RangeFilter
+  purity: RangeFilter
+  generation: RangeFilter
+  work_boost: RangeFilter
+}
+
+input RangeFilter {
+  min: Int
+  max: Int
+}
+
 type NameStatus {
   status: Boolean!
   message: String
-}
-
-type WhitelistStatus {
-  whitelist_round: Int!
-  anti_bot_round: Int!
-  public_round: Int!
-  proof: [String]
-}
-
-type JoinRaceResponse {
-  status: Int!
-  message: String
-  payload: JoinPayload
-  signature: String
-}
-
-type MissionPayload {
-  race_id: Int!
-  token_id: Int!
-  address: String!
-  athletes: [Int]!
-  owners: [String]!
-  size: Int!
-  completed_races: [CompletedRace]
-  timeout: Int!
-  salt: Int!
-}
-
-type CompetitivePayload {
-  race_id: Int!
-  token_id: Int!
-  address: String!
-  entry_fee_wei: String!
-  size: Int!
-  completed_races: [CompletedRace]
-  timeout: Int!
-  salt: Int!
-}
-
-type MegaRacePayload {
-  race_id: Int!
-  token_id: Int!
-  address: String!
-  entry_fee_wei: String!
-  size: Int!
-  completed_races: [CompletedRace]
-  timeout: Int!
-  salt: Int!
-}
-
-type CompletedRace {
-  race_id: Int!
-  race_type: Int!
-  results: [Int]!
-  owners: [String]!
-  rewards_wei: [String]
-}
-
-type Incubate {
-  payload: IncubatorPayload
-  signature: String
-}
-
-type IncubatorPayload {
-  owner: String!
-  item_id: Int!
-  base_fee_wei: String!
-  market_price_wei: String!
-  nonce: Int!
-  fid: Int!
-  mid: Int!
-  timeout: Int!
-  salt: Int!
 }
 
 type Snails {
@@ -512,6 +352,7 @@ type Snail {
   image: String!
   image_nobg: String!
   image_headshot: String!
+  image_pfp: String!
   stats: DashboardStats
   more_stats(seasons: [Int]): [SeasonStats]
   colors: Colors
@@ -524,13 +365,15 @@ type Snail {
   market: MarketListing
   holder: String
   gene_market: GeneMarket
-  layers: [Layer]
   race_history: [Race]
   burn: BurnInfo
   auras: AuraInfo
   owner_profile: Profile
   slime_boost: Float
   microwave: MicrowaveInfo
+  atlas: Atlas
+  status: Int
+  work_boost: Float
 }
 
 type MicrowaveInfo {
@@ -589,12 +432,18 @@ type Layer {
   order: Int
 }
 
+type Atlas {
+  image: String
+  json: String
+  layers: [Layer]
+}
+
 type Experience {
   xp: Int!
   level: Int!
   on: Int!
   remaining: Int!
-  reward: Int!
+  reward: Int
 }
 
 type BreedInfo {
@@ -632,18 +481,29 @@ type Gender {
 
 type Colors {
   body_primary: String
+  body_secondary: String
   shell_primary: String
+  shell_secondary: String
   helm_primary: String
+  helm_secondary: String
   extension_primary: String
+  extension_secondary: String
 }
 
-type Attribute {
-  trait_type: String!
-  value: String!
-  id: Int!
-  count: Int
-  percentage: Float
+enum Family {
+  ATLANTIS
+  AGATE
+  MILK
+  HELIX
+  GARDEN
 }
+
+enum BreedingStatus {
+  ALL
+  BREEDABLE
+}
+
+union Stat = MeanStat | CounterStat
 
 type DashboardStats {
   races: Int
@@ -690,50 +550,92 @@ type MeanStat {
   std: Float!
 }
 
-type Rarity {
-  rarity: [Attribute]
+union RacePromise = Race | Races | RaceHistory | Problem
+
+union RaceSchedulePromise = RaceSchedule | Problem
+
+union RaceDashboardPromise = RaceDashboardResponse | Problem
+
+union JoinRacePromise = JoinRaceResponse | Problem
+
+union JoinPayload = MissionPayload | CompetitivePayload | MegaRacePayload
+
+input RaceFilters {
+  # Owner address
+  owner: String
+
+  # Race League [1-9]
+  league: Int
+
+  # Race status [1-7]
+  status: [Int]
+
+  # Id for the race
+  id: [Int]
 }
 
-type Statics {
-  traits: [TraitType]
+input RaceHistoryFilters {
+  token_id: Int!
+  category: Int
+  league: Int
+  distance: Int
+  adaptations: [Int]
 }
 
-type TraitType {
-  name: String!
-  id: Int!
-  options: [Attribute]
+input JoinRaceParams {
+  token_id: Int!
+  race_id: Int!
+  address: String!
+  signature: String!
 }
 
-type BuyItemResponse {
+type JoinRaceResponse {
   status: Int!
   message: String
-  payload: BuyItemPayload
+  payload: JoinPayload
   signature: String
 }
 
-type BuyItemPayload {
-  item_id: Int!
-  order_id: Int!
-  currency: Int!
-  count: Int!
-  price_wei: String!
+type MissionPayload {
+  race_id: Int!
+  token_id: Int!
   address: String!
+  athletes: [Int]!
+  owners: [String]!
+  size: Int!
+  completed_races: [CompletedRace]
   timeout: Int!
   salt: Int!
 }
 
-type Simulation {
-  family: [Probability]
-  purity: [Probability]
-  klass: [Probability]
-  generation: [Probability]
-  adaptation: String
+type CompetitivePayload {
+  race_id: Int!
+  token_id: Int!
+  address: String!
+  entry_fee_wei: String!
+  size: Int!
+  completed_races: [CompletedRace]
+  timeout: Int!
+  salt: Int!
 }
 
-type Probability {
-  name: String
-  p: Float
-  hint: String
+type MegaRacePayload {
+  race_id: Int!
+  token_id: Int!
+  address: String!
+  entry_fee_wei: String!
+  size: Int!
+  completed_races: [CompletedRace]
+  timeout: Int!
+  salt: Int!
+}
+
+type CompletedRace {
+  race_id: Int!
+  race_type: Int!
+  results: [Int]!
+  owners: [String]!
+  rewards_wei: [String]
 }
 
 type RaceHistory {
@@ -765,6 +667,7 @@ type Race {
   participation: Boolean
   race_feed: [RaceFeedResponse]
   reward_status: Int
+  placement: Int
 }
 
 type Rewards {
@@ -777,6 +680,20 @@ type Rewards {
 type RaceSchedule {
   current: Race
   next: Race
+}
+
+type RaceDashboardResponse {
+  dashboard: RaceDashboardStats
+}
+
+type RaceDashboardStats {
+  mission: RaceStats
+  competitive: RaceStats
+  mega_race: RaceStats
+}
+
+type RaceStats {
+  active: Int!
 }
 
 union RaceFeedResponse = SectorDataResponse | TimeDataResponse | Problem
@@ -798,10 +715,1039 @@ type ResultsTimeData {
 
 type SectorDataResponse {
   sector_data: [AthleteData]
+  bunny_data: [AthleteData]
   sector: Int!
 }
 
 type TimeDataResponse {
   time_data: [AthleteTimeData]
   next_race: Int
+}
+
+input BuyItemParams {
+  item_id: Int!
+  address: String!
+  count: Int = 1
+  payload: ExtraParams
+}
+
+input ExtraParams {
+  token_id: Int
+  name: String
+  use_scroll: Boolean
+  guild_id: Int
+  building_type: BuildingType
+}
+
+union ShopItemsPromise = ShopItemsResponse | Problem
+
+union BuyItemPromise = BuyItemResponse | Problem
+
+type ShopItemsResponse {
+  items: [ShopItem]
+}
+
+type ShopItem {
+  id: Int
+  name: String
+  price: Float
+  currency: Int
+}
+
+type BuyItemResponse {
+  status: Int!
+  message: String
+  payload: BuyItemPayload
+  signature: String
+}
+
+type BuyItemPayload {
+  item_id: Int!
+  order_id: Int!
+  currency: Int!
+  count: Int!
+  price_wei: String!
+  address: String!
+  timeout: Int!
+  salt: Int!
+}
+
+input ProfileParams {
+  username: String
+  collection_id: Int
+  image_id: String
+  twitter: String
+  address: String!
+}
+
+input InventoryFilters {
+  item_type: Int
+  status: [Int]
+  flag: ViewFlag
+  family: Int
+}
+
+union ProfilePromise = Profile | Problem
+
+union InventoryPromise = Inventory | Problem
+
+type Profile {
+  address: String!
+  username: String
+  image: String
+  avatar: Avatar
+  avatar_options: [Avatar]
+  twitter: String
+  favorite_snails: [Int]
+  stats: ProfileStats
+  guild: GuildLite
+}
+
+type Avatar {
+  name: String
+  image_id: String
+  collection_id: Int
+  url: String
+}
+
+type ProfileStats {
+  total_races: Int
+  snails: Int
+  earned_slime: Float
+  earned_avax: Float
+  sold: Int
+  sold_amount: Float
+  bought: Int
+  bought_amount: Float
+  bred: Int
+  burned: Int
+  minted: Int
+  workers: Int
+}
+
+type Inventory {
+  count: Int
+  items: [InventoryItem]
+}
+
+type InventoryItem {
+  id: Int
+  type_id: Int
+  name: String
+  description: String
+  coef: Float
+  count: Int
+  status: Int
+  expires_at: String
+}
+
+enum ViewFlag {
+  ALL
+  COOKING
+  MIXING
+}
+
+enum GiftType {
+  FIRST_YEAR_GIFT
+  MYSTERY_BOX
+}
+
+input IncubateParams {
+  owner: String!
+  item_id: Int
+  market_price_wei: String
+  nonce: Int!
+  fid: Int!
+  mid: Int!
+  use_scroll: Boolean
+}
+
+input MicrowaveParams {
+  address: String!
+  token_ids: [Int!]!
+  signature: String!
+  use_scroll: Boolean
+}
+
+input PressureParams {
+  token_id: Int
+  items: [ItemParams!]!
+  address: String!
+  signature: String!
+}
+
+input ChangeAdaptationParams {
+  token_id: Int!
+  slot: Int!
+  address: String!
+}
+
+input ItemParams {
+  id: Int!
+  count: Int!
+}
+
+union SimulationPromise = Simulation | Problem
+
+union IncubatePromise = Incubate | Problem
+
+union MicrowavePromise = GenericResponse | Problem
+
+union PressurePromise = Pressure | Problem
+
+union GenericPayload = MicrowavePayload | BuyItemPayload | WorkerPayload
+
+union GenericPromise = GenericResponse | Problem
+
+union LaboratoryPromise = Laboratory | Problem
+
+type Laboratory {
+  breeding_coef: Float
+  microwave_coef: Float
+}
+
+type GenericResponse {
+  status: Int!
+  message: String
+  payload: GenericPayload
+  signature: String
+}
+
+type Incubate {
+  payload: IncubatorPayload
+  signature: String
+}
+
+type IncubatorPayload {
+  owner: String!
+  item_id: Int!
+  base_fee_wei: String!
+  market_price_wei: String!
+  nonce: Int!
+  fid: Int!
+  mid: Int!
+  timeout: Int!
+  salt: Int!
+}
+
+type Simulation {
+  family: [Probability]
+  purity: [Probability]
+  klass: [Probability]
+  generation: [Probability]
+  adaptation: String
+}
+
+type Probability {
+  name: String
+  p: Float
+  hint: String
+}
+
+type MicrowavePayload {
+  owner: String!
+  order_id: Int!
+  size: Int!
+  token_ids: [Int]!
+  timeout: Int!
+  salt: Int!
+  coef: Float!
+  fee_wei: String!
+  fee_details: [String!]!
+}
+
+type Pressure {
+  snail: Snail
+  items: [InventoryItem]!
+  changes: [Change]!
+}
+
+type Change {
+  name: String
+  description: String
+  src: Int
+  src_type: ItemSourceType
+  _from: String
+  _to: String
+}
+
+enum ItemSourceType {
+  SNAIL
+  ITEM
+  BUILDING
+  GIFT
+  GUILD
+}
+
+input AnalyticsFilter {
+  api_key: String!
+}
+
+union AnalyticsPromise = Analytics | Problem
+
+union AnalyticData = SingleData | CounterData | HistogramData
+
+type Analytics {
+  slime: [Analytic]
+  snails: [Analytic]
+  racers: [Analytic]
+  missions: [Analytic]
+}
+
+type Analytic {
+  name: String!
+  data: AnalyticData
+}
+
+type SingleData {
+  k: String!
+  vs: String!
+}
+
+type CounterData {
+  k: String!
+  v: Float!
+}
+
+type HistogramData {
+  lk: [String]!
+  lv: [Float]!
+  lc: [Float]
+}
+
+union WhitelistPromise = WhitelistStatus | Problem
+
+type WhitelistStatus {
+  whitelist_round: Int!
+  anti_bot_round: Int!
+  public_round: Int!
+  proof: [String]
+}
+
+# A guild's message and activity board
+type ActivityBoard {
+  board(cursor: Int): BoardPage
+}
+
+type GuildMessageBoard {
+  board(cursor: Int): BoardPage
+}
+
+type BoardPage {
+  total_count: Int
+  page_info: PageInfo!
+  messages: [GuildMessage]
+}
+
+type GuildMessage {
+  id: Int!
+  cursor: Int!
+  topic: GuildMessageTopic
+  content: String!
+  subjects: [Subject]
+  created_at: String
+  sender: Profile
+  reactions: [MessageReaction]
+  replies(cursor: Int): ReplyPage
+}
+
+enum GuildMessageTopic {
+  G_CREATE
+  G_MODEL_SET
+  G_MODEL_CHANGE
+  G_NAME_CHANGE
+  G_DESC_CHANGE
+  G_FLAG_CHANGE
+  G_DISBAND
+  M_JOIN
+  M_KICK
+  M_PROMOTE
+  M_DEMOTE
+  M_LEFT
+  P_ACCEPT
+  P_REJECT
+  T_DONATE
+  T_RESEARCH_BUY
+  T_RESEARCH_UPGRADE
+  T_CLAIM
+  T_UNSTAKE
+  T_STAKE
+  P_FAILED
+  T_TOURNAMENT
+  T_CLAIM_SOURCE
+}
+
+union ProposalPromise = Proposal | Problem
+
+input GovernanceParams {
+  modal: GovernanceModal!
+
+  # Member Id of Leader
+  leader: Int!
+
+  # Member Ids of Officers
+  officers: [Int]
+}
+
+# The guild's governance
+type Governance {
+  modal: GovernanceModal!
+
+  # Use proposal_id as cursor, page_size is default to 10.
+  # TEST-This emits a new query call when required
+  active_proposals(cursor: Int): ProposalPage
+
+  # Use proposal_id as cursor, page_size is default to 10.
+  # TEST-This emits a new query call when required
+  finished_proposals(cursor: Int): ProposalPage
+}
+
+type ProposalPage {
+  total_count: Int!
+  page_info: PageInfo
+  proposals: [Proposal]
+}
+
+type Proposal {
+  cursor: Int!
+  id: Int!
+  topic: ProposalTopic!
+
+  # Use profile for {profile} field in description
+  profile: Profile!
+  description: String
+
+  # Use subjects to fill {numbers} in description using Subject's order
+  subjects: [Subject]
+  created_at: String!
+  settles_at: String!
+  executed_at: String
+  status: ProposalStatus!
+  modal: GovernanceModal!
+  votes: Votes
+}
+
+type Votes {
+  total: Float!
+  attendance: Float!
+  votes_yes: Float!
+  votes_no: Float!
+
+  # TEST-This emits a new query call when required.
+  voters: [Voters]
+}
+
+type Voters {
+  vote: Ballot!
+  size: Float!
+  profile: Profile!
+}
+
+enum GovernanceModal {
+  SNAILOCRACY
+  PROOF_OF_SNAIL
+  PROOF_OF_BOOST
+  DICTATORSHIP
+}
+
+enum Ballot {
+  YES
+  NO
+}
+
+enum ProposalTopic {
+  # Change the guild name
+  CHANGE_NAME
+
+  # Change the guild description
+  CHANGE_DESCRIPTION
+
+  # Change the guild flag
+  CHANGE_FLAG
+
+  # Change the guild governance (modal, voting system)
+  CHANGE_MODAL
+
+  # Disband the guild
+  DISBAND_GUILD
+
+  # Invite a new member to the guild
+  ADD_MEMBER
+
+  # Kick a member from the guild
+  KICK_MEMBER
+
+  # Promote a member to a higher rank
+  PROMOTE_MEMBER
+
+  # Demote a member to a lower rank
+  DEMOTE_MEMBER
+
+  # Bulk update of members
+  BULK_UPDATE_ROSTER
+
+  # Upgrade building
+  UPGRADE_BUILDING
+}
+
+enum ProposalStatus {
+  # The proposal is still open for voting
+  ACTIVE
+
+  # The voting period has ended and the proposal is being processed
+  LOCKED
+
+  # The proposal has been accepted
+  ACCEPTED
+
+  # The proposal has been rejected
+  REJECTED
+
+  # The proposal has been accepted but the execution failed
+  FAILED
+}
+
+input GuildParams {
+  name: String
+  description: String
+  flag: GuildFlagParams
+  disband: Boolean
+}
+
+input GuildFlagParams {
+  flag: FlagBase
+  primary: String
+  secondary: String
+}
+
+input GuildFilters {
+  name: String
+  modal: GovernanceModal
+
+  # If true, will only return guilds that the user has an application to
+  applied: Boolean
+
+  # Used with applied field.
+  address: String
+}
+
+union GuildPromise = Guilds | Guild | Problem
+
+union SubjectModal = GuildLite | Profile | Snail | Proposal | Flag
+
+type Guilds {
+  guilds: [Guild]
+  count: Int
+}
+
+type Guild {
+  id: Int!
+  name: String!
+  capacity: Int!
+  description: String
+  flag: Flag
+  created_at: String!
+  membership(address: String!): Member
+  roster: GuildRoster
+  governance: Governance
+  activity: ActivityBoard
+  stats: GuildStats
+  treasury: Treasury
+  research: ResearchCenter
+  status: GuildStatus
+  team: Team
+  messages: GuildMessageBoard
+}
+
+type Flag {
+  flag_base: FlagBase
+  twin_url: String
+  flat_url: String
+  primary: String
+  secondary: String
+}
+
+type Subject {
+  type: SubjectType
+  id: Int
+
+  # Order will be used to fill descriptions
+  order: Int
+  modal: SubjectModal
+  value: String
+  hidden: Boolean
+}
+
+type GuildLite {
+  id: Int!
+  name: String!
+  flag: Flag
+}
+
+enum SubjectType {
+  PROFILE
+  GUILD
+  PROPOSAL
+  SNAIL
+  TEXT
+  MODAL
+  RANK
+  RESOURCE
+  TOKEN
+  RESEARCH
+  FLAG
+  TOURNAMENT
+}
+
+enum FlagBase {
+  CHECKERED
+  SPLIT
+  DOT
+}
+
+enum GuildOrder {
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  NAME_ASC
+  NAME_DESC
+  SIZE_ASC
+
+  # Should be default
+  SIZE_DESC
+  LEVEL_ASC
+  LEVEL_DESC
+}
+
+enum GuildStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  BANNED
+  DISBAND
+  ABORTED
+}
+
+union BuildingRewardPromise = BuildingRewards | Problem
+
+type BuildingRewards {
+  changes: [Change]!
+}
+
+type ResearchCenter {
+  buildings: [Building!]!
+  stats: ResearchCenterStats!
+}
+
+type ResearchCenterStats {
+  worker_count: Int
+  tomato_ph: Float
+}
+
+type Building {
+  id: Int
+  name: String!
+  type: BuildingType!
+  level: Int!
+  max_level: Int
+  description: String
+  level_description: String
+  subjects: [Subject]
+  next_level: Building
+  upgrade_cost: [ResourceBalance]
+  reward(address: String): BuildingReward
+}
+
+type BuildingReward {
+  has_reward: Boolean!
+  next_reward_at: String
+  amount: Float
+}
+
+enum BuildingType {
+  # Increases Guilds' member limit
+  FRIDGE
+
+  # Primary Resource Production
+  SINK
+
+  # Increase Tournament speed of Snails.
+  # Each family should have their own option which means there has to be 5 options to upgrade.
+  DRINK_ATLANTIS
+  DRINK_AGATE
+  DRINK_MILK
+  DRINK_HELIX
+  DRINK_GARDEN
+
+  # Generates Slime Boost
+  JUICER
+
+  # Generates Incubator Scroll
+  HERB_GARDEN
+
+  # Generates Microwave Scroll
+  MICROWAVE
+
+  # Generates XP Boost
+  ENERGY_DRINK
+}
+
+type WorkerPayload {
+  order_id: Int!
+  token_ids: [Int]
+  owner: String!
+  timeout: Int!
+  salt: Int!
+}
+
+input RosterParams {
+  changes: [RosterChange!]!
+
+  # Decides if changes should be made in bulk or one at a time. Defaults to false.
+  bulk: Boolean
+}
+
+input RosterChange {
+  # Member ID
+  id: Int!
+
+  # ADD_MEMBER, KICK_MEMBER, PROMOTE_MEMBER, DEMOTE_MEMBER topics are supported.
+  topic: ProposalTopic!
+
+  # Optional; only required for PROMOTE_MEMBER and DEMOTE_MEMBER topics.
+  new_rank: MemberRank
+}
+
+# The guild's roster
+type GuildRoster {
+  members: MemberPage
+  pending: MemberPage
+}
+
+type MemberPage {
+  count: Int!
+  users: [Member!]!
+}
+
+type Member {
+  id: Int!
+  profile: Profile!
+  joined_at: String!
+  rank: MemberRank
+  reputation: Int
+  status: MembershipStatus!
+  stats: MemberStats!
+}
+
+type MemberStats {
+  # Votes for Proof of Snail also denotes snail count.
+  votes_pos: Int!
+
+  # Votes for Proof of Boost.
+  votes_pob: Float!
+
+  # Number of snails sent to work for guild
+  workers: Int!
+
+  # Amount of primary gathered by workers per hour
+  ph_primary: Float!
+
+  # Lifetime primary gathered by workers
+  total_primary: Float!
+}
+
+enum MemberRank {
+  # The lowest rank
+  MEMBER
+
+  # Managing rank
+  OFFICER
+
+  # Leader rank. Only one per guild.
+  LEADER
+}
+
+enum MembershipStatus {
+  # User submits an application to join the guild.
+  PENDING
+
+  # User revokes their application.
+  REVOKED
+
+  # User's applications are dropped automatically by another action.(Joining another guild etc.)
+  DROPPED
+
+  # User's application is rejected by a guild official.
+  REJECTED
+
+  # User is accepted into the guild.
+  ACTIVE
+
+  # User left the guild.
+  LEFT
+
+  # User was kicked from the guild.
+  KICKED
+
+  # User creating a guild, waiting on-chain confirmation.
+  CREATING
+
+  # User aborted guild creation.
+  ABORTED
+
+  # User application is on proposal stage.
+  PROPOSED
+
+  # User application failed
+  FAILED
+}
+
+type GuildStats {
+  achievements: [Achievement!]!
+  level: Int!
+  member_count: Int
+  snail_count: Int
+}
+
+type Achievement {
+  id: Int!
+  type: AchievementType!
+  name: String!
+  description: String!
+}
+
+# The guild's treasury
+type Treasury {
+  resources: [ResourceBalance]!
+  ledger(cursor: Int): BoardPage
+}
+
+type ResourceBalance {
+  id: Resource!
+  name: String!
+  symbol: String!
+  amount: Float!
+}
+
+enum Resource {
+  # Primary source for research, name is a placeholder
+  PRIMARY
+
+  # Secondary source for research, name is a placeholder
+  SECONDARY
+
+  # Time is a resource
+  TIME
+  SLIME
+  USDT
+  USDC
+}
+
+union NotificationPromise = NotificationResponse | Problem
+
+type NotificationResponse {
+  slime_ratio: Float
+  notifications: [MenuNotification]
+  has_paused_workers: Boolean
+  guild_id: Int
+  first_year_gift: Boolean
+}
+
+type MenuNotification {
+  key: String
+  notified_at: String
+}
+
+union TournamentPromise = TournamentPage | Tournament | Problem
+
+input TournamentFilters {
+  status: Int
+  order: Int
+}
+
+type TournamentPage {
+  total_count: Int!
+  page_info: PageInfo
+  tournaments: [Tournament]
+}
+
+type Tournament {
+  id: Int
+  name: String
+  current_week: Int
+  current_day: Int
+  weeks: [RaceWeek]
+  leaderboard(cursor: Int): LeaderboardPage
+  guild_count: Int
+  prize_pool: [ResourceBalance]
+  scheduled_at: String
+}
+
+type LeaderboardPage {
+  total_count: Int!
+  page_info: PageInfo
+  entries: [LeaderboardEntry]
+  my_guild: LeaderboardEntry
+}
+
+type LeaderboardEntry {
+  order: Int
+  guild: GuildLite
+  points: Int
+  rewards: [ResourceBalance]
+}
+
+type RaceWeek {
+  starts_at: String
+  team_select_ends_at: String
+  ends_at: String
+  week: Int
+  days: [RaceDay]
+  conditions: [String]!
+  distance: String!
+  guild_count: Int
+}
+
+type RaceDay {
+  races: [Race]
+  family: Family
+  race_date: String
+  order: Int
+  result: RaceDayResult
+}
+
+type RaceDayResult {
+  entries: [RaceDayResultEntry]
+}
+
+type RaceDayResultEntry {
+  snail: Snail
+  guild: GuildLite
+  points: Int
+  timer: Float
+  order: Int
+  race_id: Int
+}
+
+type Team {
+  tournament_id: Int
+  weekly_team: [WeeklyTeam]
+}
+
+type WeeklyTeam {
+  week: Int
+  athletes: [TeamAthlete]
+}
+
+type TeamAthlete {
+  family: Family
+  snail: Snail
+}
+
+input TeamParams {
+  athletes: [TeamAthleteParams!]!
+}
+
+input TeamAthleteParams {
+  family: Family!
+  token_id: Int!
+}
+
+input ReviewReportParams {
+  report_id: Int!
+  review_by: String!
+  review_comment: String!
+  status: ReportStatus!
+  days: Int
+  api_key: String!
+}
+
+union ReportsPromise = ReportsPage | Problem
+
+input DeleteMessageParams {
+  message_id: Int!
+}
+
+input ReportMessageParams {
+  message_id: Int!
+  category: ReportCategory!
+  language: Language!
+  reason: String!
+}
+
+input SendReactionParams {
+  message_id: Int!
+  reaction: Reaction!
+  is_delete: Boolean
+}
+
+input SendGuildMessageParams {
+  guild_id: Int!
+  reply_to: Int
+  content: String!
+}
+
+type ReportsPage {
+  total_count: Int
+  page_info: PageInfo!
+  reports: [Report]
+}
+
+type Report {
+  id: Int!
+  cursor: Int!
+  message: GuildMessage
+  reporter: Profile
+  category: ReportCategory
+  language: Language
+  reason: String
+  status: ReportStatus
+  review_by: String
+  review_comment: String
+  created_at: String
+  reviewed_at: String
+  revokes_at: String
+}
+
+type ReplyPage {
+  total_count: Int
+  page_info: PageInfo!
+  replies: [GuildMessage]
+}
+
+type MessageReaction {
+  id: Reaction!
+  count: Int!
+}
+
+enum Reaction {
+  LIKE
+  DISLIKE
+}
+
+enum Language {
+  ENGLISH
+  GERMAN
+  FRENCH
+  SPANISH
+  JAPANESE
+  KOREAN
+  CHINESE
+  TURKISH
+  OTHER
+}
+
+enum ReportCategory {
+  FLAMING
+  INSULTS
+  RACISM
+  INAPPROPRIATE
+  SPAM
+  ADVERTISEMENT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  PUNISHED
+  DISMISSED
 }
