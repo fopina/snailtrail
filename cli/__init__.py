@@ -309,6 +309,7 @@ def build_parser():
         action='store_true',
         help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
     )
+    utils_parsers.add_parser('accounts', help='Just list accounts, quick function')
     return parser
 
 

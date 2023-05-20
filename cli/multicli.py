@@ -183,6 +183,14 @@ SNAILS: {totals[2]}'''
         """
         This is a multicli cmd only, not implmemented in cli ("per wallet")
         """
+        m = getattr(self, f'cmd_utils_{self.args.util_cmd}')
+        return m()
+
+    def cmd_utils_accounts(self):
+        for c in self.clis:
+            print(c.name)
+
+    def cmd_utils_duplicates(self):
         sa = defaultdict(list)
         for c in self.clis:
             for _, snail in c.my_snails.items():
