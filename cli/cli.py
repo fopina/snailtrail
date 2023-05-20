@@ -294,7 +294,7 @@ class CLI:
             if x.id in self._snail_mission_cooldown and to_queue < self._snail_mission_cooldown[x.id]:
                 to_queue = self._snail_mission_cooldown[x.id]
             tleft = to_queue - self._now()
-            base_msg = f"{x.name_id} : ({x.level} - {x.stats['experience']['remaining']}) : "
+            base_msg = f"{x.name_id} : ({x.level_str} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
                 logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
@@ -386,7 +386,9 @@ class CLI:
 
                         tx = self.client.rejoin_mission_races(r)
 
-                msg = f"🐌 `{snail.name_id}` ({snail.level} - {snail.stats['experience']['remaining']}) joined mission"
+                msg = (
+                    f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
+                )
                 if r.get('status') == 0:
                     logger.info(f'{msg}')
                     self.notify_mission(msg)
@@ -542,7 +544,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for family, snails in per_family.items():
             print(f'{Fore.BLUE}{family}{Fore.RESET}')
             for score, snail in snails:
-                print(f'{score}: {snail.name} {snail.adaptations} P{snail.purity} L{snail.level}')
+                print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
     def _bot_tournament(self):

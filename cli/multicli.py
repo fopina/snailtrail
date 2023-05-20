@@ -139,7 +139,7 @@ SNAILS: {totals[2]}'''
             snails.sort(key=lambda x: x[0], reverse=True)
             for score, snail, c in snails:
                 print(
-                    f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}P{snail.purity}/L{snail.level}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
+                    f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity_str}/{snail.level_str}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
                 )
 
     def cmd_guild(self):

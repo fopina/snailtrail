@@ -299,7 +299,7 @@ class Notifier:
                     % (
                         f'[{escmv2(snail.name)}](https://www.snailtrail.art/snails/{snail.id}/about)',
                         escmv2(
-                            f"lv {snail.level} - {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity}"
+                            f"{snail.level_str} {snail.family.gene} {snail.gender.emoji()} {snail.klass} {snail.purity_str}"
                         ),
                         self._breed_status_markdown(snail.breed_status),
                         escmv2(self._queueable_at(snail)),
