@@ -556,12 +556,17 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         if self._notify_tournament is not None:
             if self._notify_tournament != data:
                 msg = f'`{self.profile_guild}` leaderboard:\n'
-                for _k in ('order', 'points'):
-                    if self._notify_tournament[_k] != data[_k]:
-                        c = '🔻' if self._notify_tournament[_k] > data[_k] else '🚀'
-                        msg += f"*{_k}* {self._notify_tournament[_k]}{c}{data[_k]}\n"
-                    else:
-                        msg += f"*{_k}* {data[_k]}\n"
+                _k = 'order'
+                if self._notify_tournament[_k] != data[_k]:
+                    c = '🏆' if self._notify_tournament[_k] > data[_k] else '💩'
+                    msg += f"*position* {self._notify_tournament[_k]}{c}{data[_k]}\n"
+                else:
+                    msg += f"*position* {data[_k]}\n"
+                _k = 'points'
+                if self._notify_tournament[_k] != data[_k]:
+                    msg += f"*points* {self._notify_tournament[_k]}📈{data[_k]}\n"
+                else:
+                    msg += f"*points* {data[_k]}\n"
                 self.notifier.notify(msg)
                 logger.info(msg)
         self._notify_tournament = data
