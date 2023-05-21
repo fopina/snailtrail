@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
@@ -67,6 +68,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
             dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
+            dispatcher.add_handler(CommandHandler("inventory", self.cmd_inventory))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
@@ -345,6 +347,34 @@ class Notifier:
 🔺 {totals[1]:.3f}
 🐌 {totals[2]}'''
             )
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_inventory(self, update: Update, context: CallbackContext) -> None:
+        """
+        Inventory items
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        msg = []
+        totals = defaultdict(lambda: 0)
+        m = update.message.reply_markdown('Loading items...')
+        for c in self.clis.values():
+            self.tag_with_wallet(c, msg)
+            msg.append('...Loading...')
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            type_group = defaultdict(list)
+            for item in c.client.iterate_inventory(c.owner):
+                type_group[item.type_id].append(item)
+            msg.pop()
+            for _, v in type_group.items():
+                msg.append(f'_{v[0].name}_: {len(v)}')
+                totals[v[0].name] += len(v)
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+        if self.multi_cli:
+            msg.append('`Total`')
+            for k, v in totals.items():
+                msg.append(f'_{k}_: {v}')
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth

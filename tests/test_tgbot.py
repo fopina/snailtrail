@@ -39,6 +39,7 @@ class Test(TestCase):
 /market - Show marketplace stats - volume, floors and highs
 /racereview - Review all races to join (that were already notified)
 /racepending - View pending races (that you joined)
+/inventory - Inventory items
 /stats - My snails stats
 /reloadsnails - Reset snails cache
 /settings - Toggle bot settings
