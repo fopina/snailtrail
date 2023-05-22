@@ -444,7 +444,12 @@ class CLI:
             except client.web3client.exceptions.ContractLogicError as e:
                 print(e)
         elif self.args.send is not None:
-            target = self.args.wallet[self.args.send].address
+            if self.args.send < 1 or self.args.send > len(self.args.wallet):
+                raise Exception(
+                    'you have %d wallets, --account must be between 1 and %d'
+                    % (len(self.args.wallet), len(self.args.wallet))
+                )
+            target = self.args.wallet[self.args.send - 1].address
             if target == self.owner:
                 return
             bal = self.client.web3.balance_of_slime(raw=True)
@@ -686,6 +691,31 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             print(c)
 
     def cmd_snails(self):
+        if self.args.transfer is not None:
+            transfer_snail, transfer_account = self.args.transfer
+            if transfer_account < 1 or transfer_account > len(self.args.wallet):
+                raise Exception(
+                    'you have %d wallets, --account must be between 1 and %d'
+                    % (len(self.args.wallet), len(self.args.wallet))
+                )
+            target = self.args.wallet[transfer_account - 1].address
+            for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
+                if snail.id == transfer_snail:
+                    break
+            else:
+                print('snail not here')
+                return
+
+            print(f'Found: {snail}')
+            if target == self.owner:
+                print('Target is the same as owner')
+                return False
+
+            tx = self.client.web3.transfer_snail(self.owner, target, snail.id)
+            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+            print(f'Transferred for {fee} AVAX')
+            return False
+
         if self.args.sort == 'stats':
             it = list(self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True))
             for snail in it:

@@ -187,3 +187,12 @@ class Client:
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )
+
+    def transfer_snail(
+        self, _from: str, to: str, token_id: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        return self._bss(
+            self.snailnft_contract.functions.transferFrom(_from, to, token_id),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )

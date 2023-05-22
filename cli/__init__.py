@@ -240,6 +240,9 @@ def build_parser():
 
     pm = subparsers.add_parser('snails', help='Snail shit')
     pm.add_argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
+    pm.add_argument(
+        '-t', '--transfer', type=int, nargs=2, metavar=('snail_id', 'account'), help='Transfer <snail_id> to <account>'
+    )
 
     pm = subparsers.add_parser('inventory', help='Inventory shit')
 
