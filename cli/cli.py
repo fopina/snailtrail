@@ -1341,6 +1341,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
     )
     @commands.argument(
+        '--external-wallet',
+        type=commands.wallet_ext_or_int,
+        metavar='account_or_address',
+        help='Test snail against snails from this external account',
+    )
+    @commands.argument(
         '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
     )
     @commands.argument('-G', '--gene-family', type=int, help='filter gene market by this family (5 is Atlantis)')
@@ -1492,14 +1498,22 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             assert len(snails) == 2
             print(self.cmd_incubate_sim_report(snails[0].incubation_simulation(snails[1])))
             return False
-        elif argc == 1:
+
+        if argc == 1:
             snails = list(self.client.iterate_all_snails(filters={'id': self.args.sim}))
             assert len(snails) == 1
             main_snail = snails
 
         ret = True
         snail_fees = []
-        snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+        if self.args.external_wallet:
+            if argc != 1:
+                raise Exception(
+                    '--external-wallet currently can only be used with a specific snail, not all snails from the current account'
+                )
+            snails = list(self.client.iterate_all_snails(filters={'owner': self.args.external_wallet.address}))
+        else:
+            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
         if self.args.breeders:
             snails = [x for x in snails if x.breed_status < 0]
 
