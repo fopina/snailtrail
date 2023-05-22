@@ -9,7 +9,7 @@ import configargparse
 from colorama import Fore
 from snail import proxy
 
-from . import cli, multicli, tempconfigparser, tgbot
+from . import cli, multicli, tempconfigparser, tgbot, commands
 
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 
@@ -154,158 +154,11 @@ def build_parser():
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
-    pm = subparsers.add_parser('missions', help='Mission related stuff')
-    pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
-    pm.add_argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
-    pm.add_argument('-l', '--limit', type=int, help='Limit history to X missions')
-    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get mission history for SNAIL_ID (use 0 for ALL)')
-    pm.add_argument('--agg', type=int, help='Aggregate history to X entries')
+    for k, v in commands.commands.items():
+        pm = subparsers.add_parser(k, help=v.help)
+        for a in reversed(v.arguments):
+            pm.add_argument(*a[0], **a[1])
 
-    pm = subparsers.add_parser('bot', help='THE THING!')
-    pm.add_argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
-    pm.add_argument(
-        '--mission-chat-id', type=int, help='Notification chat id to be used only for mission join notifications'
-    )
-    pm.add_argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
-    pm.add_argument(
-        '-b',
-        '--boost',
-        type=int,
-        action='append',
-        help='If auto, these snail ids should always take last spots for missions (boost)',
-    )
-    pm.add_argument(
-        '--minimum-tickets',
-        type=int,
-        default=0,
-        help='Any snail with less tickets than this will only join on last spots',
-    )
-    pm.add_argument(
-        '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
-    )
-    pm.add_argument(
-        '-f',
-        '--fair',
-        action='store_true',
-        help='Take last spots when negative mission tickets',
-    )
-    pm.add_argument(
-        '--cheap',
-        action='store_true',
-        help='Cheap mode - only take --fair/--boost last spots if they are low-fee races. Other cheap stuff to be added',
-    )
-    pm.add_argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
-    pm.add_argument(
-        '--races-join',
-        action='store_true',
-        help='Auto-join every matched race - use race-matches and race-price to restrict them!',
-    )
-    pm.add_argument(
-        '--race-stats',
-        action='store_true',
-        help='Include similar race stats for the snail when notifying about a new race and for race over notifications (will generate extra queries)',
-    )
-    pm.add_argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
-    pm.add_argument('--race-price', type=int, help='Maximum price for race')
-    pm.add_argument(
-        '-o',
-        '--races-over',
-        action='store_true',
-        help='Monitor finished competitive races with participation and notify on position',
-    )
-    pm.add_argument(
-        '--missions-over',
-        action='store_true',
-        help='Monitor finished missions with participation and log position/earns (no notification sent)',
-    )
-    pm.add_argument(
-        '--first-run-over',
-        action='store_true',
-        help='Also trigger log/notify for first run (mostly for testing)',
-    )
-    pm.add_argument(
-        '--mission-matches',
-        type=int,
-        default=1,
-        help='Minimum adaptation matches to join mission - 1 might be worthy, higher might be crazy',
-    )
-    pm.add_argument('--market', action='store_true', help='Monitor marketplace stats')
-    pm.add_argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
-    pm.add_argument('--tournament', action='store_true', help='Monitor tournament changes for own guild')
-    pm.add_argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
-    pm.add_argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
-    pm.add_argument(
-        '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
-    )
-
-    pm = subparsers.add_parser('snails', help='Snail shit')
-    pm.add_argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
-    pm.add_argument(
-        '-t', '--transfer', type=int, nargs=2, metavar=('snail_id', 'account'), help='Transfer <snail_id> to <account>'
-    )
-
-    pm = subparsers.add_parser('inventory', help='Inventory shit')
-
-    pm = subparsers.add_parser('market', help='Find bargains and matches in the market')
-    pm.add_argument('-f', '--females', action='store_true', help='breeders in marketplace')
-    pm.add_argument('-g', '--genes', action='store_true', help='search genes marketplace')
-    pm.add_argument('-p', '--price', type=float, default=1, help='price limit for search')
-    pm.add_argument('--stats', action='store_true', help='marketplace stats')
-
-    pm = subparsers.add_parser('incubate', help='Incubation fees and breed plannign')
-    pm.add_argument(
-        '-f',
-        '--fee',
-        metavar='SNAIL_ID',
-        type=int,
-        nargs='*',
-        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
-    )
-    pm.add_argument(
-        '-s',
-        '--sim',
-        metavar='SNAIL_ID',
-        type=int,
-        nargs='*',
-        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
-    )
-    pm.add_argument(
-        '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
-    )
-    pm.add_argument('-G', '--gene-family', type=int, help='filter gene market by this family (5 is Atlantis)')
-    pm.add_argument('-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW')
-    pm.add_argument(
-        '--plan', action='store_true', help='Lazy (suboptimal) planning for cheapest breeds (only for `-bf`)'
-    )
-
-    pm = subparsers.add_parser('rename', help='Rename a snail')
-    pm.add_argument('snail', type=int, help='snail')
-    pm.add_argument('name', help='new name')
-
-    pm = subparsers.add_parser('balance', help='Check wallet balances for all the tokens')
-    pm.add_argument('-c', '--claim', action='store_true', help='Claim rewards')
-    pm.add_argument('-s', '--send', type=int, metavar='account', help='Transfer slime to this account')
-
-    pm = subparsers.add_parser('races', help='Race details (not missions)')
-    pm.add_argument('-v', '--verbose', action='store_true', help='Verbosity')
-    pm.add_argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
-    pm.add_argument('-l', '--limit', type=int, help='Limit to X races')
-    pm.add_argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID (use 0 for ALL)')
-    pm.add_argument('-p', '--price', type=int, help='Filter for less or equal to PRICE')
-    pm.add_argument('-j', '--join', action=StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID')
-    pm.add_argument('--pending', action='store_true', help='Get YOUR pending races (joined but not yet started)')
-
-    pm = subparsers.add_parser('tournament', help='Tournament info')
-    pm.add_argument('-s', '--stats', action='store_true', help='Print only tournament stats')
-    pm.add_argument('-w', '--week', type=int, help='Week to check (default to current week)')
-
-    pm = subparsers.add_parser('guild', help='Guilds overview')
-    pm.add_argument(
-        '-v',
-        '--verbose',
-        action='store_true',
-        help='Display details for every account (otherwise just overall summary)',
-    )
     pm = subparsers.add_parser('utils', help='Random set of utilities')
     utils_parsers = pm.add_subparsers(title='util command', dest='util_cmd')
     pmm = utils_parsers.add_parser('duplicates', help='Find snails with same adaptations')

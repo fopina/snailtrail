@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from functools import cached_property
 from typing import Optional, Union
 from xmlrpc.client import Boolean
+from pathlib import Path
 
 from colorama import Fore
 from snail import VERSION, client
@@ -16,6 +17,7 @@ from . import tgbot
 from .decorators import cached_property_with_ttl
 from .helpers import SetQueue
 from .types import RaceJoin, Wallet
+from . import commands
 
 logger = logging.getLogger(__name__)
 
@@ -432,7 +434,11 @@ class CLI:
             raise Exception(r)
         print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
+    @commands.argument('-c', '--claim', action='store_true', help='Claim rewards')
+    @commands.argument('-s', '--send', type=int, metavar='account', help='Transfer slime to this account')
+    @commands.command()
     def cmd_balance(self):
+        """Check wallet balances for all the tokens"""
         if self.args.claim:
             try:
                 r = self.client.web3.claim_rewards()
@@ -493,7 +499,86 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             logger.info(msg)
         self._notify_coefficent = coef
 
+    @commands.argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
+    @commands.argument(
+        '--mission-chat-id', type=int, help='Notification chat id to be used only for mission join notifications'
+    )
+    @commands.argument('-x', '--exclude', type=int, action='append', help='If auto, ignore these snail ids')
+    @commands.argument(
+        '-b',
+        '--boost',
+        type=int,
+        action='append',
+        help='If auto, these snail ids should always take last spots for missions (boost)',
+    )
+    @commands.argument(
+        '--minimum-tickets',
+        type=int,
+        default=0,
+        help='Any snail with less tickets than this will only join on last spots',
+    )
+    @commands.argument(
+        '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
+    )
+    @commands.argument(
+        '-f',
+        '--fair',
+        action='store_true',
+        help='Take last spots when negative mission tickets',
+    )
+    @commands.argument(
+        '--cheap',
+        action='store_true',
+        help='Cheap mode - only take --fair/--boost last spots if they are low-fee races. Other cheap stuff to be added',
+    )
+    @commands.argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
+    @commands.argument(
+        '--races-join',
+        action='store_true',
+        help='Auto-join every matched race - use race-matches and race-price to restrict them!',
+    )
+    @commands.argument(
+        '--race-stats',
+        action='store_true',
+        help='Include similar race stats for the snail when notifying about a new race and for race over notifications (will generate extra queries)',
+    )
+    @commands.argument('--race-matches', type=int, default=1, help='Minimum adaptation matches to notify')
+    @commands.argument('--race-price', type=int, help='Maximum price for race')
+    @commands.argument(
+        '-o',
+        '--races-over',
+        action='store_true',
+        help='Monitor finished competitive races with participation and notify on position',
+    )
+    @commands.argument(
+        '--missions-over',
+        action='store_true',
+        help='Monitor finished missions with participation and log position/earns (no notification sent)',
+    )
+    @commands.argument(
+        '--first-run-over',
+        action='store_true',
+        help='Also trigger log/notify for first run (mostly for testing)',
+    )
+    @commands.argument(
+        '--mission-matches',
+        type=int,
+        default=1,
+        help='Minimum adaptation matches to join mission - 1 might be worthy, higher might be crazy',
+    )
+    @commands.argument('--market', action='store_true', help='Monitor marketplace stats')
+    @commands.argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
+    @commands.argument('--tournament', action='store_true', help='Monitor tournament changes for own guild')
+    @commands.argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
+    @commands.argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
+    @commands.argument(
+        '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
+    )
+    @commands.command()
     def cmd_bot(self):
+        """
+        THE THING!
+        """
         self.load_bot_settings()
         self.cmd_bot_greet()
         self.args.notify.start_polling()
@@ -510,7 +595,11 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             msg += ' `(non-interactive)`'
         self.notifier.notify(msg)
 
+    @commands.argument('-s', '--stats', action='store_true', help='Print only tournament stats')
+    @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
+    @commands.command()
     def cmd_tournament(self, data=None):
+        """Tournament info"""
         if data is None:
             data = self.client.gql.tournament(self.owner)
             print(f"Name: {data['name']}")
@@ -642,7 +731,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             )
             return 120
 
+    @commands.argument('-j', '--join', action=commands.StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
+    @commands.argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
+    @commands.argument('-l', '--limit', type=int, help='Limit history to X missions')
+    @commands.argument(
+        '--history', type=int, metavar='SNAIL_ID', help='Get mission history for SNAIL_ID (use 0 for ALL)'
+    )
+    @commands.argument('--agg', type=int, help='Aggregate history to X entries')
+    @commands.command()
     def cmd_missions(self):
+        """
+        Mission stuff
+        """
         if self.args.join:
             # join mission
             try:
@@ -690,7 +790,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
             print(c)
 
+    @commands.argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
+    @commands.argument(
+        '-t', '--transfer', type=int, nargs=2, metavar=('snail_id', 'account'), help='Transfer <snail_id> to <account>'
+    )
+    @commands.command()
     def cmd_snails(self):
+        """
+        Snail shit
+        """
         if self.args.transfer is not None:
             transfer_snail, transfer_account = self.args.transfer
             if transfer_account < 1 or transfer_account > len(self.args.wallet):
@@ -758,7 +866,11 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
 
+    @commands.command()
     def cmd_inventory(self):
+        """
+        Inventory shit
+        """
         type_group = defaultdict(list)
         for item in self.client.iterate_inventory(self.owner):
             type_group[item.type_id].append(item)
@@ -768,7 +880,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 assert f.name == f2.name
             print(f'{f.name}: {len(v)}')
 
+    @commands.argument('-f', '--females', action='store_true', help='breeders in marketplace')
+    @commands.argument('-g', '--genes', action='store_true', help='search genes marketplace')
+    @commands.argument('-p', '--price', type=float, default=1, help='price limit for search')
+    @commands.argument('--stats', action='store_true', help='marketplace stats')
+    @commands.command()
     def cmd_market(self):
+        """
+        Find bargains and matches in the market
+        """
         if self.args.stats:
             d = self.client.marketplace_stats()
             print(f"Volume: {d['volume']}")
@@ -780,7 +900,11 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
         return False
 
+    @commands.argument('snail', type=int, help='snail')
+    @commands.argument('name', help='new name')
+    @commands.command()
     def cmd_rename(self):
+        """Rename a snail"""
         self.rename_snail()
 
     def _cmd_guild_data(self):
@@ -803,7 +927,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         cleaned_data.update(data['stats'])
         return cleaned_data
 
+    @commands.argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='Display details for every account (otherwise just overall summary)',
+    )
+    @commands.command()
     def cmd_guild(self):
+        """Guilds overview"""
         data = self._cmd_guild_data()
         if not data:
             print('No guild')
@@ -1129,7 +1261,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         except client.ClientError:
             logger.exception('unexpected joinRace error')
 
+    @commands.argument('-v', '--verbose', action='store_true', help='Verbosity')
+    @commands.argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
+    @commands.argument('-l', '--limit', type=int, help='Limit to X races')
+    @commands.argument('--history', type=int, metavar='SNAIL_ID', help='Get race history for SNAIL_ID (use 0 for ALL)')
+    @commands.argument('-p', '--price', type=int, help='Filter for less or equal to PRICE')
+    @commands.argument(
+        '-j', '--join', action=commands.StoreRaceJoin, help='Join competitive race RACE_ID with SNAIL_ID'
+    )
+    @commands.argument('--pending', action='store_true', help='Get YOUR pending races (joined but not yet started)')
+    @commands.command()
     def cmd_races(self):
+        """Race details (not missions)"""
         if self.args.finished:
             self._finished_races()
             return
@@ -1154,7 +1297,35 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             return
         self._open_races()
 
+    @commands.argument(
+        '-f',
+        '--fee',
+        metavar='SNAIL_ID',
+        type=int,
+        nargs='*',
+        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
+    )
+    @commands.argument(
+        '-s',
+        '--sim',
+        metavar='SNAIL_ID',
+        type=int,
+        nargs='*',
+        help='if not SNAIL_ID is specified, all owned snails will be crossed. If one is, that will be compared against owned snails. If two are specified, only those 2 are used.',
+    )
+    @commands.argument(
+        '-g', '--genes', type=int, help='search genes marketplace (value is the number of gene search results to fetch)'
+    )
+    @commands.argument('-G', '--gene-family', type=int, help='filter gene market by this family (5 is Atlantis)')
+    @commands.argument('-b', '--breeders', action='store_true', help='use only snails that are able to breed NOW')
+    @commands.argument(
+        '--plan', action='store_true', help='Lazy (suboptimal) planning for cheapest breeds (only for `-bf`)'
+    )
+    @commands.command()
     def cmd_incubate(self):
+        """
+        Incubation fees and breed plannign
+        """
         if self.args.fee is not None:
             return self.cmd_incubate_fee()
         if self.args.sim is not None:
