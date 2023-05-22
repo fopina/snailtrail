@@ -1274,7 +1274,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                         break
                 break
         print(
-            f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}) {agg}"
+            f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}){agg}"
         )
 
     def _join_race(self, join_arg: RaceJoin):
