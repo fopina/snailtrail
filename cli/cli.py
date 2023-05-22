@@ -803,29 +803,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         Snail shit
         """
         if self.args.transfer is not None:
-            transfer_snail, transfer_account = self.args.transfer
-            if transfer_account < 1 or transfer_account > len(self.args.wallet):
-                raise Exception(
-                    'you have %d wallets, --account must be between 1 and %d'
-                    % (len(self.args.wallet), len(self.args.wallet))
-                )
-            target = self.args.wallet[transfer_account - 1].address
-            for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
-                if snail.id == transfer_snail:
-                    break
-            else:
-                print('snail not here')
-                return
-
-            print(f'Found: {snail}')
-            if target == self.owner:
-                print('Target is the same as owner')
-                return False
-
-            tx = self.client.web3.transfer_snail(self.owner, target, snail.id)
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
-            print(f'Transferred for {fee} AVAX')
-            return False
+            return self.cmd_snails_transfer()
 
         if self.args.sort == 'stats':
             it = list(self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True))
@@ -852,6 +830,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                     snail['tmp_total_races'] = -1
         else:
             it = list(self.my_snails.values())
+
         if self.args.sort:
             if self.args.sort == 'breed':
                 it.sort(key=lambda x: x.breed_status)
@@ -868,6 +847,33 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 )
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
+
+    def cmd_snails_transfer(self):
+        transfer_snail, transfer_account = self.args.transfer
+        if transfer_account < 1 or transfer_account > len(self.args.wallet):
+            raise Exception(
+                'you have %d wallets, --account must be between 1 and %d'
+                % (len(self.args.wallet), len(self.args.wallet))
+            )
+        target = self.args.wallet[transfer_account - 1].address
+        print('going in', self.args.transfer)
+        return False
+        for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
+            if snail.id == transfer_snail:
+                break
+        else:
+            print('snail not here')
+            return
+
+        print(f'Found: {snail}')
+        if target == self.owner:
+            print('Target is the same as owner')
+            return False
+
+        tx = self.client.web3.transfer_snail(self.owner, target, snail.id)
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+        print(f'Transferred for {fee} AVAX')
+        return False
 
     @commands.command()
     def cmd_inventory(self):

@@ -9,7 +9,7 @@ import configargparse
 from colorama import Fore
 from snail import proxy
 
-from . import cli, multicli, tempconfigparser, tgbot, commands
+from . import multicli, tempconfigparser, tgbot, commands
 
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 
@@ -17,58 +17,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 
-class FileOrString(str):
-    def __new__(cls, content):
-        f = Path(content)
-        if f.exists():
-            return str.__new__(cls, f.read_text().strip())
-        return str.__new__(cls, content)
-
-
-class FileOrInt(int):
-    def __new__(cls, content):
-        f = Path(content)
-        if f.exists():
-            return int.__new__(cls, f.read_text().strip())
-        return int.__new__(cls, content)
-
-
-class AppendWalletAction(configargparse.argparse._AppendAction):
-    def __call__(self, parser, namespace, values, option_string=None):
-        return super().__call__(parser, namespace, cli.Wallet(*map(FileOrString, values)), option_string)
-
-
-class StoreRaceJoin(configargparse.argparse.Action):
-    def __init__(
-        self,
-        option_strings,
-        dest,
-        nargs=2,
-        const=None,
-        default=None,
-        type=int,
-        choices=None,
-        required=False,
-        help=None,
-        metavar=('SNAIL_ID', 'RACE_ID'),
-    ):
-        if type != int:
-            raise ValueError('type must always be int (default)')
-        if nargs != 2:
-            raise ValueError('nargs must always be 2 (default)')
-        super().__init__(option_strings, dest, nargs, const, default, type, choices, required, help, metavar)
-
-    def __call__(self, parser, namespace, values, option_string):
-        setattr(namespace, self.dest, cli.RaceJoin(*values))
-
-
-class DefaultOption(str):
-    pass
-
-
 class StoreBotConfig(configargparse.argparse._StoreAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        bot = tgbot.Notifier(FileOrString(values[0]), FileOrInt(values[1]), None)
+        bot = tgbot.Notifier(commands.FileOrString(values[0]), commands.FileOrInt(values[1]), None)
         bot._settings_list = [
             x
             for x in parser._subparsers._actions[-1].choices['bot']._actions
@@ -90,12 +41,12 @@ def build_parser():
         '--wallet',
         nargs=2,
         metavar=('ADDRESS', 'PRIVATE_KEY'),
-        action=AppendWalletAction,
+        action=commands.AppendWalletAction,
         help='owner wallet and its private key (values or path to files with value)',
     )
     parser.add_argument(
         '--web3-rpc',
-        type=FileOrString,
+        type=commands.FileOrString,
         default='https://api.avax.network/ext/bc/C/rpc',
         help='web3 http endpoint (value or path to file with value)',
     )
@@ -103,7 +54,7 @@ def build_parser():
     parser.add_argument(
         '--graphql-endpoint',
         help='Snailtrail graphql endpoint',
-        default=DefaultOption('https://api.snailtrail.art/graphql/'),
+        default=commands.DefaultOption('https://api.snailtrail.art/graphql/'),
     )
     parser.add_argument(
         '--gotls-bin',
@@ -201,7 +152,7 @@ def main(argv=None):
         logger.debug('debug enabled')
 
     # if no proxy is set and using official graphql, start gotlsproxy
-    if not args.proxy and isinstance(args.graphql_endpoint, DefaultOption):
+    if not args.proxy and isinstance(args.graphql_endpoint, commands.DefaultOption):
         logger.info('starting proxy')
         use_upstream_proxy = os.getenv('http_proxy') or os.getenv('https_proxy')
         if use_upstream_proxy:
@@ -217,7 +168,7 @@ def main(argv=None):
         args.notifier.owner_chat_id = args.tg_bot_owner
 
     if not args.wallet:
-        args.wallet = [cli.Wallet(FileOrString('owner.conf'), FileOrString('pkey.conf'))]
+        args.wallet = [cli.Wallet(commands.FileOrString('owner.conf'), commands.FileOrString('pkey.conf'))]
     wallets = args.wallet
     if args.account is not None:
         wallets = []

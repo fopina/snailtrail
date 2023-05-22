@@ -1,32 +1,6 @@
 from functools import partial
-import configargparse
-from . import cli
 
 commands = {}
-
-
-class StoreRaceJoin(configargparse.argparse.Action):
-    def __init__(
-        self,
-        option_strings,
-        dest,
-        nargs=2,
-        const=None,
-        default=None,
-        type=int,
-        choices=None,
-        required=False,
-        help=None,
-        metavar=('SNAIL_ID', 'RACE_ID'),
-    ):
-        if type != int:
-            raise ValueError('type must always be int (default)')
-        if nargs != 2:
-            raise ValueError('nargs must always be 2 (default)')
-        super().__init__(option_strings, dest, nargs, const, default, type, choices, required, help, metavar)
-
-    def __call__(self, parser, namespace, values, option_string):
-        setattr(namespace, self.dest, cli.RaceJoin(*values))
 
 
 class command:
