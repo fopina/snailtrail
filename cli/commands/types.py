@@ -21,8 +21,13 @@ class FileOrInt(int):
 
 
 class AppendWalletAction(configargparse.argparse._AppendAction):
+    # FIXME: hack to access wallet list from any other action as the primary parser namespace is not available to subparsers...
+    WALLETS = []
+
     def __call__(self, parser, namespace, values, option_string=None):
-        return super().__call__(parser, namespace, Wallet(*map(FileOrString, values)), option_string)
+        w = Wallet(*map(FileOrString, values))
+        self.WALLETS.append(w)
+        return super().__call__(parser, namespace, w, option_string)
 
 
 class DefaultOption(str):
@@ -51,3 +56,42 @@ class StoreRaceJoin(configargparse.argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string):
         setattr(namespace, self.dest, RaceJoin(*values))
+
+
+def wallet_ext_or_int(index_or_address: str):
+    if index_or_address[:2].lower() == '0x':
+        return Wallet(index_or_address, '')
+
+    if not index_or_address.isdigit():
+        raise ValueError('must start with 0x (address) or be a number (account index)')
+
+    index_or_address = int(index_or_address)
+    l = len(AppendWalletAction.WALLETS)
+    if index_or_address < 1 or index_or_address > l:
+        raise ValueError('you have %d wallets, index must be between 1 and %d' % (l, l))
+    return AppendWalletAction.WALLETS[index_or_address - 1]
+
+
+class TransferParamsAction(configargparse.argparse.Action):
+    def __init__(
+        self,
+        option_strings,
+        dest,
+        nargs=2,
+        const=None,
+        default=None,
+        type=str,
+        choices=None,
+        required=False,
+        help=None,
+        metavar=('snail_id', 'account_or_address'),
+    ):
+        if type != str:
+            raise ValueError('type must always be str (default)')
+        if nargs != 2:
+            raise ValueError('nargs must always be 2 (default)')
+        super().__init__(option_strings, dest, nargs, const, default, type, choices, required, help, metavar)
+
+    def __call__(self, parser, namespace, values, option_string):
+        snail_id, aoa = values
+        setattr(namespace, self.dest, (int(snail_id), wallet_ext_or_int(aoa)))
