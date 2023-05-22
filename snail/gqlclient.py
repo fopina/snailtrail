@@ -269,6 +269,8 @@ class Client(requests.Session):
                             elo
                             experience {level, xp, remaining}
                             mission_tickets
+                            earned_token
+                            earned_avax
                         }
                         %s
                     }

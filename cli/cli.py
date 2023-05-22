@@ -212,7 +212,9 @@ class CLI:
 
     @cached_property_with_ttl(600)
     def my_snails(self):
-        return {snail.id: snail for snail in self.client.iterate_all_snails(filters={'owner': self.owner})}
+        return {
+            snail.id: snail for snail in self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True)
+        }
 
     def _breed_status_str(self, status):
         if status >= 0:
@@ -766,7 +768,8 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                     self._history_missions(s)
                 return True
             else:
-                self._history_missions(Snail({'id': self.args.history}))
+                s = list(self.client.iterate_all_snails(filters={'id': self.args.history}, more_stats=True))[0]
+                self._history_missions(s)
                 return False
 
         # list missions
@@ -1261,7 +1264,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         if total_rewards_nb != total_rewards:
             rate_nb = total_rewards_nb / len(races)
             text_nb = f' ({c}{rate_nb:.2f}{Fore.RESET})'
-        print(f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward{agg}")
+
+        rate_all = '-'
+        for stat in snail.more_stats[0]['data']:
+            if stat['name'] == 'Mission':
+                for istat in stat['data']:
+                    if istat['name'] == 'Race Type':
+                        rate_all = f"{snail.stats['earned_token'] / istat['data'][0]['count']:.2f}"
+                        break
+                break
+        print(
+            f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}) {agg}"
+        )
 
     def _join_race(self, join_arg: RaceJoin):
         try:
