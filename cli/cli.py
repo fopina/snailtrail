@@ -1221,7 +1221,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if time_on_first is None:
                 continue
             reward = race.rewards['final_distribution'][p - 1]
-            races.append((race, p, time_on_first, time_on_third, reward))
+            # FIXME: this might change
+            if p <= 4:
+                reward_no_boost = [15, 12, 9, 6][p - 1]
+            else:
+                reward_no_boost = 3
+            races.append((race, p, time_on_first, time_on_third, reward, reward_no_boost))
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
@@ -1245,13 +1250,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             agg = f': {"/".join(aggs_c)}'
 
         total_rewards = sum(x[4] for x in races)
+        total_rewards_nb = sum(x[5] for x in races)
         if self.args.limit and len(races) == self.args.limit:
             c = Fore.GREEN
         else:
             c = Fore.YELLOW
-        print(
-            f"{snail.name_id} - {len(races)} total missions, average {c}{total_rewards / len(races):.2f}{Fore.RESET} reward{agg}"
-        )
+
+        rate = total_rewards / len(races)
+        text_nb = ''
+        if total_rewards_nb != total_rewards:
+            rate_nb = total_rewards_nb / len(races)
+            text_nb = f' ({c}{rate_nb:.2f}{Fore.RESET})'
+        print(f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward{agg}")
 
     def _join_race(self, join_arg: RaceJoin):
         try:
