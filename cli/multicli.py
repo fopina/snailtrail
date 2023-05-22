@@ -34,12 +34,16 @@ class MultiCLI:
             args.notify.register_cli(c)
             self.clis.append(c)
 
+        # get original indices (so they remain constant in the name)
+        # as "active" wallets might be restricted using -a flag
+        wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet)}
+
         # get proper profile info
         profiles = [c.owner for c in self.clis]
         data = self.clis[0].client.gql.profile(profiles)
         for i, c in enumerate(self.clis):
             c._profile = data[f'profile{i}']
-            c._profile['_i'] = i + 1
+            c._profile['_i'] = wallet_indices[c.owner]
 
     @property
     def is_multi(self) -> bool:
