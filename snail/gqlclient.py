@@ -102,7 +102,7 @@ class Client(requests.Session):
         r = r.json()
         if r.get('data') is None:
             raise Exception(r)
-        problems = [v['problem'] for v in r['data'].values() if 'problem' in v]
+        problems = [v['problem'] for v in r['data'].values() if v and 'problem' in v]
         if problems:
             raise APIError.make(problems)
         return r["data"]
