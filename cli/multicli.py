@@ -96,7 +96,7 @@ class MultiCLI:
             totals[0] += cs + bs
             totals[1] += cw + bw + ba
             totals[2] += bn
-            print(f'{Fore.CYAN}== {c.name}{Fore.RESET} ==')
+            c._header()
             print(
                 f'''\
 SLIME: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}
@@ -110,6 +110,17 @@ SLIME: {totals[0]:.3f}
 AVAX: {totals[1]:.3f}
 SNAILS: {totals[2]}'''
         )
+
+    def cmd_inventory(self):
+        totals = defaultdict(lambda: 0)
+        for c in self.clis:
+            c._header()
+            for _, v in c.cmd_inventory().items():
+                totals[v[0].name] += len(v)
+
+        print(f'{Fore.CYAN}== TOTAL{Fore.RESET} ==')
+        for k, v in totals.items():
+            print(f'{k}: {v}')
 
     def cmd_incubate(self):
         if self.args.fee is not None and self.args.plan:
@@ -131,7 +142,7 @@ SNAILS: {totals[2]}'''
         all_snails = defaultdict(list)
         data = None
         for c in self.clis:
-            print(f'{Fore.CYAN}== {c.name} =={Fore.RESET}')
+            c._header()
             _, res, data = c.cmd_tournament(data=data)
             for family, snails in res.items():
                 for score, snail in snails:

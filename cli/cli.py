@@ -873,7 +873,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         return False
 
     @commands.command()
-    def cmd_inventory(self):
+    def cmd_inventory(self, verbose=True):
         """
         Inventory shit
         """
@@ -884,7 +884,9 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             f = v[0]
             for f2 in v[1:]:
                 assert f.name == f2.name
-            print(f'{f.name}: {len(v)}')
+            if verbose:
+                print(f'{f.name}: {len(v)}')
+        return type_group
 
     @commands.argument('-f', '--females', action='store_true', help='breeders in marketplace')
     @commands.argument('-g', '--genes', action='store_true', help='search genes marketplace')
@@ -1569,9 +1571,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             print(f'{prefix}{self.cmd_incubate_sim_report(sim, indent=indent)}')
         return ret
 
+    def _header(self):
+        if self.main_one is not None:
+            print(f'{Fore.CYAN}== {self.name} =={Fore.RESET}')
+
     def run(self):
         if not self.args.cmd:
             return
-        if self.main_one is not None:
-            print(f'{Fore.CYAN}== {self.name} =={Fore.RESET}')
+        self._header()
         return getattr(self, f'cmd_{self.args.cmd}')()

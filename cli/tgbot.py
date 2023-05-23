@@ -362,11 +362,8 @@ class Notifier:
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
-            type_group = defaultdict(list)
-            for item in c.client.iterate_inventory(c.owner):
-                type_group[item.type_id].append(item)
             msg.pop()
-            for _, v in type_group.items():
+            for _, v in c.cmd_inventory(verbose=False).items():
                 msg.append(f'_{v[0].name}_: {len(v)}')
                 totals[v[0].name] += len(v)
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
