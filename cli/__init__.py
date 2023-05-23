@@ -101,6 +101,7 @@ def build_parser():
         action='append',
         help='Use subset of accounts (if multiple accounts in config) - 0-index of the wallet array (in config)',
     )
+    parser.add_argument('--debug-http', action='store_true', help='Debug all http requests made')
     parser.add_argument('--no-colors', action='store_true', help='Disable colors in output')
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
@@ -129,6 +130,11 @@ def main(argv=None):
         p.error('choose a command')
     if args.cmd == 'utils' and not args.util_cmd:
         p.error('choose an "utils" sub-command')
+
+    if args.debug_http:
+        import http.client as http_client
+
+        http_client.HTTPConnection.debuglevel = 1
 
     if args.no_colors:
         from colorama import init
