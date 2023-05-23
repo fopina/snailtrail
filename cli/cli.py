@@ -639,7 +639,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def _bot_tournament(self):
         _n: datetime = self._now()
         _n = (_n.hour, _n.minute)
-        if self._notify_tournament is not None and (_n < (16, 50) or _n > (17, 10)):
+        if self._notify_tournament is not None and (_n < (16, 50) or _n > (17, 20)):
             # only worth checking stats around 5PM UTC (or when starting)
             return
 
