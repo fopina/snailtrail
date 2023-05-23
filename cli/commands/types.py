@@ -62,7 +62,7 @@ def wallet_ext_or_int(index_or_address: str):
     if index_or_address[:2].lower() == '0x':
         return Wallet(index_or_address, '')
 
-    if not index_or_address.isdigit():
+    if not index_or_address.isnumeric():
         raise ValueError('must start with 0x (address) or be a number (account index)')
 
     index_or_address = int(index_or_address)

@@ -39,7 +39,7 @@ class TestBot(TestCase):
             cli.cli.Wallet('0x76e83242f32721952eba2df6c72aa27b63bd44ff', 'pkey1'), 'http://localhost:99999', args, True
         )
         c.client.gql = mock.MagicMock()
-        c.client.web3 = mock.MagicMock()
+        c.client.web3 = mock.MagicMock(wallet=c.owner)
         c.notifier = mock.MagicMock()
         self.cli = c
 

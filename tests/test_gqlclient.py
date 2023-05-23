@@ -13,7 +13,7 @@ class Test(TestCase):
 
     def setUp(self) -> None:
         self.client = gqlclient.Client()
-        self.req_mock = mock.MagicMock()
+        self.req_mock = mock.MagicMock(errors=None)
         self.client.request = self.req_mock
 
     def assertValidGQL(self, gql_string):

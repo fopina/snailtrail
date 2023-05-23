@@ -79,7 +79,6 @@ class Test(TestCase):
             self.client.join_mission_races(
                 TEST_SNAIL,
                 171971,
-                TEST_ADDRESS,
                 '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c',
             )
 

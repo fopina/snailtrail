@@ -1,5 +1,7 @@
 from functools import cached_property
 from typing import Any, Union
+from datetime import datetime
+import base64
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
@@ -167,12 +169,14 @@ class Client:
             self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
         )
 
-    def sign_race_join(self, owner: str, snail_id: int, race_id: int):
+    def sign_race_join(self, snail_id: int, race_id: int, owner: str = None):
         """Generate and sign payload to join a daily mission
-        >>> o = Client(wallet='x', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
-        >>> o.sign_race_join('0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', 1816, 44660)
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> o.sign_race_join(1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
+        if owner is None:
+            owner = self.wallet
         keccak_hash = keccak.new(digest_bits=256)
         keccak_hash.update(
             snail_id.to_bytes(32, "big") + race_id.to_bytes(32, "big") + bytes.fromhex(owner.replace("0x", ""))
@@ -180,6 +184,23 @@ class Client:
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
         return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+
+    def auth_token(self, timestamp=None, literal_key=b'snailtrail', owner=None) -> tuple[str, int]:
+        """Generate an auth token for GraphQL API
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> o.auth_token(timestamp=1684841032263)
+        ('MHhlMGM4ZTE3ZjJjYTA4MjExOWU2N2UzYjFmNThkODkwYTY1NWY5NDVmMzAxNmQ4Nzc5YWQ3NWY5N2QwOTMzNWFjMWVmMzBjNjUwYmQ3ODI1ZGY2MjNmNDczYjk2YjM0YWM2MWJjNzExNzYzN2NmNjU0MWM2MTBhNTRiYzIyNWU4MTFiOjB4YmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkMDoxNjg0ODQxMDMyMjYz', 1685445832263)
+        """
+        if owner is None:
+            owner = self.wallet
+        if timestamp is None:
+            timestamp = int(datetime.utcnow().timestamp() * 1000)
+        keccak_hash = keccak.new(digest_bits=256)
+        keccak_hash.update(int.to_bytes(timestamp, 32, "big") + literal_key + bytes.fromhex(owner.replace("0x", "")))
+        sign_payload = keccak_hash.digest()
+        message = encode_defunct(sign_payload)
+        signed_payload = self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+        return (base64.b64encode(f'{signed_payload}:{owner}:{timestamp}'.encode()).decode(), timestamp + 604800000)
 
     def transfer_slime(self, to: str, amount: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
         return self._bss(

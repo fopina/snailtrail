@@ -354,7 +354,7 @@ class CLI:
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
-                        r, _ = self.client.join_mission_races(snail.id, race.id, self.owner, allow_last_spot=False)
+                        r, _ = self.client.join_mission_races(snail.id, race.id, allow_last_spot=False)
                         logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
                     except client.RequiresTransactionClientError as e:
                         r = e.args[1]
@@ -375,9 +375,7 @@ class CLI:
                         continue
                 else:
                     try:
-                        r, tx = self.client.join_mission_races(
-                            snail.id, race.id, self.owner, allow_last_spot=(snail.id in boosted)
-                        )
+                        r, tx = self.client.join_mission_races(snail.id, race.id, allow_last_spot=(snail.id in boosted))
                     except client.RequiresTransactionClientError as e:
                         logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         if not self.args.fair:
@@ -429,12 +427,6 @@ class CLI:
             logger.info(f'{len(queueable)} without matching race')
             return
         return closest
-
-    def rename_snail(self):
-        r = self.client.gql.name_change(self.args.name)
-        if not r.get('status'):
-            raise Exception(r)
-        print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
     @commands.argument('-c', '--claim', action='store_true', help='Claim rewards')
     @commands.argument(
@@ -750,7 +742,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             # join mission
             try:
                 r, rcpt = self.client.join_mission_races(
-                    self.args.join.snail_id, self.args.join.race_id, self.owner, allow_last_spot=self.args.last_spot
+                    self.args.join.snail_id, self.args.join.race_id, allow_last_spot=self.args.last_spot
                 )
                 c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
                 if rcpt is None:
@@ -908,12 +900,55 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             self.find_market_snails(only_females=self.args.females, price_filter=self.args.price)
         return False
 
-    @commands.argument('snail', type=int, help='snail')
+    @commands.argument('--snail', type=int, help='rename this snail')
+    @commands.argument('--acc', type=commands.wallet_ext_or_int, help='rename this account')
     @commands.argument('name', help='new name')
     @commands.command()
     def cmd_rename(self):
-        """Rename a snail"""
-        self.rename_snail()
+        """Rename stuff: snails, accounts, etc"""
+        if self.args.snail:
+            return self.cmd_rename_snail()
+        if self.args.acc:
+            return self.cmd_rename_account()
+        print('Nothing to rename?')
+        return False
+
+    def cmd_rename_account(self):
+        if self.args.acc.address != self.owner:
+            # not this one, next
+            return
+
+        print(f'Renaming {self._profile.get("username", "(unk)")} to {self.args.name}')
+        token, _ = self.client.web3.auth_token()
+        self.client.gql.query(
+            "update_profile_promise",
+            {
+                'params': {
+                    "address": self.owner,
+                    "username": self.args.name,
+                }
+            },
+            """
+            mutation update_profile_promise($params: ProfileParams) {
+                update_profile_promise(params: $params) {
+                    ... on Problem {
+                    problem
+                    }
+                    ... on Response {
+                    success
+                    }
+                }
+            }
+            """,
+            auth=token,
+        )
+        return False
+
+    def cmd_rename_snail(self):
+        r = self.client.gql.name_change(self.args.name)
+        if not r.get('status'):
+            raise Exception(r)
+        print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
     def _cmd_guild_data(self):
         if not self.profile_guild:

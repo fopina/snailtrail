@@ -84,13 +84,18 @@ class Client(requests.Session):
         self._last_query = 0
         self.url = url
 
-    def query(self, operation, variables, query):
+    def query(self, operation, variables, query, auth=None):
         if self.rate_limiter is not None:
             delta = time.time() - self._last_query - self.rate_limiter
             if delta < 0:
                 time.sleep(self.rate_limiter)
+        if auth:
+            headers = {'auth': auth}
+        else:
+            headers = None
         r = self.post(
             self.url,
+            headers=headers,
             json={
                 'operationName': operation,
                 'variables': variables,
@@ -100,6 +105,8 @@ class Client(requests.Session):
         self._last_query = time.time()
         r.raise_for_status()
         r = r.json()
+        if 'errors' in r:
+            raise APIError.make([[v['extensions']['code'], v['message']] for v in r['errors']])
         if r.get('data') is None:
             raise Exception(r)
         problems = [v['problem'] for v in r['data'].values() if v and 'problem' in v]
