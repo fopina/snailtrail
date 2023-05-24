@@ -8,15 +8,7 @@ from eth_account.messages import encode_defunct
 from web3 import Web3, exceptions  # noqa - for others to import from here
 from web3.middleware import geth_poa_middleware
 
-from . import abi
-
-CONTRACT_PREFERENCES = '0xfDC483EE4ff24d3a8580504a5D04128451972e1e'
-CONTRACT_RACE = '0x58B699642f2a4b91Dd10800Ef852427B719dB1f0'
-CONTRACT_SLIME = '0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8'
-CONTRACT_SNAILNFT = '0xec675B7C5471c67E9B203c6D1C604df28A89FB7f'
-CONTRACT_INCUBATOR = '0x09457e0181dA074610530212A6378605382764b8'
-CONTRACT_MEGA_RACE = '0xa65592fC7afa222Ac30a80F273280e6477a274e3'
-CONTRACT_WAVAX = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'
+from . import contracts
 
 
 class Client:
@@ -34,36 +26,39 @@ class Client:
         self.__pkey = private_key
         self.wallet = wallet
 
-    @cached_property
-    def preferences_contract(self):
+    def _contract(self, module):
         return self.web3.eth.contract(
-            address=self.web3.toChecksumAddress(CONTRACT_PREFERENCES),
-            abi=abi.PREFERENCES,
+            address=self.web3.toChecksumAddress(module.CONTRACT),
+            abi=module.ABI,
         )
 
     @cached_property
+    def preferences_contract(self):
+        return self._contract(contracts.snail_preference)
+
+    @cached_property
     def race_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_RACE), abi=abi.RACE)
+        return self._contract(contracts.snail_race)
 
     @cached_property
     def mega_race_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_MEGA_RACE), abi=abi.RACE)
+        return self._contract(contracts.snail_mega_race)
 
     @cached_property
     def slime_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SLIME), abi=abi.ACCOUNT)
+        return self._contract(contracts.snail_token)
 
     @cached_property
     def wavax_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_WAVAX), abi=abi.ACCOUNT)
+        return self._contract(contracts.wavax)
 
     @cached_property
     def snailnft_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_SNAILNFT), abi=abi.SNAILNFT)
+        return self._contract(contracts.snail_nft)
 
     @cached_property
     def incubator_contract(self):
-        return self.web3.eth.contract(address=self.web3.toChecksumAddress(CONTRACT_INCUBATOR), abi=abi.INCUBATOR)
+        return self._contract(contracts.snail_incubator)
 
     def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
