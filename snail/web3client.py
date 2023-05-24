@@ -60,6 +60,10 @@ class Client:
     def incubator_contract(self):
         return self._contract(contracts.snail_incubator)
 
+    @cached_property
+    def snailguild_contract(self):
+        return self._contract(contracts.snail_guild)
+
     def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
@@ -237,6 +241,18 @@ class Client:
     ):
         return self._bss(
             self.snailnft_contract.functions.transferFrom(_from, to, token_id),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
+    def unstake_snails(
+        self,
+        snail_ids: list[int],
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
+    ):
+        return self._bss(
+            self.snailguild_contract.functions.unstakeSnails(snail_ids),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )

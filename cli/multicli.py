@@ -158,7 +158,7 @@ SNAILS: {totals[2]}'''
                 )
 
     def cmd_guild(self):
-        if self.args.claim:
+        if self.args.claim or self.args.unstake:
             return False
         guilds = {}
         for c in self.clis:

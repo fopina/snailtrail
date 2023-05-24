@@ -974,6 +974,11 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         return cleaned_data
 
     @commands.argument(
+        '--unstake',
+        action='store_true',
+        help='Unstake all the snails',
+    )
+    @commands.argument(
         '-c',
         '--claim',
         action='store_true',
@@ -988,13 +993,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     @commands.command()
     def cmd_guild(self):
         """Guilds overview"""
+        if self.args.unstake:
+            return self.cmd_guild_unstake()
+
         data = self._cmd_guild_data()
         if not data:
             if self.args.verbose:
                 print('No guild')
             return
+
         if self.args.claim:
             return self.cmd_guild_claim(data)
+
         if self.args.verbose:
             print(f'Guild: {self.profile_guild} - lv {data["level"]}')
             print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
@@ -1012,6 +1022,19 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if 'claim once per hour' not in str(e):
                 raise
             logger.warn(str(e))
+
+    def cmd_guild_unstake(self):
+        if not self.profile_guild:
+            print('No guild')
+            return
+        snails = list(self.client.iterate_my_snails(self.owner, filters={'status': 5}))
+        if not snails:
+            print('No workers')
+            return
+        snail_ids = [s.id for s in snails]
+        tx = self.client.web3.unstake_snails(snail_ids)
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+        print(f'{len(snails)} snails unstaked for {fee} AVAX')
 
     def find_candidates(self, race, snails):
         candidates = []

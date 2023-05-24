@@ -114,6 +114,11 @@ class Client:
             self.gql.get_my_snails_for_ranked, 'snails', klass=gqltypes.Snail, args=[owner, league]
         )
 
+    def iterate_my_snails(self, owner, **kwargs):
+        yield from self._iterate_pages(
+            self.gql.get_my_snails, 'snails', klass=gqltypes.Snail, args=[owner], kwargs=kwargs
+        )
+
     def iterate_inventory(self, address, adaptations=None) -> Generator[gqltypes.InventoryItem, None, None]:
         yield from self._iterate_pages(
             self.gql.get_inventory,

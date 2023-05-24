@@ -559,6 +559,52 @@ class Client(requests.Session):
             """,
         )['my_snails_ranked_promise']
 
+    def get_my_snails(
+        self,
+        owner,
+        limit=20,
+        offset=0,
+        filters=None,
+    ):
+        return self.query(
+            "my_snails_promise",
+            {"filters": filters, "limit": limit, "offset": offset, "owner": owner},
+            """
+            query my_snails_promise(
+            $limit: Int
+            $offset: Int
+            $owner: String!
+            $gender: Int
+            $filters: SnailFilters
+            ) {
+            my_snails_promise(
+                limit: $limit
+                offset: $offset
+                owner: $owner
+                gender: $gender
+                filters: $filters
+            ) {
+                ... on Problem {
+                problem
+                __typename
+                }
+                ... on Snails {
+                snails {
+                    id
+                    name
+                    image_headshot
+                    purity
+                    __typename
+                }
+                count
+                __typename
+                }
+                __typename
+            }
+            }
+            """,
+        )['my_snails_promise']
+
     def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str):
         return self.query(
             "joinMissionRaces",
