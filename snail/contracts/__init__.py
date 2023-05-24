@@ -1,7 +1,6 @@
-# generated automatically from https://www.snailtrail.art/main.d3905bf907602c39.js - DO NOT MODIFY
+# generated automatically - DO NOT MODIFY
 
-from . import wavax
-from . import snail_token
+from . import multicall
 from . import snail_gene_marketplace
 from . import snail_guild
 from . import snail_incubator
@@ -12,3 +11,5 @@ from . import snail_nft
 from . import snail_preference
 from . import snail_race
 from . import snail_shop
+from . import snail_token
+from . import wavax

@@ -2,6 +2,7 @@
 
 import requests
 import re
+import json
 import json5
 from pathlib import Path
 import subprocess
@@ -118,11 +119,9 @@ class Parser:
         path = CONTRACT_DIR
         path.mkdir(exist_ok=True)
         header = f'# generated automatically from {self.script_url} - DO NOT MODIFY'
-        init_lines = [header, '']
         for (abi_definition, contract) in self.abi_with_contract:
             camel = camel_to_snake(contract)
             address = self.contracts[contract]
-            init_lines.append(f'from . import {camel}')
             f = path / f'{camel}.py'
             f.write_text(
                 f'''{header}
@@ -132,7 +131,34 @@ CONTRACT = '{address}'
 ABI = {repr(abi_definition)}
 '''
             )
-        (path / '__init__.py').write_text('\n'.join(init_lines))
+
+    def update_multicall(self):
+        address = '0xcA11bde05977b3631167028862bE2a173976CA11'
+        contract = 'multicall'
+        r = requests.get(f'https://api.snowtrace.io/api?module=contract&action=getabi&address={address}')
+        r.raise_for_status()
+        abi_definition = json.loads(r.json()['result'])
+        f = CONTRACT_DIR / f'{contract}.py'
+        header = f'# generated automatically - DO NOT MODIFY'
+        f.write_text(
+            f'''{header}
+
+CONTRACT = '{address}'
+
+ABI = {repr(abi_definition)}
+'''
+        )
+
+    def update_init(self):
+        path = CONTRACT_DIR
+        modules = [
+            f'from . import {l.stem}'
+            for l in path.glob('*.py')
+            if l.stem != '__init__'
+        ]
+        modules.sort()
+        header = f'# generated automatically - DO NOT MODIFY'
+        (path / '__init__.py').write_text('\n'.join([header, ''] + modules))
 
     def black_em(self):
         subprocess.check_call(['black', CONTRACT_DIR])
@@ -145,6 +171,8 @@ ABI = {repr(abi_definition)}
         # all contracts matched
         assert_equal(set(), set(self.contracts.keys()) - set(x[1] for x in self.abi_with_contract))
         self.update_files()
+        self.update_multicall()
+        self.update_init()
         self.black_em()
 
 
