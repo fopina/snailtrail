@@ -170,14 +170,32 @@ class Client:
         >>> o.sign_race_join(1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
+        return self._sign_values(snail_id, race_id)
+
+    def _sign_values(self, *values, owner: str = None):
+        """Hash and sign typed values
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> o._sign_values(1816)
+        '0xd608d3c0adde23a7ddeb94e3f15f742887249b87cae9e6c98c95422e72e9945410c5029efd815efc0d95c80dd05b119b8ac2b82b19b14e51580a9385356ed6881c'
+        """
         if owner is None:
             owner = self.wallet
+
         keccak_hash = keccak.new(digest_bits=256)
-        keccak_hash.update(
-            snail_id.to_bytes(32, "big") + race_id.to_bytes(32, "big") + bytes.fromhex(owner.replace("0x", ""))
-        )
+        for value in values:
+            if isinstance(value, int):
+                keccak_hash.update(value.to_bytes(32, "big"))
+            elif isinstance(value, str):
+                keccak_hash.update(value.encode())
+            elif isinstance(value, bytes):
+                keccak_hash.update(value)
+            else:
+                raise NotImplementedError(type(value), 'not supported')
+        keccak_hash.update(bytes.fromhex(owner.replace("0x", "")))
+
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
+
         return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
 
     def sign_burn(self, snails: list[int], owner: str = None):
@@ -186,17 +204,9 @@ class Client:
         >>> o.sign_burn([1816])
         '0xb2e129e5e5b38243486394aa50247101c6c078f177b3362d672bc1739687e92a4de54ef9d522a6567e6e54b93ddd44a8ccf4463cab0ab053102f675171f793691b'
         """
-        if owner is None:
-            owner = self.wallet
-        keccak_hash = keccak.new(digest_bits=256)
-        for snail in snails:
-            keccak_hash.update(snail.to_bytes(32, "big"))
-        keccak_hash.update(b'microwave' + bytes.fromhex(owner.replace("0x", "")))
-        sign_payload = keccak_hash.digest()
-        message = encode_defunct(sign_payload)
-        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+        return self._sign_values(*snails, b'microwave', owner=owner)
 
-    def auth_token(self, timestamp=None, literal_key=b'snailtrail', owner=None) -> tuple[str, int]:
+    def auth_token(self, timestamp=None, owner=None) -> tuple[str, int]:
         """Generate an auth token for GraphQL API
         >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
         >>> o.auth_token(timestamp=1684841032263)[:2]
@@ -206,11 +216,7 @@ class Client:
             owner = self.wallet
         if timestamp is None:
             timestamp = int(datetime.utcnow().timestamp() * 1000)
-        keccak_hash = keccak.new(digest_bits=256)
-        keccak_hash.update(int.to_bytes(timestamp, 32, "big") + literal_key + bytes.fromhex(owner.replace("0x", "")))
-        sign_payload = keccak_hash.digest()
-        message = encode_defunct(sign_payload)
-        signed_payload = self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+        signed_payload = self._sign_values(timestamp, b'snailtrail', owner=owner)
         expires_on = timestamp + 604800000
         return (
             base64.b64encode(f'{signed_payload}:{owner}:{timestamp}'.encode()).decode(),
