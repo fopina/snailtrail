@@ -54,6 +54,13 @@ class Client:
         self.gql = gqlclient.Client(http_token=http_token, proxy=proxy, rate_limiter=rate_limiter, retry=gql_retry)
         if wallet and private_key and web3_provider:
             self.web3 = web3client.Client(wallet, private_key, web3_provider, web3_provider_class=web3_provider_class)
+        self._gql_token = None
+
+    @property
+    def gql_token(self):
+        if self._gql_token is None or self._gql_token[2]():
+            self._gql_token = self.web3.auth_token()
+        return self._gql_token[0]
 
     def _iterate_pages(self, method, key, klass=None, args=None, kwargs=None, max_calls=None):
         args = args or []
@@ -213,3 +220,66 @@ class Client:
         for l in d['highs']:
             r['prices'][l['name']][1] = l['value']
         return r
+
+    def microwave_snails_preview(self, snails: list[int]):
+        signature = self.web3.sign_burn(snails)
+        return self.gql.query(
+            "microwave_promise",
+            {'params': {'token_ids': snails, 'signature': signature, 'address': self.web3.wallet, 'use_scroll': False}},
+            """
+            query microwave_promise($params: MicrowaveParams) {
+            microwave_promise(params: $params) {
+                ... on Problem {
+                problem
+                }
+                ... on GenericResponse {
+                status
+                message
+                signature
+                payload {
+                    ... on MicrowavePayload {
+                    owner
+                    order_id
+                    size
+                    token_ids
+                    timeout
+                    salt
+                    fee_wei
+                    fee_details
+                    coef
+                    }
+                }
+                }
+            }
+            }
+            """,
+            auth=self.gql_token,
+        )['microwave_promise']
+
+    def microwave_snails(self, snails: list[int]):
+        r = self.microwave_snails_preview(snails)
+        raise NotImplementedError('code it before you use it')
+
+    def rename_account(self, new_name: str):
+        return self.gql.query(
+            "update_profile_promise",
+            {
+                'params': {
+                    "address": self.web3.wallet,
+                    "username": new_name,
+                }
+            },
+            """
+            mutation update_profile_promise($params: ProfileParams) {
+                update_profile_promise(params: $params) {
+                    ... on Problem {
+                    problem
+                    }
+                    ... on Response {
+                    success
+                    }
+                }
+            }
+            """,
+            auth=self.gql_token,
+        )['update_profile_promise']

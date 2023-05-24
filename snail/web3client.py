@@ -180,6 +180,22 @@ class Client:
         message = encode_defunct(sign_payload)
         return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
 
+    def sign_burn(self, snails: list[int], owner: str = None):
+        """Generate and sign payload to join a daily mission
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> o.sign_race_join(1816, 44660)
+        '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
+        """
+        if owner is None:
+            owner = self.wallet
+        keccak_hash = keccak.new(digest_bits=256)
+        for snail in snails:
+            keccak_hash.update(snail.to_bytes(32, "big"))
+        keccak_hash.update(b'microwave' + bytes.fromhex(owner.replace("0x", "")))
+        sign_payload = keccak_hash.digest()
+        message = encode_defunct(sign_payload)
+        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+
     def auth_token(self, timestamp=None, literal_key=b'snailtrail', owner=None) -> tuple[str, int]:
         """Generate an auth token for GraphQL API
         >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
@@ -195,7 +211,13 @@ class Client:
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
         signed_payload = self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
-        return (base64.b64encode(f'{signed_payload}:{owner}:{timestamp}'.encode()).decode(), timestamp + 604800000)
+        expires_on = timestamp + 604800000
+        return (
+            base64.b64encode(f'{signed_payload}:{owner}:{timestamp}'.encode()).decode(),
+            expires_on,
+            # is_expired function, some buffer (1h) to renew
+            lambda: int(datetime.utcnow().timestamp() * 1000) > (expires_on - 3600000),
+        )
 
     def transfer_slime(self, to: str, amount: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
         return self._bss(

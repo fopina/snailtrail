@@ -919,29 +919,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             return
 
         print(f'Renaming {self._profile.get("username", "(unk)")} to {self.args.name}')
-        token, _ = self.client.web3.auth_token()
-        self.client.gql.query(
-            "update_profile_promise",
-            {
-                'params': {
-                    "address": self.owner,
-                    "username": self.args.name,
-                }
-            },
-            """
-            mutation update_profile_promise($params: ProfileParams) {
-                update_profile_promise(params: $params) {
-                    ... on Problem {
-                    problem
-                    }
-                    ... on Response {
-                    success
-                    }
-                }
-            }
-            """,
-            auth=token,
-        )
+        self.client.rename_account(self.args.name)
         return False
 
     def cmd_rename_snail(self):
@@ -1394,7 +1372,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     @commands.command()
     def cmd_incubate(self):
         """
-        Incubation fees and breed plannign
+        Incubation fees and breed planning
         """
         if self.args.fee is not None:
             return self.cmd_incubate_fee()
@@ -1605,6 +1583,25 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             indent = len(prefix) - 30
             print(f'{prefix}{self.cmd_incubate_sim_report(sim, indent=indent)}')
         return ret
+
+    @commands.command()
+    def cmd_burn(self):
+        """
+        Burn fees
+        """
+        # pick random snail to simulate and get the coefficient
+        for s in self.my_snails:
+            try:
+                r = self.client.microwave_snails_preview([s])
+                break
+            except client.gqlclient.APIError as e:
+                if 'You have recently used this action' not in str(e):
+                    raise
+        else:
+            # no snail available? just let it roll to another account
+            return
+        print(r['payload']['coef'])
+        return False
 
     def _header(self):
         if self.main_one is not None:
