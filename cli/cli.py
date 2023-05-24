@@ -144,6 +144,7 @@ class CLI:
         self._notify_mission_data = None
         self._notify_marketplace = {}
         self._notify_coefficent = None
+        self._notify_burn_coefficent = None
         self._notify_tournament = None
         self._next_mission = None
         self._snail_mission_cooldown = {}
@@ -489,10 +490,30 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     def _bot_coefficent(self):
         coef = self.client.web3.get_current_coefficent()
         if self._notify_coefficent is not None and coef < self._notify_coefficent:
-            msg = f'Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
+            msg = f'🍆 Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
             self.notifier.notify(msg)
             logger.info(msg)
         self._notify_coefficent = coef
+
+    def _bot_burn_coefficent(self):
+        if self._notify_burn_coefficent is not None and self._notify_burn_coefficent[1] > datetime.now():
+            # refresh only once every 2min
+            return
+
+        r = self._burn_coef()
+        if r is None:
+            logger.error('No snail available for burn coefficient')
+            return
+        coef = r['payload']['coef']
+        if self._notify_burn_coefficent is not None and coef < self._notify_burn_coefficent[0]:
+            msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self._notify_burn_coefficent[0]}*)'
+            self.notifier.notify(msg)
+            logger.info(msg)
+
+        self._notify_burn_coefficent = (
+            coef,
+            datetime.now() + timedelta(minutes=120),
+        )
 
     @commands.argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     @commands.argument(
@@ -563,6 +584,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
     )
     @commands.argument('--market', action='store_true', help='Monitor marketplace stats')
     @commands.argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
+    @commands.argument('--burn', action='store_true', help='Monitor burn coefficent drops')
     @commands.argument('--tournament', action='store_true', help='Monitor tournament changes for own guild')
     @commands.argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
     @commands.argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
@@ -688,6 +710,9 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
                 if self.args.coefficent and self.report_as_main:
                     self._bot_coefficent()
+
+                if self.args.burn and self.report_as_main:
+                    self._bot_burn_coefficent()
 
                 if self.args.tournament:
                     self._bot_tournament()
@@ -1584,20 +1609,22 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             print(f'{prefix}{self.cmd_incubate_sim_report(sim, indent=indent)}')
         return ret
 
+    def _burn_coef(self):
+        # pick random snail to simulate and get the coefficient
+        for s in self.my_snails:
+            try:
+                return self.client.microwave_snails_preview([s])
+            except client.gqlclient.APIError as e:
+                if 'You have recently used this action' not in str(e):
+                    raise
+
     @commands.command()
     def cmd_burn(self):
         """
         Burn fees
         """
-        # pick random snail to simulate and get the coefficient
-        for s in self.my_snails:
-            try:
-                r = self.client.microwave_snails_preview([s])
-                break
-            except client.gqlclient.APIError as e:
-                if 'You have recently used this action' not in str(e):
-                    raise
-        else:
+        r = self._burn_coef()
+        if r is None:
             # no snail available? just let it roll to another account
             return
         print(r['payload']['coef'])

@@ -65,6 +65,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("claim", self.cmd_claim))
             dispatcher.add_handler(CommandHandler("swapsend", self.cmd_swapsend))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
+            dispatcher.add_handler(CommandHandler("burn", self.cmd_burn))
             dispatcher.add_handler(CommandHandler("market", self.cmd_marketplace_stats))
             dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
             dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
@@ -84,6 +85,14 @@ class Notifier:
     @property
     def multi_cli(self) -> bool:
         return len(self.clis) > 1
+
+    @property
+    def main_cli(self) -> 'cli.CLI':
+        if self.multi_cli:
+            for c in self.clis.values():
+                if c.report_as_main:
+                    return c
+        return self.any_cli
 
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.multi_cli:
@@ -468,7 +477,19 @@ class Notifier:
         """
         Show current incubation coefficent
         """
-        update.message.reply_markdown(f'current coefficient is `{self.any_cli.client.web3.get_current_coefficent()}`')
+        update.message.reply_markdown(
+            f'current breed coefficient is `{self.any_cli.client.web3.get_current_coefficent()}`'
+        )
+
+    @bot_auth
+    def cmd_burn(self, update: Update, context: CallbackContext) -> None:
+        """
+        Show current burn coefficent
+        """
+        if self.main_cli._notify_burn_coefficent is None:
+            update.message.reply_markdown(f'burn coefficient monitor is disabled')
+        else:
+            update.message.reply_markdown(f'current burn coefficient is `{self.main_cli._notify_burn_coefficent[0]}`')
 
     @bot_auth
     def cmd_marketplace_stats(self, update: Update, context: CallbackContext) -> None:

@@ -233,7 +233,7 @@ class TestBot(TestCase):
 
         self.cli.notifier.notify.reset_mock()
         self.cli._bot_coefficent()
-        self.cli.notifier.notify.assert_called_once_with('Coefficent drop to *1.0000* (from *3*)')
+        self.cli.notifier.notify.assert_called_once_with('🍆 Coefficent drop to *1.0000* (from *3*)')
 
     def test_balance(self):
         self.cli.args.claim = False

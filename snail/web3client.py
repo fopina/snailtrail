@@ -183,8 +183,8 @@ class Client:
     def sign_burn(self, snails: list[int], owner: str = None):
         """Generate and sign payload to join a daily mission
         >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
-        >>> o.sign_race_join(1816, 44660)
-        '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
+        >>> o.sign_burn([1816])
+        '0xb2e129e5e5b38243486394aa50247101c6c078f177b3362d672bc1739687e92a4de54ef9d522a6567e6e54b93ddd44a8ccf4463cab0ab053102f675171f793691b'
         """
         if owner is None:
             owner = self.wallet
@@ -199,7 +199,7 @@ class Client:
     def auth_token(self, timestamp=None, literal_key=b'snailtrail', owner=None) -> tuple[str, int]:
         """Generate an auth token for GraphQL API
         >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
-        >>> o.auth_token(timestamp=1684841032263)
+        >>> o.auth_token(timestamp=1684841032263)[:2]
         ('MHhlMGM4ZTE3ZjJjYTA4MjExOWU2N2UzYjFmNThkODkwYTY1NWY5NDVmMzAxNmQ4Nzc5YWQ3NWY5N2QwOTMzNWFjMWVmMzBjNjUwYmQ3ODI1ZGY2MjNmNDczYjk2YjM0YWM2MWJjNzExNzYzN2NmNjU0MWM2MTBhNTRiYzIyNWU4MTFiOjB4YmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkMDoxNjg0ODQxMDMyMjYz', 1685445832263)
         """
         if owner is None:

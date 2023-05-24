@@ -36,6 +36,7 @@ class Test(TestCase):
 /claim - Claim rewards
 /swapsend - Send all slime to one account (for single swaps)
 /incubate - Show current incubation coefficent
+/burn - Show current burn coefficent
 /market - Show marketplace stats - volume, floors and highs
 /racereview - Review all races to join (that were already notified)
 /racepending - View pending races (that you joined)
