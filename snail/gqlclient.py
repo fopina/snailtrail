@@ -106,7 +106,7 @@ class Client(requests.Session):
         r.raise_for_status()
         r = r.json()
         if 'errors' in r:
-            raise APIError.make([[v['extensions']['code'], v['message']] for v in r['errors']])
+            raise APIError.make([[v.get('extensions', {'code': '-'})['code'], v['message']] for v in r['errors']])
         if r.get('data') is None:
             raise Exception(r)
         problems = [v['problem'] for v in r['data'].values() if v and 'problem' in v]

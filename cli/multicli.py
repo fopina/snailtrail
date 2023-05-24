@@ -158,22 +158,15 @@ SNAILS: {totals[2]}'''
                 )
 
     def cmd_guild(self):
-        if self.args.verbose:
-
-            def _m(c):
-                d = c.run()
-                if d:
-                    return d[1]
-
-        else:
-
-            def _m(c):
-                return c._cmd_guild_data()
-
+        if self.args.claim:
+            return False
         guilds = {}
         for c in self.clis:
-            data = _m(c)
+            if self.args.verbose:
+                c._header()
+            data = c.cmd_guild()
             if data:
+                data = data[1]
                 if c.profile_guild not in guilds:
                     guilds[c.profile_guild] = data
                     guilds[c.profile_guild]['members'] = []

@@ -974,6 +974,12 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         return cleaned_data
 
     @commands.argument(
+        '-c',
+        '--claim',
+        action='store_true',
+        help='Claim guild rewards (only tomato for now)',
+    )
+    @commands.argument(
         '-v',
         '--verbose',
         action='store_true',
@@ -984,14 +990,28 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         """Guilds overview"""
         data = self._cmd_guild_data()
         if not data:
-            print('No guild')
+            if self.args.verbose:
+                print('No guild')
             return
-        print(f'Guild: {self.profile_guild} - lv {data["level"]}')
-        print(f'Tomato: {data["tomato"]} ({data["tomato"]} ph)')
-        print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
-        if data['sink_reward']:
-            print(f"{data['sink_reward']} TMT to claim")
+        if self.args.claim:
+            return self.cmd_guild_claim(data)
+        if self.args.verbose:
+            print(f'Guild: {self.profile_guild} - lv {data["level"]}')
+            print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
+            print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
+            if data['sink_reward']:
+                print(f"{data['sink_reward']} TMT to claim")
         return True, data
+
+    def cmd_guild_claim(self, data):
+        if not data['sink_reward']:
+            return
+        try:
+            print(self.client.claim_tomato(self._profile['guild']['id'])['message'])
+        except client.gqlclient.APIError as e:
+            if 'claim once per hour' not in str(e):
+                raise
+            logger.warn(str(e))
 
     def find_candidates(self, race, snails):
         candidates = []

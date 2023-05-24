@@ -283,3 +283,24 @@ class Client:
             """,
             auth=self.gql_token,
         )['update_profile_promise']
+
+    def claim_tomato(self, guild_id: int):
+        return self.gql.query(
+            "collect_primary_promise",
+            {'guild_id': guild_id},
+            """
+            mutation collect_primary_promise($guild_id: Int!) {
+            collect_primary_promise(guild_id: $guild_id) {
+                ... on Problem {
+                problem
+                }
+                ... on GenericResponse {
+                status
+                message
+                signature
+                }
+            }
+            }
+            """,
+            auth=self.gql_token,
+        )['collect_primary_promise']
