@@ -1,4 +1,4 @@
-requests==2.30.0
+requests==2.31.0
 # 6 has breaking changes
 web3==5.31.4
 
