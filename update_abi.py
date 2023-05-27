@@ -151,11 +151,7 @@ ABI = {repr(abi_definition)}
 
     def update_init(self):
         path = CONTRACT_DIR
-        modules = [
-            f'from . import {l.stem}'
-            for l in path.glob('*.py')
-            if l.stem != '__init__'
-        ]
+        modules = [f'from . import {l.stem}' for l in path.glob('*.py') if l.stem != '__init__']
         modules.sort()
         header = f'# generated automatically - DO NOT MODIFY'
         (path / '__init__.py').write_text('\n'.join([header, ''] + modules))

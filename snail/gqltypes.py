@@ -180,6 +180,22 @@ class Snail(AttrDict):
             return list(Gender)[self['gender']['id']]
 
     @property
+    def can_change_gender(self):
+        if self.breed_status == -2:
+            return True
+        x = self.can_change_gender_at
+        if x:
+            return (x - datetime.now(tz=timezone.utc)).total_seconds() < 0
+        return False
+
+    @property
+    def can_change_gender_at(self):
+        if 'gender' in self:
+            x = self['gender'].get('can_change_at')
+            if x:
+                return _parse_datetime_micro(x)
+
+    @property
     def adaptations(self):
         if 'adaptations' in self:
             return list(map(Adaptation.from_str, self['adaptations']))
@@ -187,6 +203,10 @@ class Snail(AttrDict):
     @property
     def monthly_breed_available(self):
         return self['breeding']['breed_detail']['monthly_breed_available']
+
+    @property
+    def monthly_breed_limit(self):
+        return self['breeding']['breed_detail']['monthly_breed_limit']
 
     @property
     def genome_str(self):

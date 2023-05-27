@@ -257,6 +257,7 @@ class Client(requests.Session):
                         name
                         gender {
                         id
+                        can_change_at
                         }
                         new_born
                         genome
@@ -269,6 +270,7 @@ class Client(requests.Session):
                         breed_detail {
                             cycle_end
                             monthly_breed_available
+                            monthly_breed_limit
                             breed_count_total
                         }
                         }

@@ -1547,13 +1547,15 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             snails = self.cmd_incubate_fee_lazy_plan(snail_fees)
             for fee, snail1, snail2 in snails:
                 print(
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} {snail1.family.gene} - '
+                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
             return True, snails
         else:
             for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
                 print(
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} {snail1.family.gene} - '
+                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
         return True
 
@@ -1573,6 +1575,14 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         indent_str = ' ' * indent
         return f'\n{indent_str}'.join([family_odds, top_odds, top_purities])
 
+    def _incubate_locked_gender(self, snail: Snail):
+        return '' if snail.can_change_gender else '🔒'
+
+    def _incubate_breed_limit(self, snail: Snail):
+        if snail.breed_status < 0:
+            return f' ({snail.monthly_breed_available}/{snail.monthly_breed_limit})'
+        return ''
+
     def cmd_incubate_sim(self):
         pc = self.client.web3.get_current_coefficent()
         argc = len(self.args.sim)
@@ -1588,7 +1598,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             main_snail = snails
 
         ret = True
-        snail_fees = []
+        snail_fees: list[tuple[int, Snail, Snail, float]] = []
         if self.args.external_wallet:
             if argc != 1:
                 raise Exception(
@@ -1646,7 +1656,11 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for sim, snail1, snail2, fee in sorted(
             snail_fees, key=lambda x: (1 / Snail.GENE_FEES[x[0][0][0][0]], x[0][0][0][1])
         ):
-            prefix = f'{colors[snail1.gender]}{snail1.name_id}{Fore.RESET} - {colors[snail2.gender]}{snail2.name_id}{Fore.RESET} for {Fore.RED}{fee:0.2f}{Fore.RESET}: '
+            prefix = (
+                f'{colors[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET}'
+                ' - '
+                f'{colors[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} for {Fore.RED}{fee:0.2f}{Fore.RESET}: '
+            )
             # remove 30 for the coloring bytes
             indent = len(prefix) - 30
             print(f'{prefix}{self.cmd_incubate_sim_report(sim, indent=indent)}')
