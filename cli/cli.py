@@ -668,18 +668,21 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         data = self.client.gql.tournament_guild_stats(self.owner)['leaderboard']['my_guild']
         if self._notify_tournament is not None:
             if self._notify_tournament != data:
-                msg = f'`{self.profile_guild}` leaderboard:\n'
-                _k = 'order'
-                if self._notify_tournament[_k] != data[_k]:
-                    c = '🏆' if self._notify_tournament[_k] > data[_k] else '💩'
-                    msg += f"*position* {self._notify_tournament[_k]}{c}{data[_k]}\n"
+                if data is None:
+                    msg = 'Current tournament over!'
                 else:
-                    msg += f"*position* {data[_k]}\n"
-                _k = 'points'
-                if self._notify_tournament[_k] != data[_k]:
-                    msg += f"*points* {self._notify_tournament[_k]}📈{data[_k]}\n"
-                else:
-                    msg += f"*points* {data[_k]}\n"
+                    msg = f'`{self.profile_guild}` leaderboard:\n'
+                    _k = 'order'
+                    if self._notify_tournament[_k] != data[_k]:
+                        c = '🏆' if self._notify_tournament[_k] > data[_k] else '💩'
+                        msg += f"*position* {self._notify_tournament[_k]}{c}{data[_k]}\n"
+                    else:
+                        msg += f"*position* {data[_k]}\n"
+                    _k = 'points'
+                    if self._notify_tournament[_k] != data[_k]:
+                        msg += f"*points* {self._notify_tournament[_k]}📈{data[_k]}\n"
+                    else:
+                        msg += f"*points* {data[_k]}\n"
                 self.notifier.notify(msg)
                 logger.info(msg)
         self._notify_tournament = data
@@ -868,6 +871,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
                 )
             else:
                 print(snail, self._breed_status_str(snail.breed_status))
+        print(f'==> {len(it)} snails')
 
     def cmd_snails_transfer(self):
         transfer_wallet: Wallet
