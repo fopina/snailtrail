@@ -638,24 +638,27 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         else:
             week_pos = self.args.week
 
-        for week in data['weeks']:
-            if week['week'] == week_pos:
-                break
-        else:
-            raise Exception(f'week {week_pos} not found')
-        print(f'{Fore.GREEN}For week {week_pos}{Fore.RESET}')
-        snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
-        candidates = self.find_candidates(Race(week), snails)
         per_family = {}
-        for score, snail in candidates:
-            if snail.family not in per_family:
-                per_family[snail.family] = []
-            per_family[snail.family].append((score, snail))
+        if week_pos == 0:
+            print('No tournament this week')
+        else:
+            for week in data['weeks']:
+                if week['week'] == week_pos:
+                    break
+            else:
+                raise Exception(f'week {week_pos} not found')
+            print(f'{Fore.GREEN}For week {week_pos}{Fore.RESET}')
+            snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
+            candidates = self.find_candidates(Race(week), snails)
+            for score, snail in candidates:
+                if snail.family not in per_family:
+                    per_family[snail.family] = []
+                per_family[snail.family].append((score, snail))
 
-        for family, snails in per_family.items():
-            print(f'{Fore.BLUE}{family}{Fore.RESET}')
-            for score, snail in snails:
-                print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
+            for family, snails in per_family.items():
+                print(f'{Fore.BLUE}{family}{Fore.RESET}')
+                for score, snail in snails:
+                    print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
     def _bot_tournament(self):
