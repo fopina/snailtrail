@@ -230,6 +230,18 @@ class Snail(AttrDict):
         return f'P{self.purity}'
 
     @property
+    def slime_boost_str(self):
+        if self.slime_boost and self.slime_boost > 1:
+            return f'S{self.slime_boost}'
+        return ''
+
+    @property
+    def work_boost_str(self):
+        if self.work_boost and self.work_boost > 1:
+            return f'W{self.work_boost}'
+        return ''
+
+    @property
     def breed_status(self):
         """
         return < 0 if breeding available: -1 for normal ones, -2 if it's the first breed (ex-newborn)
@@ -331,12 +343,12 @@ class Snail(AttrDict):
         >>> s.name
         'Snail #8940'
         >>> str(s)
-        'Snail #8940 L1 Helix 👩 Expert P11'
+        'Snail #8940 L1 Helix 👩 Expert P11  '
         >>> s = Snail({'id': 8940, 'adaptations': ['Glacier'], 'name': 'Superman', 'gender': {'id': 1}, 'new_born': True, 'genome': ['H', 'H', 'G', 'A', 'H', 'A', 'A', 'G', 'M', 'H', 'M', 'H', 'H', 'G', 'H', 'H', 'X', 'H', 'H', 'H'], 'klass': 'Expert', 'family': 'Helix', 'purity': 11, 'breeding': {'breed_detail': {'cycle_end': '2022-07-25 16:50:19', 'monthly_breed_available': 0}}, 'stats': {'elo': '1424', 'experience': {'level': 1, 'xp': 50, 'remaining': 200}, 'mission_tickets': -1}})
         >>> str(s)
-        'Superman (#8940) L1 Helix 👩 Expert P11'
+        'Superman (#8940) L1 Helix 👩 Expert P11  '
         """
-        return f"{self.name_id} {self.level_str} {self.family} {self.gender.emoji()} {self.klass} {self.purity_str}"
+        return f"{self.name_id} {self.level_str} {self.family} {self.gender.emoji()} {self.klass} {self.purity_str} {self.slime_boost_str} {self.work_boost_str}"
 
 
 class Race(AttrDict):
