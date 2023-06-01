@@ -12,6 +12,7 @@ from pathlib import Path
 from colorama import Fore
 from snail import VERSION, client
 from snail.gqltypes import Gender, Race, Snail
+from snail.web3client import DECIMALS
 
 from . import tgbot
 from .decorators import cached_property_with_ttl
@@ -396,7 +397,7 @@ class CLI:
                     logger.info(f'{msg}')
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     logger.info(f'{msg} LAST SPOT - fee: {fee}')
                     self.notify_mission(f'{msg} *LAST SPOT*')
             except client.ClientError as e:
@@ -444,7 +445,7 @@ class CLI:
             try:
                 r = self.client.web3.claim_rewards()
                 if r.get('status') == 1:
-                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    bal = int(r['logs'][1]['data'], 16) / DECIMALS
                     print(f'claimed {bal}')
                 else:
                     print('ERROR:', r)
@@ -458,9 +459,9 @@ class CLI:
             if not bal:
                 print('Nothing to send')
                 return
-            print(f'Sending {bal / 1000000000000000000} to {target}')
+            print(f'Sending {bal / DECIMALS} to {target}')
             r = self.client.web3.transfer_slime(target, bal)
-            sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+            sent = int(r['logs'][0]['data'], 16) / DECIMALS
             print(f'{sent} SLIME sent')
         else:
             print(
@@ -822,7 +823,8 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         '-t',
         '--transfer',
         action=commands.TransferParamsAction,
-        help='Transfer <snail_id> to <account_or_address> - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
+        # nargs='2+',
+        help='Transfer 1 or more <snail_id> to <account_or_address> - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
     )
     @commands.command()
     def cmd_snails(self):
@@ -878,23 +880,49 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
     def cmd_snails_transfer(self):
         transfer_wallet: Wallet
-        transfer_snail, transfer_wallet = self.args.transfer
+        transfer_wallet, transfer_snails = self.args.transfer
+        if not transfer_snails:
+            print('No snails specified')
+            return False
+
+        matches = []
         for snail in self.client.iterate_all_snails(filters={'owner': self.owner}):
-            if snail.id == transfer_snail:
-                break
-        else:
+            if snail.id in transfer_snails:
+                matches.append(snail)
+                if len(matches) == len(transfer_snails):
+                    # nothing else to look for, stop
+                    break
+        if not matches:
             print('snail not here')
             return
 
-        print(f'Found: {snail}')
+        if len(matches) == 1:
+            print(f'Found: {matches[0]}')
+        else:
+            print('Found:')
+            for m in matches:
+                print(f' - {m}')
+
         if transfer_wallet.address == self.owner:
             print('Target is the same as owner')
             return False
 
-        tx = self.client.web3.transfer_snail(self.owner, transfer_wallet.address, snail.id)
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+        if len(matches) == 1:
+            tx = self.client.web3.transfer_snail(self.owner, transfer_wallet.address, matches[0].id)
+        else:
+            tx = self.client.web3.approve_all_snails_for_bulk()
+            if tx:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                print(f'Approved bulkTransfer for {fee} AVAX')
+            tx = self.client.web3.bulk_transfer_snails(
+                transfer_wallet.address,
+                [m.id for m in matches],
+            )
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'Transferred for {fee} AVAX')
-        return False
+        for m in matches:
+            transfer_snails.remove(m.id)
+        return len(transfer_snails) > 0
 
     @commands.command()
     def cmd_inventory(self, verbose=True):
@@ -1040,7 +1068,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             return
         snail_ids = [s.id for s in snails]
         tx = self.client.web3.unstake_snails(snail_ids)
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / 1000000000000000000
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'{len(snails)} snails unstaked for {fee} AVAX')
 
     def find_candidates(self, race, snails):

@@ -10,6 +10,8 @@ from web3.middleware import geth_poa_middleware
 
 from . import contracts
 
+DECIMALS = 1000000000000000000
+
 
 class Client:
     def __init__(
@@ -63,6 +65,10 @@ class Client:
     @cached_property
     def snailguild_contract(self):
         return self._contract(contracts.snail_guild)
+
+    @cached_property
+    def bulk_transfer_contract(self):
+        return self._contract(contracts.bulk_transfer)
 
     def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
@@ -140,33 +146,31 @@ class Client:
         )
 
     def claimable_slime(self):
-        return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
+        return self.race_contract.functions.claimableRewards().call({'from': self.wallet}) / DECIMALS
 
     def balance_of_slime(self, raw=False):
         x = self.slime_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
         if raw:
             return x
-        return x / 1000000000000000000
+        return x / DECIMALS
 
     def claimable_wavax(self):
-        return self.mega_race_contract.functions.claimableRewards().call({'from': self.wallet}) / 1000000000000000000
+        return self.mega_race_contract.functions.claimableRewards().call({'from': self.wallet}) / DECIMALS
 
     def balance_of_wavax(self, raw=False):
         x = self.wavax_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
         if raw:
             return x
-        return x / 1000000000000000000
+        return x / DECIMALS
 
     def balance_of_snails(self):
         return self.snailnft_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
 
     def get_balance(self):
-        return self.web3.eth.get_balance(self.wallet) / 1000000000000000000
+        return self.web3.eth.get_balance(self.wallet) / DECIMALS
 
     def get_current_coefficent(self):
-        return (
-            self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / 1000000000000000000
-        )
+        return self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / DECIMALS
 
     def sign_race_join(self, snail_id: int, race_id: int, owner: str = None):
         """Generate and sign payload to join a daily mission
@@ -253,6 +257,30 @@ class Client:
     ):
         return self._bss(
             self.snailguild_contract.functions.unstakeSnails(snail_ids),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
+    def approve_all_snails_for_bulk(
+        self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        current = self.snailnft_contract.functions.isApprovedForAll(
+            self.wallet, self.bulk_transfer_contract.address
+        ).call()
+        target = not remove
+        if current is target:
+            return
+        return self._bss(
+            self.snailnft_contract.functions.setApprovalForAll(self.bulk_transfer_contract.address, target),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
+    def bulk_transfer_snails(
+        self, to: str, token_ids: list[int], wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        return self._bss(
+            self.bulk_transfer_contract.functions.bulkTransfer721Lite(self.snailnft_contract.address, to, token_ids),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )

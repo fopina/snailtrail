@@ -132,9 +132,9 @@ ABI = {repr(abi_definition)}
 '''
             )
 
-    def update_multicall(self):
-        address = '0xcA11bde05977b3631167028862bE2a173976CA11'
-        contract = 'multicall'
+    def update_bulk_transfer(self):
+        address = '0xee5b5376d71d4af51bdc64ca353f51485fa8d6d5'
+        contract = 'bulk_transfer'
         r = requests.get(f'https://api.snowtrace.io/api?module=contract&action=getabi&address={address}')
         r.raise_for_status()
         abi_definition = json.loads(r.json()['result'])
@@ -167,7 +167,7 @@ ABI = {repr(abi_definition)}
         # all contracts matched
         assert_equal(set(), set(self.contracts.keys()) - set(x[1] for x in self.abi_with_contract))
         self.update_files()
-        self.update_multicall()
+        self.update_bulk_transfer()
         self.update_init()
         self.black_em()
 

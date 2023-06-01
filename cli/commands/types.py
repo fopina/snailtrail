@@ -77,21 +77,21 @@ class TransferParamsAction(configargparse.argparse.Action):
         self,
         option_strings,
         dest,
-        nargs=2,
+        nargs='+',
         const=None,
         default=None,
         type=str,
         choices=None,
         required=False,
         help=None,
-        metavar=('snail_id', 'account_or_address'),
+        metavar=('account_or_address', 'snail_id'),
     ):
         if type != str:
             raise ValueError('type must always be str (default)')
-        if nargs != 2:
+        if nargs != '+':
             raise ValueError('nargs must always be 2 (default)')
         super().__init__(option_strings, dest, nargs, const, default, type, choices, required, help, metavar)
 
     def __call__(self, parser, namespace, values, option_string):
-        snail_id, aoa = values
-        setattr(namespace, self.dest, (int(snail_id), wallet_ext_or_int(aoa)))
+        aoa, *snail_id = values
+        setattr(namespace, self.dest, (wallet_ext_or_int(aoa), set(map(int, snail_id))))

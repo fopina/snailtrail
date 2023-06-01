@@ -1,6 +1,6 @@
 # generated automatically - DO NOT MODIFY
 
-from . import multicall
+from . import bulk_transfer
 from . import snail_gene_marketplace
 from . import snail_guild
 from . import snail_incubator

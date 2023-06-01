@@ -6,6 +6,7 @@ from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQuery
 import logging
 
 from . import cli
+from .cli import DECIMALS
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,7 @@ class Notifier:
             try:
                 r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                 if r.get('status') == 1:
-                    bal = int(r['logs'][1]['data'], 16) / 1000000000000000000
+                    bal = int(r['logs'][1]['data'], 16) / DECIMALS
                     total_claimed += bal
                     extra_text.append(f'claimed {bal} from {_cli.name}')
                 else:
@@ -246,7 +247,7 @@ class Notifier:
             if not bal:
                 extra_text.append(f'{c.name}: Nothing to send')
             else:
-                extra_text.append(f'{c.name}: sending {bal / 1000000000000000000}')
+                extra_text.append(f'{c.name}: sending {bal / DECIMALS}')
                 query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
                 h = c.client.web3.transfer_slime(cli.owner, bal, wait_for_transaction_receipt=False)
                 final_status[c.name] = None
@@ -256,7 +257,7 @@ class Notifier:
         # wait for receipts
         for c, hash in hash_queue:
             r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
-            sent = int(r['logs'][0]['data'], 16) / 1000000000000000000
+            sent = int(r['logs'][0]['data'], 16) / DECIMALS
             total_sent += sent
             extra_text.append(f'{c.name}: sent {sent} SLIME')
             query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
