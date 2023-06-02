@@ -1,11 +1,11 @@
 from functools import cached_property
-from typing import Any, Union
+from typing import Any, Optional, Union
 from datetime import datetime
 import base64
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
-from web3 import Web3, exceptions  # noqa - for others to import from here
+from web3 import Web3, Account, exceptions  # noqa - for others to import from here
 from web3.middleware import geth_poa_middleware
 
 from . import contracts
@@ -16,16 +16,16 @@ DECIMALS = 1000000000000000000
 class Client:
     def __init__(
         self,
-        wallet,
-        private_key,
-        web3_provider,
-        web3_provider_class=None,
+        wallet: str,
+        web3_provider: str,
+        web3_account: Optional[Account] = None,
+        web3_provider_class: Any = None,
     ):
         if web3_provider_class is None:
             web3_provider_class = Web3.HTTPProvider
         self.web3 = Web3(web3_provider_class(web3_provider))
         self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        self.__pkey = private_key
+        self.account: str = web3_account
         self.wallet = wallet
 
     def _contract(self, module):
@@ -76,7 +76,7 @@ class Client:
         tx = function_call.buildTransaction({"nonce": nonce, "from": self.wallet})
         if estimate_only:
             return self.web3.eth.estimate_gas(tx)
-        signed_txn = self.web3.eth.account.sign_transaction(tx, private_key=self.__pkey)
+        signed_txn = self.account.sign_transaction(tx)
         tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         if wait_for_transaction_receipt is False:
             return tx_hash
@@ -174,7 +174,8 @@ class Client:
 
     def sign_race_join(self, snail_id: int, race_id: int, owner: str = None):
         """Generate and sign payload to join a daily mission
-        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
         >>> o.sign_race_join(1816, 44660)
         '0x66287e0465f644bad50cab950218ee6386f0e19bde3be4fad34f473b33f806c0177718d8ddb4ffe0149e3098b20abc1a382c6c77d7f4b7f61f6f4fa33f8f47641c'
         """
@@ -182,7 +183,8 @@ class Client:
 
     def _sign_values(self, *values, owner: str = None):
         """Hash and sign typed values
-        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
         >>> o._sign_values(1816)
         '0xd608d3c0adde23a7ddeb94e3f15f742887249b87cae9e6c98c95422e72e9945410c5029efd815efc0d95c80dd05b119b8ac2b82b19b14e51580a9385356ed6881c'
         """
@@ -204,11 +206,12 @@ class Client:
         sign_payload = keccak_hash.digest()
         message = encode_defunct(sign_payload)
 
-        return self.web3.eth.account.sign_message(message, private_key=self.__pkey).signature.hex()
+        return self.account.sign_message(message).signature.hex()
 
     def sign_burn(self, snails: list[int], owner: str = None):
         """Generate and sign payload to join a daily mission
-        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
         >>> o.sign_burn([1816])
         '0xb2e129e5e5b38243486394aa50247101c6c078f177b3362d672bc1739687e92a4de54ef9d522a6567e6e54b93ddd44a8ccf4463cab0ab053102f675171f793691b'
         """
@@ -216,7 +219,8 @@ class Client:
 
     def auth_token(self, timestamp=None, owner=None) -> tuple[str, int]:
         """Generate an auth token for GraphQL API
-        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', private_key='badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_provider='x')
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
         >>> o.auth_token(timestamp=1684841032263)[:2]
         ('MHhlMGM4ZTE3ZjJjYTA4MjExOWU2N2UzYjFmNThkODkwYTY1NWY5NDVmMzAxNmQ4Nzc5YWQ3NWY5N2QwOTMzNWFjMWVmMzBjNjUwYmQ3ODI1ZGY2MjNmNDczYjk2YjM0YWM2MWJjNzExNzYzN2NmNjU0MWM2MTBhNTRiYzIyNWU4MTFiOjB4YmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkYmFkMDoxNjg0ODQxMDMyMjYz', 1685445832263)
         """

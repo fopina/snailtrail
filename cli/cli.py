@@ -132,7 +132,7 @@ class CLI:
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
-            private_key=wallet.private_key,
+            web3_account=wallet.account,
             web3_provider=args.web3_rpc,
             rate_limiter=args.rate_limit,
             gql_retry=args.retry if args.retry > 0 else None,

@@ -39,10 +39,9 @@ def build_parser():
     )
     parser.add_argument(
         '--wallet',
-        nargs=2,
-        metavar=('ADDRESS', 'PRIVATE_KEY'),
+        metavar='ADDRESS_OR_PRIVATE_KEY',
         action=commands.AppendWalletAction,
-        help='owner wallet and its private key (values or path to files with value)',
+        help='wallet address (or private key) - if only address, most features not available (values or path to files with value)',
     )
     parser.add_argument(
         '--web3-rpc',

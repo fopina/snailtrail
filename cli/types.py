@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from web3 import Account
 
 
 @dataclass
@@ -10,4 +11,9 @@ class RaceJoin:
 @dataclass
 class Wallet:
     address: str
-    private_key: str
+    account: Account
+
+    @classmethod
+    def from_private_key(cls, private_key):
+        a = Account.from_key(private_key)
+        return cls(a.address, a)
