@@ -147,7 +147,7 @@ class CLI:
         self._notify_coefficent = None
         self._notify_burn_coefficent = None
         self._notify_tournament = None
-        self._next_mission = None
+        self._next_mission = False, -1
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
 
@@ -310,11 +310,11 @@ class CLI:
                 logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
         return queueable, closest
 
-    def join_missions(self):
+    def join_missions(self) -> tuple[bool, datetime]:
         missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
         queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
         if not queueable:
-            return closest
+            return True, closest
 
         boosted = set(self.args.boost or [])
         if self.args.fair:
@@ -427,8 +427,8 @@ class CLI:
 
         if queueable:
             logger.info(f'{len(queueable)} without matching race')
-            return
-        return closest
+            return False, len(queueable)
+        return True, closest
 
     @commands.argument('-c', '--claim', action='store_true', help='Claim rewards')
     @commands.argument(
@@ -697,12 +697,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if not self.args.paused:
                 if self.args.missions:
                     now = self._now()
-                    if self._next_mission is None or self._next_mission < now:
+                    if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission < now:
                         self._next_mission = self.join_missions()
-                        logger.info('next mission in at %s', self._next_mission)
-                    if self._next_mission is not None:
+                        if self._next_mission[0] is False:
+                            msg = f'{self._next_mission[1]} pending'
+                        elif self._next_mission[1] is None:
+                            msg = f'no snails'
+                        else:
+                            msg = str(self._next_mission[1])
+                        logger.info('next mission in at %s', msg)
+                    if self._next_mission[0] and self._next_mission[1] is not None:
                         # if wait for next mission is lower than wait argument, use it
-                        _w = (self._next_mission - now).total_seconds()
+                        _w = (self._next_mission[1] - now).total_seconds()
                         if 0 < _w < w:
                             w = _w
 

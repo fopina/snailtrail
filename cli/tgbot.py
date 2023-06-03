@@ -467,10 +467,12 @@ class Notifier:
         msgs = []
         for c in self.clis.values():
             self.tag_with_wallet(c, msgs)
-            if c._next_mission is None:
+            if not c._next_mission[0]:
+                msgs.append(f'🫥 {c._next_mission[0]}')
+            elif not c._next_mission[1]:
                 msgs.append('⁉️')
             else:
-                msgs.append(f'⏲️ `{str(c._next_mission - c._now()).split(".")[0]}`')
+                msgs.append(f'⏲️ `{str(c._next_mission[1] - c._now()).split(".")[0]}`')
         update.message.reply_markdown('\n'.join(msgs))
 
     @bot_auth
