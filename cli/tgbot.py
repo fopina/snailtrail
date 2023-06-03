@@ -468,7 +468,7 @@ class Notifier:
         for c in self.clis.values():
             self.tag_with_wallet(c, msgs)
             if not c._next_mission[0]:
-                msgs.append(f'🫥 {c._next_mission[0]}')
+                msgs.append(f'🫥 {c._next_mission[1]}')
             elif not c._next_mission[1]:
                 msgs.append('⁉️')
             else:
