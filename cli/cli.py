@@ -697,7 +697,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if not self.args.paused:
                 if self.args.missions:
                     now = self._now()
-                    if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission < now:
+                    if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
                         self._next_mission = self.join_missions()
                         if self._next_mission[0] is False:
                             msg = f'{self._next_mission[1]} pending'
