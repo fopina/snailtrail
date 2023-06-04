@@ -381,14 +381,15 @@ class CLI:
                     except client.RequiresTransactionClientError as e:
                         logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         if not self.args.fair:
-                            raise
+                            continue
 
                         r = e.args[1]
                         # join last spot anyway, even if not "boosted" (negative tickets)
                         if self.args.cheap and not r['payload']['size'] == 0:
-                            raise
+                            continue
 
                         tx = self.client.rejoin_mission_races(r)
+                        logger.info('Joined cheap last spot without need - %s on %d', snail.name, race.id)
 
                 msg = (
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
