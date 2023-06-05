@@ -323,6 +323,12 @@ class CLI:
                 if s.stats['mission_tickets'] < self.args.minimum_tickets:
                     boosted.add(s.id)
 
+        def _slow_snail(snail):
+            # add snail to cooldown, use 90 for now - check future logs if they still get locked
+            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
+            # also remove from queueable (due to "continue")
+            queueable.remove(snail)
+
         for race in missions:
             if race.participation:
                 # already joined
@@ -363,17 +369,11 @@ class CLI:
                         if r['payload']['size'] == 0:
                             tx = self.client.rejoin_mission_races(r)
                         else:
-                            # add snail to cooldown, use 90 for now - check future logs if they still get locked
-                            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
-                            # also remove from queueable (due to "continue")
-                            queueable.remove(snail)
+                            _slow_snail(snail)
                             continue
                     except client.gqlclient.RaceAlreadyFullAPIError:
                         logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
-                        # add snail to cooldown, use 90 for now - check future logs if they still get locked
-                        self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
-                        # also remove from queueable (due to "continue")
-                        queueable.remove(snail)
+                        _slow_snail(snail)
                         continue
                 else:
                     try:
@@ -399,8 +399,12 @@ class CLI:
                     self.notify_mission(msg)
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-                    logger.info(f'{msg} LAST SPOT - fee: {fee}')
-                    self.notify_mission(f'{msg} *LAST SPOT*')
+                    if tx['status'] == 1:
+                        logger.info(f'{msg} LAST SPOT - fee: {fee}')
+                        self.notify_mission(f'{msg} *LAST SPOT*')
+                    else:
+                        logger.error(f'Last spot transaction reverted - {tx["transactionHash"]} - fee: {fee}')
+                        _slow_snail(snail)
             except client.ClientError as e:
                 logger.exception('failed to join mission')
                 self.notifier.notify(
@@ -417,9 +421,10 @@ class CLI:
                     seconds=float(msg[58:].split(' ', 1)[0])
                 )
             except client.web3client.exceptions.ContractLogicError as e:
+                # immediate contract errors, no fee paid
                 if 'Race already submitted' in str(e):
                     logger.error('Too late for the race, try next one')
-                    # continue loop to next race *without* removing snail from queueable
+                    _slow_snail(snail)
                     continue
                 raise
 
