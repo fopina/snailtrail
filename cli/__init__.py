@@ -119,6 +119,17 @@ def build_parser():
         help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
     )
     utils_parsers.add_parser('accounts', help='Just list accounts, quick function')
+    pmm = utils_parsers.add_parser(
+        'balance_balance', help='Take from the rich and give to the poor - balance wallet balances'
+    )
+    pmm.add_argument(
+        '-f',
+        '--force',
+        action='store_true',
+        help='Do it (only simulates without this flag)',
+    )
+    pmm.add_argument('stop', type=float, help='Stop amount that triggers transfer')
+    pmm.add_argument('limit', type=float, help='Final balance every triggered account should have')
     return parser
 
 

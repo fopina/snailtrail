@@ -216,6 +216,27 @@ SNAILS: {totals[2]}'''
             for c, snail in v:
                 print(f'  {snail.name} {c.name}')
 
+    def cmd_utils_balance_balance(self):
+        if self.args.limit <= self.args.stop:
+            raise Exception('stop must be lower than limit')
+        balances = []
+        for c in self.clis:
+            balances.append((c.client.web3.get_balance(), c))
+        balances.sort(key=lambda x: x[0], reverse=True)
+        donor: tuple[float, cli.CLI] = balances[0]
+        poor: list[tuple[float, cli.CLI]] = [(x, self.args.limit - x, z) for (x, z) in balances if x < self.args.stop]
+        total_transfer = sum(y for _, y, _ in poor)
+        if donor[0] - self.args.limit < total_transfer:
+            print(f'Donor has not enough balance: {total_transfer} required but only {donor[0]} available')
+            return
+        for p in poor:
+            print(f'{donor[1].name} to {p[2].name}: {p[1]}')
+            if self.args.force:
+                tx = donor[1].client.web3.transfer(p[2].owner, p[1])
+                print(tx)
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                print(f'> fee: {fee}')
+
     def run(self):
         if not self.args.cmd:
             return

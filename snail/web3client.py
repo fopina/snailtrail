@@ -25,7 +25,7 @@ class Client:
             web3_provider_class = Web3.HTTPProvider
         self.web3 = Web3(web3_provider_class(web3_provider))
         self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        self.account: str = web3_account
+        self.account: Account = web3_account
         self.wallet = wallet
 
     def _contract(self, module):
@@ -73,7 +73,23 @@ class Client:
     def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
-        tx = function_call.buildTransaction({"nonce": nonce, "from": self.wallet})
+        if isinstance(function_call, dict):
+            # raw transaction
+            tx = {k: v for k, v in function_call.items()}
+            gas_price = int(0.000000025 * DECIMALS)
+            tx.update(
+                {
+                    'nonce': nonce,
+                    'from': self.wallet,
+                    'gas': 21000,
+                    'maxFeePerGas': gas_price,
+                    'maxPriorityFeePerGas': gas_price,
+                    'chainId': 43114,
+                }
+            )
+        else:
+            # function call
+            tx = function_call.buildTransaction({'nonce': nonce, 'from': self.wallet})
         if estimate_only:
             return self.web3.eth.estimate_gas(tx)
         signed_txn = self.account.sign_transaction(tx)
@@ -235,6 +251,17 @@ class Client:
             expires_on,
             # is_expired function, some buffer (1h) to renew
             lambda: int(datetime.utcnow().timestamp() * 1000) > (expires_on - 3600000),
+        )
+
+    def transfer(self, to: str, amount: float, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
+        transaction = {
+            'to': to,
+            'value': int(amount * DECIMALS),
+        }
+        return self._bss(
+            transaction,
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
         )
 
     def transfer_slime(self, to: str, amount: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
