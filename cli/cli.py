@@ -405,6 +405,7 @@ class CLI:
                     else:
                         logger.error(f'Last spot transaction reverted - {tx["transactionHash"]} - fee: {fee}')
                         _slow_snail(snail)
+                        continue
             except client.ClientError as e:
                 logger.exception('failed to join mission')
                 self.notifier.notify(
