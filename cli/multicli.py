@@ -233,7 +233,6 @@ SNAILS: {totals[2]}'''
             print(f'{donor[1].name} to {p[2].name}: {p[1]}')
             if self.args.force:
                 tx = donor[1].client.web3.transfer(p[2].owner, p[1])
-                print(tx)
                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                 print(f'> fee: {fee}')
 
