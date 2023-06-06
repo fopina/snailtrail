@@ -315,3 +315,6 @@ class Client:
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )
+
+    def snail_metadata(self, snail_id):
+        return self.snailnft_contract.functions.tokenURI(snail_id).call({'from': self.wallet})

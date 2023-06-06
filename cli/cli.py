@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import Optional, Union
 from xmlrpc.client import Boolean
 from pathlib import Path
+import requests
 
 from colorama import Fore
 from snail import VERSION, client
@@ -839,6 +840,13 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         # nargs='2+',
         help='Transfer 1 or more <snail_id> to <account_or_address> - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
     )
+    @commands.argument(
+        '-m',
+        '--metadata',
+        type=int,
+        metavar='snail',
+        help='Fetch snail metadata',
+    )
     @commands.command()
     def cmd_snails(self):
         """
@@ -846,6 +854,9 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         """
         if self.args.transfer is not None:
             return self.cmd_snails_transfer()
+
+        if self.args.metadata is not None:
+            return self._cmd_snails_metadata()
 
         if self.args.sort == 'stats':
             it = list(self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True))
@@ -936,6 +947,18 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for m in matches:
             transfer_snails.remove(m.id)
         return len(transfer_snails) > 0
+
+    def _cmd_snails_metadata(self):
+        url = self.client.web3.snail_metadata(self.args.metadata)
+        print(f'URL: {url}')
+        r = requests.get(url)
+        r.raise_for_status()
+        data = r.json()
+        print(f'Name: {data["name"]}')
+        print(f'Image: {data["image"]}')
+        for attr in data['attributes']:
+            print(f'{attr["trait_type"]}: {attr["value"]}')
+        return False
 
     @commands.command()
     def cmd_inventory(self, verbose=True):
