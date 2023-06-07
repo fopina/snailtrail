@@ -404,7 +404,7 @@ class CLI:
                         logger.info(f'{msg} LAST SPOT - fee: {fee}')
                         self.notify_mission(f'{msg} *LAST SPOT*')
                     else:
-                        logger.error(f'Last spot transaction reverted - {tx["transactionHash"]} - fee: {fee}')
+                        logger.error(f'Last spot transaction reverted - {tx.transactionHash.hex()} - fee: {fee}')
                         _slow_snail(snail)
                         continue
             except client.ClientError as e:
@@ -1438,7 +1438,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         try:
             r, rcpt = self.client.join_competitive_races(join_arg.snail_id, join_arg.race_id, self.owner)
             # FIXME: effectiveGasPrice * gasUsed = WEI used (AVAX 10^-18) - also print hexstring, not bytes...
-            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt["transactionHash"]})')
+            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt.transactionHash.hex()})')
         except client.ClientError:
             logger.exception('unexpected joinRace error')
 
