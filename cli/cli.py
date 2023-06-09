@@ -10,7 +10,9 @@ from xmlrpc.client import Boolean
 from pathlib import Path
 import requests
 
+from tqdm import tqdm
 from colorama import Fore
+
 from snail import VERSION, client
 from snail.gqltypes import Gender, Race, Snail
 from snail.web3client import DECIMALS
@@ -1698,25 +1700,31 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
             if argc == 1:
                 snails = main_snail
                 ret = False
-            for s1 in snails:
-                for s2 in male_snails.values():
+            for s1 in tqdm(snails):
+                for s2 in tqdm(male_snails.values(), leave=False):
                     sim = s1.incubation_simulation(s2)
                     fee = s1.incubation_fee(s2, pc=pc)
                     snail_fees.append((sim, s1, s2, fee + s2.gene_market_price))
         else:
             if argc == 1:
-                for si2 in snails:
-                    if main_snail[0].id == si2.id:
-                        continue
-                    sim = main_snail[0].incubation_simulation(si2)
-                    fee = main_snail[0].incubation_fee(si2, pc=pc)
-                    snail_fees.append((sim, main_snail[0], si2, fee))
+                with tqdm(snails) as pbar:
+                    for si2 in pbar:
+                        pbar.set_description(si2.name)
+                        if main_snail[0].id == si2.id:
+                            continue
+                        sim = main_snail[0].incubation_simulation(si2)
+                        fee = main_snail[0].incubation_fee(si2, pc=pc)
+                        snail_fees.append((sim, main_snail[0], si2, fee))
             else:
-                for si1 in range(len(snails)):
-                    for si2 in range(si1 + 1, len(snails)):
-                        sim = snails[si1].incubation_simulation(snails[si2])
-                        fee = snails[si1].incubation_fee(snails[si2], pc=pc)
-                        snail_fees.append((sim, snails[si1], snails[si2], fee))
+                with tqdm(range(len(snails))) as pb1:
+                    for si1 in pb1:
+                        pb1.set_description(snails[si1].name)
+                        with tqdm(range(si1 + 1, len(snails)), leave=False) as pb2:
+                            for si2 in pb2:
+                                pb2.set_description(snails[si2].name)
+                                sim = snails[si1].incubation_simulation(snails[si2])
+                                fee = snails[si1].incubation_fee(snails[si2], pc=pc)
+                                snail_fees.append((sim, snails[si1], snails[si2], fee))
 
         colors = {
             Gender.MALE: Fore.BLUE,

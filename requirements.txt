@@ -7,3 +7,4 @@ colorama==0.4.6
 # >= 20 has breaking changes...
 python-telegram-bot==13.15
 ConfigArgParse==1.5.3
+tqdm==4.65.0

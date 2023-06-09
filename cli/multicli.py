@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from typing import List
 from colorama import Fore
+from tqdm import tqdm
 
 from . import cli
 
@@ -161,16 +162,19 @@ SNAILS: {totals[2]}'''
         if self.args.claim or self.args.unstake:
             return False
         guilds = {}
-        for c in self.clis:
-            if self.args.verbose:
-                c._header()
-            data = c.cmd_guild()
-            if data:
-                data = data[1]
-                if c.profile_guild not in guilds:
-                    guilds[c.profile_guild] = data
-                    guilds[c.profile_guild]['members'] = []
-                guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
+        with tqdm(self.clis, disable=self.args.verbose) as pbar:
+            for c in pbar:
+                if self.args.verbose:
+                    c._header()
+                else:
+                    pbar.set_description(c.name)
+                data = c.cmd_guild()
+                if data:
+                    data = data[1]
+                    if c.profile_guild not in guilds:
+                        guilds[c.profile_guild] = data
+                        guilds[c.profile_guild]['members'] = []
+                    guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
 
         for k, data in guilds.items():
             print(f'{Fore.CYAN}== Guild: {k} =={Fore.RESET}')
