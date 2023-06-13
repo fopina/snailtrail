@@ -326,9 +326,9 @@ class CLI:
                 if s.stats['mission_tickets'] < self.args.minimum_tickets:
                     boosted.add(s.id)
 
-        def _slow_snail(snail):
+        def _slow_snail(snail, seconds=90):
             # add snail to cooldown, use 90 for now - check future logs if they still get locked
-            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=90)
+            self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=seconds)
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
 
@@ -415,15 +415,14 @@ class CLI:
                     f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}',
                     chat_id=self.args.mission_chat_id,
                 )
-            except client.gqlclient.APIError as e:
+            except client.gqlclient.NeedsToRestAPIError as e:
                 # handle re-join timeout errors
-                msg = str(e)
-                if not msg.startswith('This snail tried joining a mission as last, needs to rest '):
-                    raise
                 logger.exception('re-join as last error for %s', snail.name_id)
-                self._snail_mission_cooldown[snail.id] = self._now() + timedelta(
-                    seconds=float(msg[58:].split(' ', 1)[0])
-                )
+                _slow_snail(snail, seconds=e.seconds)
+                continue
+            except (client.gqlclient.RaceEntryFailedAPIError, client.gqlclient.RaceInnacurateRegistrantsAPIError):
+                logger.exception('failed to join mission')
+                continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
                 if 'Race already submitted' in str(e):
@@ -750,6 +749,7 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
             if e.response.status_code == 429:
                 # FIXME: handle retry-after header after checking it out
+                # should not happen as requests retry adapter handles this?
                 logger.exception(
                     'site %d... waiting: %s - %s',
                     e.response.status_code,
