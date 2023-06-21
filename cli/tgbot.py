@@ -527,7 +527,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'🔧 {setting.dest}: {getattr(self.any_cli.args, setting.dest)}',
+                        f'🔧 {"🟢" if getattr(self.any_cli.args, setting.dest) else "🔴"} {setting.dest}',
                         callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]
