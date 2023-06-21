@@ -119,7 +119,7 @@ class Parser:
         path = CONTRACT_DIR
         path.mkdir(exist_ok=True)
         header = f'# generated automatically from {self.script_url} - DO NOT MODIFY'
-        for (abi_definition, contract) in self.abi_with_contract:
+        for abi_definition, contract in self.abi_with_contract:
             camel = camel_to_snake(contract)
             address = self.contracts[contract]
             f = path / f'{camel}.py'

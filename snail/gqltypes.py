@@ -193,7 +193,7 @@ class Snail(AttrDict):
         if 'gender' in self:
             x = self['gender'].get('can_change_at')
             if x:
-                return _parse_datetime_micro(x)
+                return _parse_datetime(x)
 
     @property
     def adaptations(self):
@@ -276,7 +276,7 @@ class Snail(AttrDict):
 
     @property
     def queueable_at(self):
-        return _parse_datetime_micro(self['queueable_at'])
+        return _parse_datetime(self['queueable_at'])
 
     def incubation_fee(self, other_snail: 'Snail', pc=1.0):
         # https://docs.snailtrail.art/reproduction/incubator/incubation_fee/#incubation-fee
@@ -426,8 +426,6 @@ class InventoryItem(AttrDict):
 
 
 def _parse_datetime(date_str):
+    if '.' in date_str:
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
     return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-
-
-def _parse_datetime_micro(date_str):
-    return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
