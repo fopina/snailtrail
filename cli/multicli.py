@@ -184,6 +184,7 @@ SNAILS: {totals[2]}'''
             if _ph:
                 _m += f' ({Fore.GREEN}{_ph} ph{Fore.RESET})'
             print(_m)
+            print(f'Lettuce: {data["lettuce"]}')
             print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
             for m in data['members']:
                 _m = f' - {m[0]}'

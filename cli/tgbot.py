@@ -411,6 +411,7 @@ class Notifier:
             if _ph:
                 _m += f' ⏲️ {_ph}'
             msg.append(_m)
+            msg.append(f'🥬 {data["lettuce"]}')
             msg.append(f'👥 {data["member_count"]} 🐌 {data["snail_count"]}')
             for _m in data['members']:
                 if _m[1]:

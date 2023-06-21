@@ -1041,7 +1041,8 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
         for b in data['treasury']['resources']:
             if b['id'] == 'PRIMARY':
                 cleaned_data['tomato'] = b['amount']
-                break
+            elif b['id'] == 'SECONDARY':
+                cleaned_data['lettuce'] = b['amount']
         cleaned_data.update(data['research']['stats'])
         cleaned_data.update(data['stats'])
         return cleaned_data
@@ -1071,16 +1072,17 @@ AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_o
 
         data = self._cmd_guild_data()
         if not data:
-            if self.args.verbose:
+            if self.args.verbose or self.main_one is None:
                 print('No guild')
             return
 
         if self.args.claim:
             return self.cmd_guild_claim(data)
 
-        if self.args.verbose:
+        if self.args.verbose or self.main_one is None:
             print(f'Guild: {self.profile_guild} - lv {data["level"]}')
             print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
+            print(f'Lettuce: {data["lettuce"]}')
             print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
             if data['sink_reward']:
                 print(f"{data['sink_reward']} TMT to claim")
