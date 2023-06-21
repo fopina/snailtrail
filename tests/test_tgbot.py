@@ -51,7 +51,7 @@ class Test(TestCase):
         self.bot.cmd_settings(self.update, self.context)
         expected_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton('🔧 wtv: False', callback_data=f'toggle wtv')],
+                [InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv')],
                 [
                     InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
                     InlineKeyboardButton(f'❔ Help', callback_data='toggle __help'),
