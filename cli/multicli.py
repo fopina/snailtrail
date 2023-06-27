@@ -169,7 +169,10 @@ SNAILS: {totals[2]}'''
                     if c.profile_guild not in guilds:
                         guilds[c.profile_guild] = data
                         guilds[c.profile_guild]['members'] = []
-                    guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
+                    if not guilds[c.profile_guild]['next_rewards'] and data['next_rewards']:
+                        # in case first member did not have next_rewards but the others do :shrug:
+                        guilds[c.profile_guild]['next_rewards'] = data['next_rewards']
+                    guilds[c.profile_guild]['members'].append((c.name, data['rewards']))
 
         for k, data in guilds.items():
             print(f'{Fore.CYAN}== Guild: {k} =={Fore.RESET}')
@@ -180,11 +183,15 @@ SNAILS: {totals[2]}'''
                 _m += f' ({Fore.GREEN}{_ph} ph{Fore.RESET})'
             print(_m)
             print(f'Lettuce: {data["lettuce"]}')
+            if data['next_rewards']:
+                print('Next rewards:')
+                for r1, r2 in data['next_rewards']:
+                    print(f' - {r1}: {r2}')
             print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
             for m in data['members']:
                 _m = f' - {m[0]}'
                 if m[1]:
-                    _m += f' ({Fore.GREEN}{m[1]} TMT{Fore.RESET})'
+                    _m += f' ({Fore.GREEN}{m[1]}{Fore.RESET})'
                 print(_m)
 
     def cmd_utils(self):

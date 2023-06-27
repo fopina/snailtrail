@@ -398,7 +398,10 @@ class Notifier:
                 if c.profile_guild not in guilds:
                     guilds[c.profile_guild] = data
                     guilds[c.profile_guild]['members'] = []
-                guilds[c.profile_guild]['members'].append((c.name, data['sink_reward']))
+                if not guilds[c.profile_guild]['next_rewards'] and data['next_rewards']:
+                    # in case first member did not have next_rewards but the others do :shrug:
+                    guilds[c.profile_guild]['next_rewards'] = data['next_rewards']
+                guilds[c.profile_guild]['members'].append((c.name, data['rewards']))
 
         for k, data in guilds.items():
             msg.append(f'`Guild: {k}`')
@@ -409,10 +412,12 @@ class Notifier:
                 _m += f' ⏲️ {_ph}'
             msg.append(_m)
             msg.append(f'🥬 {data["lettuce"]}')
+            if data['next_rewards']:
+                msg.append(f"🎁 {data['next_rewards']}")
             msg.append(f'👥 {data["member_count"]} 🐌 {data["snail_count"]}')
             for _m in data['members']:
                 if _m[1]:
-                    msg.append(f'*{_m[0]}* 🍅 {_m[1]}')
+                    msg.append(f'*{_m[0]}* 🎁 {_m[1]}')
             msg.append('')
 
         m.edit_text(text='\n'.join(msg), parse_mode='Markdown')

@@ -1043,14 +1043,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not self.profile_guild:
             return
         data = self.client.gql.guild_details(self._profile['guild']['id'], member=self.owner)
-        cleaned_data = {}
+        cleaned_data = {
+            'rewards': [],
+            'next_rewards': [],
+        }
         for b in data['research']['buildings']:
-            if b['type'] == 'SINK':
-                if b['reward'] and b['reward']['has_reward']:
-                    cleaned_data['sink_reward'] = b['reward']['amount']
-                else:
-                    cleaned_data['sink_reward'] = 0
-                break
+            if b['reward']:
+                if b['reward']['has_reward']:
+                    cleaned_data['rewards'].append((b['name'], b['reward']['amount']))
+                if b['reward']['next_reward_at']:
+                    cleaned_data['next_rewards'].append((b['name'], b['reward']['next_reward_at']))
         for b in data['treasury']['resources']:
             if b['id'] == 'PRIMARY':
                 cleaned_data['tomato'] = b['amount']
@@ -1097,8 +1099,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
             print(f'Lettuce: {data["lettuce"]}')
             print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
-            if data['sink_reward']:
-                print(f"{data['sink_reward']} TMT to claim")
+            if data['next_rewards']:
+                print('Next rewards:')
+                for r1, r2 in data['next_rewards']:
+                    print(f' - {r1}: {r2}')
+            if data['rewards']:
+                print(f"Rewards:")
+                for r1, r2 in data['rewards']:
+                    print(f' - {r1}: {r2}')
         return True, data
 
     def cmd_guild_claim(self, data):
