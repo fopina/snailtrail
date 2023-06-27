@@ -6,6 +6,7 @@ import json
 import json5
 from pathlib import Path
 import subprocess
+import time
 
 EXPECTED_CONTRACTS = 12
 CONTRACT_DIR = Path(__file__).absolute().parent / 'snail' / 'contracts'
@@ -132,9 +133,7 @@ ABI = {repr(abi_definition)}
 '''
             )
 
-    def update_bulk_transfer(self):
-        address = '0xee5b5376d71d4af51bdc64ca353f51485fa8d6d5'
-        contract = 'bulk_transfer'
+    def _update_contract(self, address, contract):
         r = requests.get(f'https://api.snowtrace.io/api?module=contract&action=getabi&address={address}')
         r.raise_for_status()
         abi_definition = json.loads(r.json()['result'])
@@ -148,6 +147,12 @@ CONTRACT = '{address}'
 ABI = {repr(abi_definition)}
 '''
         )
+
+    def update_bulk_transfer(self):
+        return self._update_contract('0xee5b5376d71d4af51bdc64ca353f51485fa8d6d5', 'bulk_transfer')
+
+    def update_multicall(self):
+        return self._update_contract('0xca11bde05977b3631167028862be2a173976ca11', 'multicall')
 
     def update_init(self):
         path = CONTRACT_DIR
@@ -167,7 +172,11 @@ ABI = {repr(abi_definition)}
         # all contracts matched
         assert_equal(set(), set(self.contracts.keys()) - set(x[1] for x in self.abi_with_contract))
         self.update_files()
+
         self.update_bulk_transfer()
+        time.sleep(5)
+        self.update_multicall()
+
         self.update_init()
         self.black_em()
 

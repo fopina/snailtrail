@@ -439,6 +439,17 @@ class CLI:
             return False, len(queueable)
         return True, closest
 
+    def _balance(self, data=None):
+        if data is None:
+            data = self.client.web3.multicall_balances([self.owner])[self.owner]
+        r = {
+            'SLIME': (self.client.web3.claimable_slime(), data[2]),
+            'WAVAX': (self.client.web3.claimable_wavax(), data[1]),
+            'AVAX': self.client.web3.get_balance(),
+            'SNAILS': data[0],
+        }
+        return r
+
     @commands.argument('-c', '--claim', action='store_true', help='Claim rewards')
     @commands.argument(
         '-s',
@@ -448,7 +459,7 @@ class CLI:
         help='Transfer slime to this account - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
     )
     @commands.command()
-    def cmd_balance(self):
+    def cmd_balance(self, data=None):
         """Check wallet balances for all the tokens"""
         if self.args.claim:
             try:
@@ -473,12 +484,14 @@ class CLI:
             sent = int(r['logs'][0]['data'], 16) / DECIMALS
             print(f'{sent} SLIME sent')
         else:
+            r = self._balance(data=data)
             print(
                 f'''\
-SLIME: {self.client.web3.claimable_slime()} / {self.client.web3.balance_of_slime():.3f}
-WAVAX: {self.client.web3.claimable_wavax()} / {self.client.web3.balance_of_wavax()}
-AVAX: {self.client.web3.get_balance():.3f} / SNAILS: {self.client.web3.balance_of_snails()}'''
+SLIME: {r['SLIME'][0]} / {r['SLIME'][1]:.3f}
+WAVAX: {r['WAVAX'][0]} / {r['SLIME'][1]}
+AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             )
+            return r
 
     def _bot_marketplace(self):
         d = self.client.marketplace_stats()

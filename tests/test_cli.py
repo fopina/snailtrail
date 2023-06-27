@@ -239,14 +239,15 @@ class TestBot(TestCase):
         self.cli.args.claim = False
         self.cli.args.send = None
         self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.balance_of_slime.return_value = 1
         self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.balance_of_wavax.return_value = 1
         self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.balance_of_snails.return_value = 1
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1]}
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
-            self.assertIsNone(self.cli.cmd_balance())
+            self.assertEqual(
+                self.cli.cmd_balance(),
+                {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1},
+            )
         self.assertEqual(
             f.getvalue(),
             '''\

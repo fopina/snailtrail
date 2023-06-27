@@ -50,6 +50,10 @@ class MultiCLI:
     def is_multi(self) -> bool:
         return len(self.clis) > 1
 
+    @property
+    def main_cli(self) -> cli.CLI:
+        return self.clis[0]
+
     def cmd_bot(self):
         if self.args.tournament:
             # disable check in all accounts with repeated guilds
@@ -87,23 +91,14 @@ class MultiCLI:
             return False
         totals = [0, 0, 0]
 
+        cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis])
+
         for c in self.clis:
-            cs = c.client.web3.claimable_slime()
-            bs = c.client.web3.balance_of_slime()
-            cw = c.client.web3.claimable_wavax()
-            bw = c.client.web3.balance_of_wavax()
-            ba = c.client.web3.get_balance()
-            bn = c.client.web3.balance_of_snails()
-            totals[0] += cs + bs
-            totals[1] += cw + bw + ba
-            totals[2] += bn
             c._header()
-            print(
-                f'''\
-SLIME: {c.client.web3.claimable_slime()} / {c.client.web3.balance_of_slime():.3f}
-WAVAX: {c.client.web3.claimable_wavax()} / {c.client.web3.balance_of_wavax()}
-AVAX: {c.client.web3.get_balance():.3f} / SNAILS: {c.client.web3.balance_of_snails()}'''
-            )
+            data = c.cmd_balance(data=cache[c.owner])
+            totals[0] += sum(data['SLIME'])
+            totals[1] += sum(data['WAVAX']) + data['AVAX']
+            totals[2] += data['SNAILS']
         print(f'{Fore.CYAN}== TOTAL{Fore.RESET} ==')
         print(
             f'''\

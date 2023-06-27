@@ -150,11 +150,11 @@ class Test(TestCase):
 
     def test_cmd_balance(self):
         self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.balance_of_slime.return_value = 1
         self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.balance_of_wavax.return_value = 1
         self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.balance_of_snails.return_value = 1
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1]}
+        # mock value taken from test_cli::test_balance
+        self.cli._balance.return_value = {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1}
         self.bot.cmd_balance(self.update, self.context)
         self.update.message.reply_markdown.assert_called_once_with('Loading balances...')
         self.assertEqual(
@@ -179,17 +179,15 @@ class Test(TestCase):
         cli2.name = '0x3f'
         self.bot.register_cli(cli2)
         self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.balance_of_slime.return_value = 1
         self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.balance_of_wavax.return_value = 1
         self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.balance_of_snails.return_value = 1
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1], cli2.owner: [2, 2, 2]}
+        # mock value taken from test_cli::test_balance
+        self.cli._balance.return_value = {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1}
         cli2.client.web3.claimable_slime.return_value = 2
-        cli2.client.web3.balance_of_slime.return_value = 2
         cli2.client.web3.claimable_wavax.return_value = 2
-        cli2.client.web3.balance_of_wavax.return_value = 2
         cli2.client.web3.get_balance.return_value = 2
-        cli2.client.web3.balance_of_snails.return_value = 2
+        cli2._balance.return_value = {'SLIME': (2, 2), 'WAVAX': (2, 2), 'AVAX': 2, 'SNAILS': 2}
         self.bot.cmd_balance(self.update, self.context)
         self.update.message.reply_markdown.assert_called_once_with('Loading balances...')
         reply = self.update.message.reply_markdown.return_value
