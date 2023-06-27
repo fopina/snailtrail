@@ -311,3 +311,39 @@ class Client:
             """,
             auth=self.gql_token,
         )['collect_primary_promise']
+
+    def claim_building(self, guild_id: int, building: str):
+        return self.gql.query(
+            "claim_building_reward_promise",
+            {
+                'guild_id': guild_id,
+                'building': building,
+            },
+            '''
+            mutation claim_building_reward_promise(
+                $guild_id: Int!
+                $building: BuildingType
+                ) {
+                claim_building_reward_promise(guild_id: $guild_id, building: $building) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on BuildingRewards {
+                    changes {
+                        name
+                        description
+                        src
+                        src_type
+                        _from
+                        _to
+                        __typename
+                    }
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            ''',
+            auth=self.gql_token,
+        )['claim_building_reward_promise']

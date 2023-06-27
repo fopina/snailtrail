@@ -1050,9 +1050,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         for b in data['research']['buildings']:
             if b['reward']:
                 if b['reward']['has_reward']:
-                    cleaned_data['rewards'].append((b['name'], b['reward']['amount']))
+                    cleaned_data['rewards'].append((b['type'], b['reward']['amount']))
                 if b['reward']['next_reward_at']:
-                    cleaned_data['next_rewards'].append((b['name'], b['reward']['next_reward_at']))
+                    cleaned_data['next_rewards'].append((b['type'], b['reward']['next_reward_at']))
         for b in data['treasury']['resources']:
             if b['id'] == 'PRIMARY':
                 cleaned_data['tomato'] = b['amount']
@@ -1110,14 +1110,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return True, data
 
     def cmd_guild_claim(self, data):
-        if not data['sink_reward']:
+        if not data['rewards']:
             return
-        try:
-            print(self.client.claim_tomato(self._profile['guild']['id'])['message'])
-        except client.gqlclient.APIError as e:
-            if 'claim once per hour' not in str(e):
-                raise
-            logger.warn(str(e))
+        for building, _ in data['rewards']:
+            if building == 'SINK':
+                try:
+                    print(self.client.claim_tomato(self._profile['guild']['id'])['message'])
+                except client.gqlclient.APIError as e:
+                    if 'claim once per hour' not in str(e):
+                        raise
+                    logger.warn(str(e))
+            else:
+                print(self.client.claim_building(self._profile['guild']['id'], building))
 
     def cmd_guild_unstake(self):
         if not self.profile_guild:
