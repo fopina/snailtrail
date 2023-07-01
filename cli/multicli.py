@@ -127,7 +127,7 @@ SNAILS: {totals[2]}'''
             print(f'\n{Fore.GREEN}== FULL PLAN =={Fore.RESET}')
             for fee, snail1, snail2, c in sorted(snails, key=lambda x: x[0]):
                 print(
-                    f'{c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
             return
         return False
