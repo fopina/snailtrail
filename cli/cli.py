@@ -472,17 +472,7 @@ class CLI:
             except client.web3client.exceptions.ContractLogicError as e:
                 print(e)
         elif self.args.send is not None:
-            target = self.args.send.address
-            if target == self.owner:
-                return
-            bal = self.client.web3.balance_of_slime(raw=True)
-            if not bal:
-                print('Nothing to send')
-                return
-            print(f'Sending {bal / DECIMALS} to {target}')
-            r = self.client.web3.transfer_slime(target, bal)
-            sent = int(r['logs'][0]['data'], 16) / DECIMALS
-            print(f'{sent} SLIME sent')
+            return self.cmd_balance_transfer(self.args.send.address)
         else:
             r = self._balance(data=data)
             print(
@@ -492,6 +482,18 @@ WAVAX: {r['WAVAX'][0]} / {r['SLIME'][1]}
 AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             )
             return r
+
+    def cmd_balance_transfer(self, target):
+        if target == self.owner:
+            return
+        bal = self.client.web3.balance_of_slime(raw=True)
+        if not bal:
+            print('Nothing to send')
+            return
+        print(f'Sending {bal / DECIMALS} to {target}')
+        r = self.client.web3.transfer_slime(target, bal)
+        sent = int(r['logs'][0]['data'], 16) / DECIMALS
+        print(f'{sent} SLIME sent')
 
     def _bot_marketplace(self):
         d = self.client.marketplace_stats()
@@ -1537,17 +1539,28 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--plan', action='store_true', help='Lazy (suboptimal) planning for cheapest breeds (only for `-bf`)'
     )
+    @commands.argument(
+        '-x',
+        '--execute',
+        type=Path,
+        help='Execute breeding plan from saved file',
+    )
     @commands.command()
     def cmd_incubate(self):
         """
         Incubation fees and breed planning
         """
+        if self.args.execute is not None:
+            return self.cmd_incubate_execute()
         if self.args.fee is not None:
             return self.cmd_incubate_fee()
         if self.args.sim is not None:
             return self.cmd_incubate_sim()
         print(self.client.web3.get_current_coefficent())
         return False
+
+    def cmd_incubate_execute(self):
+        raise Exception('implemented only in multicli')
 
     def cmd_incubate_fee_lazy_plan(self, snail_fees):
         # lazy planning, only useful with many-to-many snails

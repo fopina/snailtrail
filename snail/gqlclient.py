@@ -1040,3 +1040,55 @@ class Client(requests.Session):
             }
             """,
         )['inventory_promise']
+
+    def incubate(
+        self,
+        address,
+        female_id,
+        male_id,
+        nonce,
+        use_scroll=False,
+        gql_token=None,
+    ):
+        return self.query(
+            "incubate_promise",
+            {
+                "params": {
+                    "fid": female_id,
+                    "mid": male_id,
+                    "item_id": 0,
+                    "use_scroll": use_scroll,
+                    "market_price_wei": "0",
+                    "nonce": nonce,
+                    "owner": address,
+                }
+            },
+            """
+            query incubate_promise($params: IncubateParams) {
+                incubate_promise(params: $params) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on Incubate {
+                    payload {
+                        owner
+                        item_id
+                        base_fee_wei
+                        market_price_wei
+                        nonce
+                        fid
+                        mid
+                        timeout
+                        salt
+                        __typename
+                    }
+                    signature
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+            auth=gql_token,
+        )['incubate_promise']

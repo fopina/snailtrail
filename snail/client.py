@@ -347,3 +347,19 @@ class Client:
             ''',
             auth=self.gql_token,
         )['claim_building_reward_promise']
+
+    def breed_snails(self, female_id, male_id):
+        nonce = self.web3.incubate_nonce()
+        data = self.gql.incubate(self.web3.wallet, female_id, male_id, nonce, gql_token=self.gql_token)
+        payload = data['payload']
+        return self.web3.incubate_snails(
+            payload['item_id'],
+            int(payload['base_fee_wei']),
+            int(payload['market_price_wei']),
+            self.web3.get_current_coefficent(raw=True),
+            female_id,
+            male_id,
+            payload['timeout'],
+            payload['salt'],
+            data['signature'],
+        )

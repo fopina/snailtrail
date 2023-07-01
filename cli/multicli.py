@@ -17,15 +17,13 @@ class MultiCLI:
     Wrapper of CLI objects to control multiple wallets
     """
 
-    clis: list[cli.CLI]
-
     def __init__(
         self,
         wallets: List[cli.Wallet],
         proxy_url: str,
         args: argparse.Namespace,
     ):
-        self.clis = []
+        self.clis: list[cli.CLI] = []
         self.args = args
 
         first_one = True if len(wallets) > 1 else None
@@ -119,6 +117,67 @@ SNAILS: {totals[2]}'''
             print(f'{k}: {v}')
 
     def cmd_incubate(self):
+        if self.args.execute:
+            # validate
+            plan = [list(map(int, l.split(' ')[0].split(':'))) for l in self.args.execute.read_text().splitlines()]
+
+            # any incomplete breed cycle?
+            males = defaultdict(lambda: 0)
+            females = defaultdict(lambda: 0)
+            for p in plan:
+                males[p[1]] += 1
+                females[p[2]] += 1
+            fail = False
+            for k, v in males.items():
+                if v < 3:
+                    print(f'male {k} only has {v} breeds')
+                    fail = True
+            if fail:
+                raise Exception('incomplete plan')
+            for k, v in females.items():
+                if v != 1:
+                    print(f'female {k} has {v} breeds')
+                    fail = True
+            if fail:
+                raise Exception('incomplete plan')
+
+            # transgender plan
+            done = set()
+
+            def _t(c, snail, gender):
+                if snail not in done:
+                    tx = c.client.web3.set_snail_gender(snail, gender.value)
+                    if tx:
+                        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                        print(f'{snail} changed gender to MALE for {fee}')
+                    done.add(snail)
+
+            for p in tqdm(plan, desc='Transgender'):
+                c = self.clis[p[0] - 1]
+                _t(c, p[1], cli.Gender.MALE)
+                _t(c, p[2], cli.Gender.FEMALE)
+
+            # regroup per account
+            new_plan = {}
+            for p in reversed(plan):
+                if p[0] not in new_plan:
+                    new_plan[p[0]] = []
+                new_plan[p[0]].append(p[1:])
+
+            last_client = None
+            for acc, acc_plan in new_plan.items():
+                c = self.clis[acc - 1]
+                if last_client is not None and last_client != c:
+                    last_client.cmd_balance_transfer(c.owner)
+                last_client = c
+                for ms, fs, *rest in acc_plan:
+                    if rest:
+                        print(f'Skipping {ms, fs}')
+                        continue
+                    tx = c.client.breed_snails(fs, ms)
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    print(f'breed {ms, fs} for {fee}')
+            return
         if self.args.fee is not None and self.args.plan:
             snails = []
             for c in self.clis:

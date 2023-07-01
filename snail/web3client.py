@@ -74,6 +74,10 @@ class Client:
     def multicall_contract(self):
         return self._contract(contracts.multicall)
 
+    @cached_property
+    def marketplace_contract(self):
+        return self._contract(contracts.snail_gene_marketplace)
+
     def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
@@ -209,8 +213,11 @@ class Client:
     def get_balance(self):
         return self.web3.eth.get_balance(self.wallet) / DECIMALS
 
-    def get_current_coefficent(self):
-        return self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet}) / DECIMALS
+    def get_current_coefficent(self, raw=False):
+        r = self.incubator_contract.functions.getCurrentCoefficent().call({'from': self.wallet})
+        if raw:
+            return r
+        return r / DECIMALS
 
     def sign_race_join(self, snail_id: int, race_id: int, owner: str = None):
         """Generate and sign payload to join a daily mission
@@ -342,3 +349,62 @@ class Client:
 
     def snail_metadata(self, snail_id):
         return self.snailnft_contract.functions.tokenURI(snail_id).call({'from': self.wallet})
+
+    def snail_gender(
+        self, snail_id, new_gender: int = None, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        """
+        gender mapping: 0 - undefined, 1 - female, 2 - male
+        (same as GraphQL)
+        """
+        return self.marketplace_contract.functions.getSnailGender(snail_id).call({'from': self.wallet})
+
+    def set_snail_gender(
+        self, snail_id, new_gender: int, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        """
+        gender mapping: 0 - undefined, 1 - female, 2 - male
+        (same as GraphQL)
+        """
+        current = self.marketplace_contract.functions.getSnailGender(snail_id).call({'from': self.wallet})
+        if current == new_gender:
+            return None
+        return self._bss(
+            self.marketplace_contract.functions.setGender(snail_id, new_gender),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
+    def incubate_snails(
+        self,
+        item_id,
+        base_fee,
+        market_price,
+        coefficent,
+        female_id,
+        male_id,
+        timeout,
+        salt,
+        signature,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
+    ):
+        return self._bss(
+            self.incubator_contract.functions.incubateSnails(
+                self.wallet,
+                item_id,
+                base_fee,
+                market_price,
+                coefficent,
+                female_id,
+                male_id,
+                timeout,
+                salt,
+                signature,
+            ),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+    
+    def incubate_nonce(self):
+        return self.incubator_contract.functions.getCurrentNonce(self.wallet).call()
