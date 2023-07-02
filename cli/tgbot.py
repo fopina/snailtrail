@@ -413,11 +413,13 @@ class Notifier:
             msg.append(_m)
             msg.append(f'🥬 {data["lettuce"]}')
             if data['next_rewards']:
-                msg.append(f"🎁 {data['next_rewards']}")
+                for k, v in data['next_rewards']:
+                    msg.append(f"🎁 `{k}`: {v}")
             msg.append(f'👥 {data["member_count"]} 🐌 {data["snail_count"]}')
             for _m in data['members']:
                 if _m[1]:
-                    msg.append(f'*{_m[0]}* 🎁 {_m[1]}')
+                    _m2 = ', '.join([f'`{k}`: {v}' for k, v in _m[1]])
+                    msg.append(f'*{_m[0]}* 🎁 {_m2}')
             msg.append('')
 
         m.edit_text(text='\n'.join(msg), parse_mode='Markdown')

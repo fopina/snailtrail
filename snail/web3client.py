@@ -405,6 +405,6 @@ class Client:
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )
-    
+
     def incubate_nonce(self):
         return self.incubator_contract.functions.getCurrentNonce(self.wallet).call()
