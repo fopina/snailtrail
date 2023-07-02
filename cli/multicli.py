@@ -164,6 +164,14 @@ SNAILS: {totals[2]}'''
                     new_plan[p[0]] = []
                 new_plan[p[0]].append(p[1:])
 
+            # approve incubator
+            for acc in tqdm(new_plan, desc='Approve incubator'):
+                c = self.clis[acc - 1]
+                tx = c.client.web3.approve_slime_for_incubator()
+                if tx:
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    print(f'{c.name} approved incubator for {fee}')
+
             last_client = None
             for acc, acc_plan in new_plan.items():
                 c = self.clis[acc - 1]

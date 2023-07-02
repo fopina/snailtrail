@@ -5,7 +5,7 @@ import base64
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
-from web3 import Web3, Account, exceptions  # noqa - for others to import from here
+from web3 import Web3, Account, constants, exceptions  # noqa - for others to import from here
 from web3.middleware import geth_poa_middleware
 
 from . import contracts
@@ -408,3 +408,16 @@ class Client:
 
     def incubate_nonce(self):
         return self.incubator_contract.functions.getCurrentNonce(self.wallet).call()
+
+    def approve_slime_for_incubator(
+        self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        current = self.slime_contract.functions.allowance(self.wallet, self.incubator_contract.address).call()
+        target = 0 if remove else int(constants.MAX_INT, 16)
+        if current == target:
+            return
+        return self._bss(
+            self.slime_contract.functions.approve(self.incubator_contract.address, target),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
