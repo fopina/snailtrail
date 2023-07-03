@@ -240,8 +240,7 @@ class TestBot(TestCase):
         self.cli.args.send = None
         self.cli.client.web3.claimable_slime.return_value = 1
         self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1]}
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1, 1]}
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.assertEqual(

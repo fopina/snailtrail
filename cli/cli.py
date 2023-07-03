@@ -445,7 +445,7 @@ class CLI:
         r = {
             'SLIME': (self.client.web3.claimable_slime(), data[2]),
             'WAVAX': (self.client.web3.claimable_wavax(), data[1]),
-            'AVAX': self.client.web3.get_balance(),
+            'AVAX': data[3],
             'SNAILS': data[0],
         }
         return r
