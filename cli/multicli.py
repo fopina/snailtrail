@@ -144,22 +144,19 @@ SNAILS: {totals[2]}'''
             # transgender plan
             done = set()
 
-            def _t(c, snail, gender):
+            def _transgender(c, snail, gender):
                 if snail not in done:
                     tx = c.client.web3.set_snail_gender(snail, gender.value)
                     if tx:
                         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                        print(f'{snail} changed gender to MALE for {fee}')
+                        print(f'{snail} changed gender to {gender} for {fee}')
                     done.add(snail)
-
-            for p in tqdm(plan, desc='Transgender'):
-                c = self.clis[p[0] - 1]
-                _t(c, p[1], cli.Gender.MALE)
-                _t(c, p[2], cli.Gender.FEMALE)
 
             # regroup per account
             new_plan = {}
-            for p in reversed(plan):
+            # reversed would be more profitable (more expensive first) but if it runs out of funds
+            # the cheapest are not processed...
+            for p in plan:
                 if p[0] not in new_plan:
                     new_plan[p[0]] = []
                 new_plan[p[0]].append(p[1:])
@@ -172,6 +169,23 @@ SNAILS: {totals[2]}'''
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                     print(f'{c.name} approved incubator for {fee}')
 
+            def retriable_breed(c, fs, ms):
+                _r = None
+                for _ in range(60):
+                    try:
+                        return c.client.breed_snails(fs, ms)
+                    except cli.client.gqlclient.APIError as e:
+                        if 'Please provide a' not in str(e):
+                            raise
+                        _r = e
+                        time.sleep(0.5)
+                    except cli.client.web3client.exceptions.ContractLogicError as e:
+                        if not 'Protocol coefficent changed' in str(e):
+                            raise
+                        time.sleep(1)
+                        _r = e
+                raise _r
+
             last_client = None
             for acc, acc_plan in new_plan.items():
                 c = self.clis[acc - 1]
@@ -182,9 +196,13 @@ SNAILS: {totals[2]}'''
                     if rest:
                         print(f'Skipping {ms, fs}')
                         continue
-                    tx = c.client.breed_snails(fs, ms)
+                    # transgender
+                    _transgender(c, ms, cli.Gender.MALE)
+                    _transgender(c, fs, cli.Gender.FEMALE)
+                    print(f'breeding {ms, fs}...')
+                    tx = retriable_breed(c, fs, ms)
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                    print(f'breed {ms, fs} for {fee}')
+                    print(f'bred {ms, fs} for {fee}')
             return
         if self.args.fee is not None and self.args.plan:
             snails = []
