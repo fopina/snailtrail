@@ -201,7 +201,7 @@ class Client:
             calls.append(
                 (self.multicall_contract.address, self.multicall_contract.encodeABI('getEthBalance', args=(w,)))
             )
-        x = self.multicall_contract.functions.aggregate(calls).call()
+        x = self.multicall_contract.functions.aggregate(calls).call({'from': self.wallet})
         w_ind = 0
         results = {}
         for y in range(0, len(x[1]), 4):
@@ -332,7 +332,7 @@ class Client:
     ):
         current = self.snailnft_contract.functions.isApprovedForAll(
             self.wallet, self.bulk_transfer_contract.address
-        ).call()
+        ).call({'from': self.wallet})
         target = not remove
         if current is target:
             return
@@ -411,12 +411,14 @@ class Client:
         )
 
     def incubate_nonce(self):
-        return self.incubator_contract.functions.getCurrentNonce(self.wallet).call()
+        return self.incubator_contract.functions.getCurrentNonce(self.wallet).call({'from': self.wallet})
 
     def approve_slime_for_incubator(
         self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
     ):
-        current = self.slime_contract.functions.allowance(self.wallet, self.incubator_contract.address).call()
+        current = self.slime_contract.functions.allowance(self.wallet, self.incubator_contract.address).call(
+            {'from': self.wallet}
+        )
         target = 0 if remove else int(constants.MAX_INT, 16)
         if current == target:
             return
