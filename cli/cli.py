@@ -151,6 +151,7 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = None
         self._notify_burn_coefficent = None
+        self._notify_auto_claim = None
         self._notify_tournament = UNDEF
         self._next_mission = False, -1
         self._snail_mission_cooldown = {}
@@ -618,6 +619,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
     )
+    @commands.argument('--auto-claim', action='store_true', help='Auto claim any guild rewards')
     @commands.command()
     def cmd_bot(self):
         """
@@ -717,6 +719,34 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 logger.info(msg)
         self._notify_tournament = data
 
+    def _bot_autoclaim(self):
+        if self._notify_auto_claim is not None and self._notify_auto_claim > datetime.now():
+            # refresh only once every 24h
+            return
+
+        data = self._cmd_guild_data()
+        if not data:
+            return
+
+        # FIXME: merge with self._cmd_guild_claim()
+        if not data['rewards']:
+            return
+
+        msg = [f'`💰 {self.name}` (`{self.profile_guild}`)']
+        for building, amount in data['rewards']:
+            msg.append(f'Claimed {amount} from {building}')
+            if building == 'SINK':
+                # FIXME: check outputs from logs and make use of return data
+                r = self.client.claim_tomato(self._profile['guild']['id'])['message']
+                logger.info('claim data: %s', r)
+            else:
+                r = self.client.claim_building(self._profile['guild']['id'], building)
+                logger.info('claim data: %s', r)
+        self.notifier.notify('\n'.join(msg))
+        logger.info(msg)
+
+        self._notify_auto_claim = datetime.now() + timedelta(hours=24)
+
     def cmd_bot_tick(self):
         try:
             w = self.args.wait
@@ -755,6 +785,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
                 if self.args.tournament:
                     self._bot_tournament()
+
+                if self.args.auto_claim:
+                    self._bot_autoclaim()
 
             logger.debug('waiting %d seconds', w)
             return w
