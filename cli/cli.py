@@ -32,6 +32,8 @@ GENDER_COLORS = {
     Gender.UNDEFINED: Fore.YELLOW,
 }
 
+UNDEF = object()
+
 
 class CachedSnailHistory:
     def __init__(self, cli: 'CLI'):
@@ -149,7 +151,7 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = None
         self._notify_burn_coefficent = None
-        self._notify_tournament = None
+        self._notify_tournament = UNDEF
         self._next_mission = False, -1
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
@@ -689,12 +691,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def _bot_tournament(self):
         _n: datetime = self._now()
         _n = (_n.hour, _n.minute)
-        if self._notify_tournament is not None and (_n < (16, 50) or _n > (18, 20)):
+        if self._notify_tournament != UNDEF and (_n < (16, 50) or _n > (18, 20)):
             # only worth checking stats around ~5PM~ 5:30PM UTC (or when starting)
             return
 
         data = self.client.gql.tournament_guild_stats(self.owner)['leaderboard']['my_guild']
-        if self._notify_tournament is not None:
+        if self._notify_tournament != UNDEF:
             if self._notify_tournament != data:
                 if data is None:
                     msg = 'Current tournament over!'
