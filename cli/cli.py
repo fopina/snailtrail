@@ -732,18 +732,25 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not data['rewards']:
             return
 
-        msg = [f'`💰 {self.name}` (`{self.profile_guild}`)']
+        msg = []
         for building, amount in data['rewards']:
-            msg.append(f'Claimed {amount} from {building}')
             if building == 'SINK':
                 # FIXME: check outputs from logs and make use of return data
-                r = self.client.claim_tomato(self._profile['guild']['id'])['message']
-                logger.info('claim data: %s', r)
+                try:
+                    r = self.client.claim_tomato(self._profile['guild']['id'])['message']
+                    msg.append(r)
+                except client.gqlclient.APIError as e:
+                    if 'claim once per hour' not in str(e):
+                        raise
             else:
+                msg.append(f'Claimed {amount} from {building}')
                 r = self.client.claim_building(self._profile['guild']['id'], building)
                 logger.info('claim data: %s', r)
-        self.notifier.notify('\n'.join(msg))
-        logger.info(msg)
+
+        if msg:
+            msg.insert(0, f'`💰 {self.name}` (`{self.profile_guild}`)')
+            self.notifier.notify('\n'.join(msg))
+            logger.info(msg)
 
         self._notify_auto_claim = datetime.now() + timedelta(hours=24)
 
