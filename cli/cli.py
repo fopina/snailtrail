@@ -226,7 +226,16 @@ class CLI:
 
     def _breed_status_str(self, status):
         if status >= 0:
-            return f"{Fore.YELLOW}breed in {status:.2f}{Fore.RESET}"
+            if status >= 1:
+                _s = f'{status:.2f}d'
+            else:
+                status *= 24
+                if status >= 1:
+                    _s = f'{status:.2f}h'
+                else:
+                    status *= 60
+                    _s = f'{status:.2f}m'
+            return f"{Fore.YELLOW}breed in {_s}{Fore.RESET}"
         elif status == -1:
             return f"{Fore.GREEN}BREEDER{Fore.RESET}"
         elif status == -2:
