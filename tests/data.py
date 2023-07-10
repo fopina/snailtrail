@@ -416,6 +416,35 @@ GQL_FINISHED_RACES = {
     '__typename': 'Races',
 }
 
+GQL_FINISHED_TOURNAMENT_RACES = {
+    'own': [
+        {
+            'id': 539258,
+            'conditions': ['Desert', 'Wind', 'Slide'],
+            'distance': '27',
+            'league': 'Tournament',
+            'race_type': 'Free',
+            'status': 5,
+            'athletes': [4266, 5328, 8829, 9742, 9902, 13628, 13671, 14105],
+            'results': [
+                {'token_id': 9902, 'time': 106.58898524253348},
+                {'token_id': 9104, 'time': 107.48542691246499},
+                {'token_id': 13671, 'time': 108.81729072829448},
+                {'token_id': 14105, 'time': 110.04417196339112},
+                {'token_id': 5328, 'time': 111.28161614535071},
+                {'token_id': 8829, 'time': 113.19943093439899},
+                {'token_id': 4266, 'time': 116.96280537921443},
+                {'token_id': 9742, 'time': 119.32389640390667},
+            ],
+            'rewards': {'final_distribution': []},
+            'track': 'Temple of Slime',
+            'starts_at': '2023-07-10 18:36:56.255950',
+            'prize_pool': '1000',
+        },
+    ],
+    '__typename': 'Races',
+}
+
 SNAIL_FEES = [
     (
         1572.237655405191,

@@ -1301,17 +1301,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if i['token_id'] in self.my_snails:
                     found = True
                     snail = self.my_snails[i['token_id']]
-                    p += 1
-                    if p > 3:
-                        e = '💩'
+                    if race.is_tournament:
+                        msg = f"🥅 {snail.name_id} in {race.track}, for {race.distance}, time {i['time']:.2f}s"
                     else:
-                        e = '🥇🥈🥉'[p - 1]
-                    if len(race.rewards['final_distribution']) >= p:
-                        reward = race.rewards['final_distribution'][p - 1]
-                    else:
-                        reward = 0
-
-                    msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
+                        p += 1
+                        if p > 3:
+                            e = '💩'
+                        else:
+                            e = '🥇🥈🥉'[p - 1]
+                        if len(race.rewards['final_distribution']) >= p:
+                            reward = race.rewards['final_distribution'][p - 1]
+                        else:
+                            reward = 0
+                        msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
                     if race.is_competitive and self.args.race_stats:
                         self._snail_history.update(snail, race)
                         msg += ' ' + self.race_stats_text(snail, race)
@@ -1398,13 +1400,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for p, i in enumerate(race['results']):
                 if i['token_id'] in self.my_snails:
                     snail = self.my_snails[i['token_id']]
+                    time_taken = i['time']
                     break
             else:
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
+                time_taken = -1
             p += 1
             if race.is_tournament:
                 c = Fore.LIGHTYELLOW_EX
                 cr = 0
+                print(f"{c}{snail.name_id} in {race.track}, for {race.distance}m - {time_taken:.2f}s{Fore.RESET}")
             else:
                 fee = int(race.prize_pool) / 9
                 if p == 1:
@@ -1419,8 +1424,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 else:
                     c = Fore.RED
                     cr = 0 - fee
+                print(f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
             total_cr += cr
-            print(f"{c}{snail.name_id} number {p} in {race.track}, for {race.distance}m - {cr}{Fore.RESET}")
             total += 1
             if self.args.limit and total >= self.args.limit:
                 break
