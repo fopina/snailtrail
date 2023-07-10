@@ -706,15 +706,20 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # only worth checking stats around ~5PM~ 5:30PM UTC (or when starting)
             return
 
-        data = self.client.gql.tournament_guild_stats(self.owner)['leaderboard']['my_guild']
+        data = self.client.gql.tournament_guild_stats(self.owner)
+        if self.report_as_main:
+            # FIXME: take info for some of the stages?
+            # tournament starting: notify initial positions? when is this message triggered?
+            # pause week - data is None, when does it become NOT NONE? (same time as previous point :troll:)
+            # "time left for next race" - how do we see current day/race is over (stop monitoring)? where is the time left for next race?
+            logger.info('DELME SOON: %s', data)
+        data = data['leaderboard']['my_guild']
         if self._notify_tournament != UNDEF:
             if self._notify_tournament != data:
                 if data is None:
                     msg = 'Current tournament over!'
                 elif self._notify_tournament is None:
                     msg = 'Tournament starting!'
-                    # FIXME: remove after checking the message (anything to do about it?)
-                    logger.info(data)
                 else:
                     msg = f'`{self.profile_guild}` leaderboard:\n'
                     _k = 'order'
