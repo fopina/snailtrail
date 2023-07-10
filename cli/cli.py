@@ -711,6 +711,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if self._notify_tournament != data:
                 if data is None:
                     msg = 'Current tournament over!'
+                elif self._notify_tournament is None:
+                    msg = 'Tournament starting!'
+                    # FIXME: remove after checking the message (anything to do about it?)
+                    logger.info(data)
                 else:
                     msg = f'`{self.profile_guild}` leaderboard:\n'
                     _k = 'order'
