@@ -713,6 +713,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # pause week - data is None, when does it become NOT NONE? (same time as previous point :troll:)
             # "time left for next race" - how do we see current day/race is over (stop monitoring)? where is the time left for next race?
             logger.info('DELME SOON: %s', data)
+            data2 = self.client.gql.tournament(self.owner)
+            logger.info('DELME SOON: %s', data2)
         data = data['leaderboard']['my_guild']
         if self._notify_tournament != UNDEF:
             if self._notify_tournament != data:
