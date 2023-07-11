@@ -1309,7 +1309,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     found = True
                     snail = self.my_snails[i['token_id']]
                     if race.is_tournament:
-                        msg = f"🥅 {snail.name_id} in {race.track}, for {race.distance}, time {i['time']:.2f}s"
+                        msg = f"🥅 {snail.name_id} ({self.profile_guild}) in {race.track}, for {race.distance}, time {i['time']:.2f}s"
                     else:
                         p += 1
                         if p > 3:

@@ -286,6 +286,7 @@ AVAX: 1.000 / SNAILS: 1
     def test_find_races_over_tournament(self):
         self.cli.args.first_run_over = True
         self.cli.args.races_over = True
+        self.cli._profile = {'guild': {'name': 'myGuild'}}
         self.cli.notifier.notify.reset_mock()
         self.cli.client.gql.get_finished_races.return_value = data.GQL_FINISHED_TOURNAMENT_RACES
         self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
@@ -294,7 +295,7 @@ AVAX: 1.000 / SNAILS: 1
         self.assertEqual(
             self.cli.notifier.notify.call_args_list,
             [
-                mock.call('🥅 Snail #9104 in Temple of Slime, for 27, time 107.49s'),
+                mock.call('🥅 Snail #9104 (myGuild) in Temple of Slime, for 27, time 107.49s'),
             ],
         )
 
