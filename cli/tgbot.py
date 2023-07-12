@@ -494,10 +494,12 @@ class Notifier:
         """
         Show current burn coefficent
         """
-        if self.main_cli._notify_burn_coefficent is None:
-            update.message.reply_markdown(f'burn coefficient monitor is disabled')
+        r = self.any_cli._burn_coef()
+        if r is None:
+            update.message.reply_markdown('No snail available for burn coefficient')
         else:
-            update.message.reply_markdown(f'current burn coefficient is `{self.main_cli._notify_burn_coefficent[0]}`')
+            coef = r['payload']['coef']
+            update.message.reply_markdown(f'current burn coefficient is `{coef}`')
 
     @bot_auth
     def cmd_marketplace_stats(self, update: Update, context: CallbackContext) -> None:
