@@ -232,7 +232,8 @@ SNAILS: {totals[2]}'''
         print(f'\n{Fore.GREEN}Summary for all{Fore.RESET}')
         for family, snails in all_snails.items():
             print(f'{Fore.BLUE}{family}{Fore.RESET}')
-            snails.sort(key=lambda x: x[0], reverse=True)
+            # sort according to https://docs.snailtrail.art/racing/speed/
+            snails.sort(key=lambda x: (x[0], int(x[1].purity), int(x[1].level)), reverse=True)
             for score, snail, c in snails:
                 print(
                     f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity_str}/{snail.level_str}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
