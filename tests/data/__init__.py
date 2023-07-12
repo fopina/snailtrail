@@ -2,6 +2,8 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 from snail.gqltypes import Snail
 
+from .tournament_promise import TOURNAMENT_PROMISE_DATA
+
 # example of a transaction hash returned by web.eth `send_raw_transaction`
 TX_HASH = b'\xd0\x16\xbf\xcba\xc1\x1d\xfb\xe5+C\xaa\xd7\xf7l\x9am\x00OQ\x92\x0eL\xfb\x1d*\x81\xaee\x8b\xf4\xc7'
 

@@ -14,7 +14,7 @@ from tqdm import tqdm
 from colorama import Fore
 
 from snail import VERSION, client
-from snail.gqltypes import Gender, Race, Snail
+from snail.gqltypes import Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
 from . import tgbot
@@ -701,43 +701,75 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _bot_tournament(self):
         _n: datetime = self._now()
-        _n = (_n.hour, _n.minute)
-        if self._notify_tournament != UNDEF and (_n < (16, 50) or _n > (18, 20)):
-            # only worth checking stats around ~5PM~ 5:30PM UTC (or when starting)
+        if self._notify_tournament != UNDEF and _n < self._notify_tournament[0]:
+            # next race not yet started
             return
 
-        data = self.client.gql.tournament_guild_stats(self.owner)
+        tour_data = self.client.gql.tournament(self.owner)
+        week = tour_data['current_week']
+        if week == 0:
+            # no races this week, jump to next week for "next race" date
+            week = 1
+
+        _previous = _next = None
+        for day_i, day in enumerate(tour_data['weeks'][week - 1]['days']):
+            _next = _parse_datetime(day['race_date'])
+            if _next > _n:
+                break
+            _previous = _next
+        if _previous == _next:
+            _next = None
+
+        stats = self.client.gql.tournament_guild_stats(self.owner)
         if self.report_as_main:
             # FIXME: take info for some of the stages?
             # tournament starting: notify initial positions? when is this message triggered?
             # pause week - data is None, when does it become NOT NONE? (same time as previous point :troll:)
             # "time left for next race" - how do we see current day/race is over (stop monitoring)? where is the time left for next race?
-            logger.info('DELME SOON: %s', data)
-            data2 = self.client.gql.tournament(self.owner)
-            logger.info('DELME SOON: %s', data2)
-        data = data['leaderboard']['my_guild']
+            logger.info('DELME SOON: %s', stats)
+            logger.info('DELME SOON: %s', tour_data)
+
+        data = stats['leaderboard']['my_guild']
+
         if self._notify_tournament != UNDEF:
-            if self._notify_tournament != data:
+            # if "previous" still ongoing (any entry with 0 points)
+            for entry in tour_data['weeks'][week - 1]['days'][day_i - 1]['result']['entries']:
+                if entry['points'] == 0:
+                    # then DO NOTHING (check again in few seconds)
+                    return
+
+            if self._notify_tournament[1] != data:
                 if data is None:
                     msg = 'Current tournament over!'
-                elif self._notify_tournament is None:
+                elif self._notify_tournament[1] is None:
                     msg = 'Tournament starting!'
                 else:
                     msg = f'`{self.profile_guild}` leaderboard:\n'
+
                     _k = 'order'
-                    if self._notify_tournament[_k] != data[_k]:
-                        c = '🏆' if self._notify_tournament[_k] > data[_k] else '💩'
-                        msg += f"*position* {self._notify_tournament[_k]}{c}{data[_k]}\n"
+                    old_value = self._notify_tournament[1][_k]
+                    new_value = data[_k]
+                    if old_value != new_value:
+                        c = '🏆' if old_value > new_value else '💩'
+                        msg += f"*position* {old_value}{c}{new_value}\n"
                     else:
-                        msg += f"*position* {data[_k]}\n"
+                        msg += f"*position* {new_value}\n"
+
                     _k = 'points'
-                    if self._notify_tournament[_k] != data[_k]:
-                        msg += f"*points* {self._notify_tournament[_k]}📈{data[_k]}\n"
+                    old_value = self._notify_tournament[1][_k]
+                    new_value = data[_k]
+                    if old_value != new_value:
+                        msg += f"*points* {old_value}📈{new_value}\n"
                     else:
-                        msg += f"*points* {data[_k]}\n"
+                        msg += f"*points* {new_value}\n"
                 self.notifier.notify(msg)
                 logger.info(msg)
-        self._notify_tournament = data
+
+        if _next is None:
+            # check again in 12h
+            logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
+            _next = _n + timedelta(hours=12)
+        self._notify_tournament = (_next, data)
 
     def _bot_autoclaim(self):
         if self._notify_auto_claim is not None and self._notify_auto_claim > datetime.now():

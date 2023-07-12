@@ -2,6 +2,7 @@ import contextlib
 import copy
 import io
 import tempfile
+from datetime import datetime, timezone
 from unittest import TestCase, mock
 
 import cli
@@ -40,6 +41,7 @@ class TestBot(TestCase):
         )
         c.client.gql = mock.MagicMock()
         c.client.web3 = mock.MagicMock(wallet=c.owner)
+        c._profile = {'guild': {'id': 69, 'name': 'SlimeBots'}}
         c.notifier = mock.MagicMock()
         self.cli = c
 
@@ -321,4 +323,71 @@ AVAX: 1.000 / SNAILS: 1
                 (1562.094186660641, 11823, 11829),
                 (1573.9282335292824, 11823, 10204),
             ],
+        )
+
+    @mock.patch('cli.cli.datetime')
+    def test_bot_tournament(self, now_mock):
+        now_mock.now.return_value = datetime(2023, 7, 11, 15, tzinfo=timezone.utc)
+        self.cli.client.gql.tournament.return_value = data.TOURNAMENT_PROMISE_DATA
+        self.cli.client.gql.tournament_guild_stats.return_value = {
+            'leaderboard': {
+                'my_guild': {
+                    'points': 1,
+                    'order': 10,
+                }
+            }
+        }
+        self.cli._bot_tournament()
+        self.cli.client.gql.tournament_guild_stats.assert_called_once_with(self.cli.owner)
+        self.assertEqual(
+            self.cli._notify_tournament,
+            (datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 1, 'order': 10}),
+        )
+        self.cli.notifier.notify.assert_not_called()
+
+        # 1 hour later, still before race start
+        now_mock.now.return_value = datetime(2023, 7, 11, 16, tzinfo=timezone.utc)
+        self.cli.client.gql.tournament_guild_stats.reset_mock()
+        self.cli._bot_tournament()
+        self.cli.client.gql.tournament_guild_stats.assert_not_called()
+
+        # 2h later, race is over
+        now_mock.now.return_value = datetime(2023, 7, 11, 18, tzinfo=timezone.utc)
+        self.cli.client.gql.tournament_guild_stats.reset_mock()
+        self.cli._bot_tournament()
+        self.cli.client.gql.tournament_guild_stats.assert_called_once_with(self.cli.owner)
+        self.cli.client.gql.tournament_guild_stats.return_value = {
+            'leaderboard': {
+                'my_guild': {
+                    'points': 20,
+                    'order': 3,
+                }
+            }
+        }
+        # nothing changes, race is "ongoing"
+        self.assertEqual(
+            self.cli._notify_tournament,
+            (datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 1, 'order': 10}),
+        )
+        self.cli.notifier.notify.assert_not_called()
+
+        # check again few seconds after - and terminate race
+        now_mock.now.return_value = datetime(2023, 7, 11, 18, 1, tzinfo=timezone.utc)
+        self.cli.client.gql.tournament.return_value = copy.deepcopy(data.TOURNAMENT_PROMISE_DATA)
+        for _e in self.cli.client.gql.tournament.return_value['weeks'][0]['days'][1]['result']['entries']:
+            _e['points'] = 1
+        self.cli.client.gql.tournament_guild_stats.reset_mock()
+        self.cli._bot_tournament()
+        self.cli.client.gql.tournament_guild_stats.assert_called_once_with(self.cli.owner)
+        # next check updated for next race and notification sent with changed data
+        self.assertEqual(
+            self.cli._notify_tournament,
+            (datetime(2023, 7, 12, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 20, 'order': 3}),
+        )
+        self.cli.notifier.notify.assert_called_once_with(
+            '''\
+`SlimeBots` leaderboard:
+*position* 10🏆3
+*points* 1📈20
+'''
         )
