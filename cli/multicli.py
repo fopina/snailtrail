@@ -240,7 +240,7 @@ SNAILS: {totals[2]}'''
                 )
 
     def cmd_guild(self):
-        if self.args.claim or self.args.unstake:
+        if self.args.claim or self.args.unstake or self.args.other:
             return False
         guilds = {}
         with tqdm(self.clis, disable=self.args.verbose) as pbar:

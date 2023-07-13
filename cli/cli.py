@@ -1103,13 +1103,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             raise Exception(r)
         print(self.client.web3.set_snail_name(self.args.snail, self.args.name))
 
-    def _cmd_guild_data(self):
-        if not self.profile_guild:
+    def _cmd_guild_data(self, guild_id=None):
+        if guild_id is None and not self.profile_guild:
             return
-        data = self.client.gql.guild_details(self._profile['guild']['id'], member=self.owner)
+        if guild_id is None:
+            guild_id = self._profile['guild']['id']
+        data = self.client.gql.guild_details(guild_id, member=self.owner)
         cleaned_data = {
             'rewards': [],
             'next_rewards': [],
+            'name': data['name'],
         }
         for b in data['research']['buildings']:
             if b['reward']:
@@ -1143,11 +1146,28 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         action='store_true',
         help='Display details for every account (otherwise just overall summary)',
     )
+    @commands.argument(
+        '--other',
+        type=int,
+        help='Details for a guild other than yours',
+    )
     @commands.command()
     def cmd_guild(self):
         """Guilds overview"""
         if self.args.unstake:
             return self.cmd_guild_unstake()
+
+        if self.args.other:
+            data = self._cmd_guild_data(guild_id=self.args.other)
+            print(f'Guild: {data["name"]} - lv {data["level"]}')
+            print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
+            print(f'Lettuce: {data["lettuce"]}')
+            print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')
+            data = self.client.gql.guild_roster(self.args.other)
+            for member in data['roster']['members']['users']:
+                p = member['profile']
+                print(f"- {p['username']} ({p['address']}): {member['stats']['workers']} workers")
+            return False
 
         data = self._cmd_guild_data()
         if not data:
@@ -1159,7 +1179,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return self.cmd_guild_claim(data)
 
         if self.args.verbose or self.main_one is None:
-            print(f'Guild: {self.profile_guild} - lv {data["level"]}')
+            print(f'Guild: {data["name"]} - lv {data["level"]}')
             print(f'Tomato: {data["tomato"]} ({data["tomato_ph"]} ph)')
             print(f'Lettuce: {data["lettuce"]}')
             print(f'Members: {data["member_count"]} ({data["snail_count"]} snails)')

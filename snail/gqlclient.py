@@ -931,6 +931,7 @@ class Client(requests.Session):
                 }
                 ... on Guild {
                     %s
+                    name
                     treasury {
                         resources {
                             id
@@ -964,6 +965,48 @@ class Client(requests.Session):
         )
         return self.query(
             "research_center_reward",
+            {
+                "guild_id": guild_id,
+            },
+            query,
+        )['guild_promise']
+
+    def guild_roster(self, guild_id):
+        query = '''
+        query guildRoster($guild_id: Int!) {
+            guild_promise(guild_id: $guild_id) {
+                ... on Problem {
+                problem
+                }
+                ... on Guild {
+                roster {
+                    members {
+                    count
+                    users {
+                        id
+                        profile {
+                        username
+                        address
+                        }
+                        rank
+                        reputation
+                        status
+                        stats {
+                        votes_pos
+                        votes_pob
+                        workers
+                        ph_primary
+                        total_primary
+                        }
+                    }
+                    }
+                }
+                }
+            }
+        }
+        '''
+        return self.query(
+            "guildRoster",
             {
                 "guild_id": guild_id,
             },
