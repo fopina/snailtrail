@@ -332,6 +332,12 @@ class CLI:
             return True, closest
 
         boosted = set(self.args.boost or [])
+        if self.args.boost_to_15:
+            # remove snails lv 15
+            for snail in queueable:
+                if snail.level >= 15:
+                    boosted.difference_update({snail.id})
+
         if self.args.fair:
             # add snails with negative tickets to "boosted" to re-use logic
             for s in queueable:
@@ -563,6 +569,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=int,
         action='append',
         help='If auto, these snail ids should always take last spots for missions (boost)',
+    )
+    @commands.argument(
+        '--boost-to-15',
+        action='store_true',
+        help='When using --boost, only consider snails under lv15',
     )
     @commands.argument(
         '--minimum-tickets',

@@ -103,6 +103,32 @@ class TestBot(TestCase):
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
 
+    def test_join_missions_boosted_to_15(self):
+        from copy import deepcopy
+
+        msnails = deepcopy(data.GQL_MISSION_SNAILS)
+        for s in msnails['snails']:
+            if s['id'] == 8667:
+                s['stats']['experience']['level'] = 15
+        self.cli.client.gql.get_my_snails_for_missions.return_value = msnails
+        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.web3.sign_race_join.return_value = 'signed'
+        self.cli.args.boost = [int(s['id']) for s in data.GQL_MISSION_SNAILS['snails']]
+        self.cli.args.boost_to_15 = True
+        self.cli.join_missions()
+        self.assertEqual(
+            self.cli.client.gql.join_mission_races.call_args_list,
+            [
+                mock.call(8851, 169399, self.cli.owner, 'signed'),
+                mock.call(8416, 169400, self.cli.owner, 'signed'),
+                mock.call(9104, 169401, self.cli.owner, 'signed'),
+                mock.call(8267, 169402, self.cli.owner, 'signed'),
+                mock.call(8663, 169403, self.cli.owner, 'signed'),
+                mock.call(8667, 169405, self.cli.owner, 'signed'),
+            ],
+        )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
+
     def test_cached_snail_history(self):
         self.cli.client.gql.get_race_history.side_effect = [
             {
