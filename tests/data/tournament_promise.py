@@ -1,3 +1,5 @@
+TOURNAMENT_STATS = {'id': 3, 'leaderboard': {'my_guild': {'order': 12, 'points': 23}}}
+
 TOURNAMENT_PROMISE_DATA = {
     'id': 3,
     'current_week': 1,
