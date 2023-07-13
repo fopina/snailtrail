@@ -44,6 +44,17 @@ def build_parser():
         help='wallet address (or private key) - if only address, most features not available (values or path to files with value)',
     )
     parser.add_argument(
+        '--friend',
+        metavar='ADDRESS_OR_PRIVATE_KEY',
+        action=commands.AppendWalletAction,
+        help='FRIEND wallet address (or private key) - if only address, most features not available (values or path to files with value)',
+    )
+    parser.add_argument(
+        '--friends',
+        action='store_true',
+        help='Also process friends wallets',
+    )
+    parser.add_argument(
         '--web3-rpc',
         type=commands.FileOrString,
         default='https://api.avax.network/ext/bc/C/rpc',
@@ -186,6 +197,8 @@ def main(argv=None):
     if not args.wallet:
         args.wallet = [cli.Wallet(commands.FileOrString('owner.conf'), commands.FileOrString('pkey.conf'))]
     wallets = args.wallet
+    if args.friends:
+        wallets.extend(args.friend)
     if args.account is not None:
         wallets = []
         for account in args.account:

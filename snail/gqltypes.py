@@ -251,6 +251,9 @@ class Snail(AttrDict):
             return -1
         elif self.gender == Gender.UNDEFINED and self.breed_cycle_end is None:
             return -2
+        elif self.breed_cycle_end is None:
+            # if P20, this is normal, other it is not...
+            return -3
         else:
             # cannot use `days_remaining` because new borns will have it as 0, but they do have cycle_end :shrug:
             return (self.breed_cycle_end - datetime.now(tz=timezone.utc)).total_seconds() / (60 * 60 * 24)

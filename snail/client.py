@@ -52,7 +52,7 @@ class Client:
         gql_retry=None,
     ):
         self.gql = gqlclient.Client(http_token=http_token, proxy=proxy, rate_limiter=rate_limiter, retry=gql_retry)
-        if wallet and web3_account and web3_provider:
+        if wallet and web3_provider:
             self.web3 = web3client.Client(
                 wallet, web3_provider, web3_account=web3_account, web3_provider_class=web3_provider_class
             )
