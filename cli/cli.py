@@ -747,6 +747,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for entry in tour_data['weeks'][week - 1]['days'][day_i - 1]['result']['entries']:
                 if entry['points'] == 0:
                     # then DO NOTHING (check again in few seconds)
+                    if self.report_as_main:
+                        logger.info('DELME SOON: race ongoing, check again in a few')
                     return
 
             if self._notify_tournament[1] != data:
@@ -780,6 +782,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # check again in 12h
             logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
             _next = _n + timedelta(hours=12)
+        if self.report_as_main:
+            logger.info('DELME SOON: checking again at %s (%s)', _next, data)
         self._notify_tournament = (_next, data)
 
     def _bot_autoclaim(self):
