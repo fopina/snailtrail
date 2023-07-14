@@ -23,6 +23,7 @@ class FileOrInt(int):
 class AppendWalletAction(configargparse.argparse._AppendAction):
     # FIXME: hack to access wallet list from any other action as the primary parser namespace is not available to subparsers...
     WALLETS = []
+    FRIENDS = []
 
     def __call__(self, parser, namespace, value, option_string=None):
         val = FileOrString(value)
@@ -30,7 +31,10 @@ class AppendWalletAction(configargparse.argparse._AppendAction):
             w = Wallet(val, None)
         else:
             w = Wallet.from_private_key(val)
-        self.WALLETS.append(w)
+        if option_string == '--wallet':
+            self.WALLETS.append(w)
+        else:
+            self.FRIENDS.append(w)
         return super().__call__(parser, namespace, w, option_string)
 
 
