@@ -738,7 +738,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # pause week - data is None, when does it become NOT NONE? (same time as previous point :troll:)
             # "time left for next race" - how do we see current day/race is over (stop monitoring)? where is the time left for next race?
             logger.info('DELME SOON: %s', stats)
-            logger.info('DELME SOON: %s', tour_data)
+            # copy is enough, not changing anything deep
+            c = tour_data.copy()
+            del c['weeks']
+            logger.info('DELME SOON: %s', c)
+            for wi, w in enumerate(tour_data['weeks']):
+                for ri, r in enumerate(w['days']):
+                    logger.info('DELME SOON: %d - %d - %s', wi, ri, r)
 
         data = stats['leaderboard']['my_guild']
 
