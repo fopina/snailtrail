@@ -935,7 +935,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         if self.args.history is not None:
             if self.args.history == 0:
-                for s in self.my_snails.values():
+                for s in tqdm(self.my_snails.values()):
                     self._history_missions(s)
                 return True
             else:
@@ -1547,63 +1547,68 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def _history_missions(self, snail):
         total = 0
         races = []
-        for race in self.client.iterate_race_history(filters={'token_id': snail.id, 'category': 2}):
-            time_on_first, time_on_third, p = CachedSnailHistory.race_stats(snail.id, race)
-            if time_on_first is None:
-                continue
-            reward = race.rewards['final_distribution'][p - 1]
-            # FIXME: this might change
-            if p <= 4:
-                reward_no_boost = [15, 12, 9, 6][p - 1]
-            else:
-                reward_no_boost = 3
-            races.append((race, p, time_on_first, time_on_third, reward, reward_no_boost))
-            total += 1
-            if self.args.limit and total >= self.args.limit:
-                break
-
-        agg = '.'
-        if self.args.agg and self.args.agg < len(races):
-            aggs = []
-            for i in range(0, len(races), self.args.agg):
-                w = races[i : i + self.args.agg]
-                aggs.append(sum(x[4] for x in w) / len(w))
-            aggs_c = []
-            for i in range(len(aggs) - 1):
-                if aggs[i] > aggs[i + 1]:
-                    c = Fore.GREEN
-                elif aggs[i] < aggs[i + 1]:
-                    c = Fore.RED
+        with tqdm(
+            self.client.iterate_race_history(filters={'token_id': snail.id, 'category': 2}),
+            desc=str(snail),
+            leave=False,
+        ) as pb:
+            for race in pb:
+                time_on_first, time_on_third, p = CachedSnailHistory.race_stats(snail.id, race)
+                if time_on_first is None:
+                    continue
+                reward = race.rewards['final_distribution'][p - 1]
+                # FIXME: this might change
+                if p <= 4:
+                    reward_no_boost = [15, 12, 9, 6][p - 1]
                 else:
-                    c = ''
-                aggs_c.append(f'{c}{aggs[i]}{Fore.RESET}')
-            aggs_c.append(str(aggs[-1]))
-            agg = f': {"/".join(aggs_c)}'
+                    reward_no_boost = 3
+                races.append((race, p, time_on_first, time_on_third, reward, reward_no_boost))
+                total += 1
+                if self.args.limit and total >= self.args.limit:
+                    break
 
-        total_rewards = sum(x[4] for x in races)
-        total_rewards_nb = sum(x[5] for x in races)
-        if self.args.limit and len(races) == self.args.limit:
-            c = Fore.GREEN
-        else:
-            c = Fore.YELLOW
+            agg = '.'
+            if self.args.agg and self.args.agg < len(races):
+                aggs = []
+                for i in range(0, len(races), self.args.agg):
+                    w = races[i : i + self.args.agg]
+                    aggs.append(sum(x[4] for x in w) / len(w))
+                aggs_c = []
+                for i in range(len(aggs) - 1):
+                    if aggs[i] > aggs[i + 1]:
+                        c = Fore.GREEN
+                    elif aggs[i] < aggs[i + 1]:
+                        c = Fore.RED
+                    else:
+                        c = ''
+                    aggs_c.append(f'{c}{aggs[i]}{Fore.RESET}')
+                aggs_c.append(str(aggs[-1]))
+                agg = f': {"/".join(aggs_c)}'
 
-        rate = total_rewards / len(races)
-        text_nb = ''
-        if total_rewards_nb != total_rewards:
-            rate_nb = total_rewards_nb / len(races)
-            text_nb = f' ({c}{rate_nb:.2f}{Fore.RESET})'
+            total_rewards = sum(x[4] for x in races)
+            total_rewards_nb = sum(x[5] for x in races)
+            if self.args.limit and len(races) == self.args.limit:
+                c = Fore.GREEN
+            else:
+                c = Fore.YELLOW
 
-        rate_all = '-'
-        for stat in snail.more_stats[0]['data']:
-            if stat['name'] == 'Mission':
-                for istat in stat['data']:
-                    if istat['name'] == 'Race Type':
-                        rate_all = f"{snail.stats['earned_token'] / istat['data'][0]['count']:.2f}"
-                        break
-                break
-        print(
-            f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}){agg}"
-        )
+            rate = total_rewards / len(races)
+            text_nb = ''
+            if total_rewards_nb != total_rewards:
+                rate_nb = total_rewards_nb / len(races)
+                text_nb = f' ({c}{rate_nb:.2f}{Fore.RESET})'
+
+            rate_all = '-'
+            for stat in snail.more_stats[0]['data']:
+                if stat['name'] == 'Mission':
+                    for istat in stat['data']:
+                        if istat['name'] == 'Race Type':
+                            rate_all = f"{snail.stats['earned_token'] / istat['data'][0]['count']:.2f}"
+                            break
+                    break
+            pb.write(
+                f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}){agg}"
+            )
 
     def _join_race(self, join_arg: RaceJoin):
         try:
