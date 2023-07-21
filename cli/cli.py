@@ -729,7 +729,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 break
             _previous = _next
         if _previous == _next:
+            # "previous" is last race of the week
             _next = None
+            # adjust for the array access later on
+            day_i += 1
 
         stats = self.client.gql.tournament_guild_stats(self.owner)
         if self.report_as_main:
