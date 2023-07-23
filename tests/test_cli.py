@@ -367,7 +367,11 @@ AVAX: 1.000 / SNAILS: 1
         self.cli.client.gql.tournament_guild_stats.assert_called_once_with(self.cli.owner)
         self.assertEqual(
             self.cli._notify_tournament,
-            (datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 1, 'order': 10}),
+            (
+                datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc),
+                {'points': 1, 'order': 10},
+                datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc),
+            ),
         )
         self.cli.notifier.notify.assert_not_called()
 
@@ -393,7 +397,11 @@ AVAX: 1.000 / SNAILS: 1
         # nothing changes, race is "ongoing"
         self.assertEqual(
             self.cli._notify_tournament,
-            (datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 1, 'order': 10}),
+            (
+                datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc),
+                {'points': 1, 'order': 10},
+                datetime(2023, 7, 11, 17, 25, 35, 50170, tzinfo=timezone.utc),
+            ),
         )
         self.cli.notifier.notify.assert_not_called()
 
@@ -408,7 +416,11 @@ AVAX: 1.000 / SNAILS: 1
         # next check updated for next race and notification sent with changed data
         self.assertEqual(
             self.cli._notify_tournament,
-            (datetime(2023, 7, 12, 17, 25, 35, 50170, tzinfo=timezone.utc), {'points': 20, 'order': 3}),
+            (
+                datetime(2023, 7, 12, 17, 25, 35, 50170, tzinfo=timezone.utc),
+                {'points': 20, 'order': 3},
+                datetime(2023, 7, 12, 17, 25, 35, 50170, tzinfo=timezone.utc),
+            ),
         )
         self.cli.notifier.notify.assert_called_once_with(
             '''\

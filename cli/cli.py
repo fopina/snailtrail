@@ -712,9 +712,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _bot_tournament(self):
         _n: datetime = self._now()
-        if self._notify_tournament != UNDEF and _n < self._notify_tournament[0]:
-            # next race not yet started
-            return
+        if self._notify_tournament != UNDEF:
+            _next, old_data, old_next = self._notify_tournament
+            if _n < _next:
+                # next race not yet started
+                return
+        else:
+            _next, old_data, old_next = None, None, None
 
         tour_data = self.client.gql.tournament(self.owner)
         week = tour_data['current_week']
@@ -760,16 +764,21 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         logger.info('DELME SOON: race ongoing, check again in a few')
                     return
 
-            if self._notify_tournament[1] != data:
+            if old_next is None and _next is not None:
+                msg = f'{tour_data["name"]} week {week} starting!'
+                self.notifier.notify(msg)
+                logger.info(msg)
+
+            if old_data != data:
                 if data is None:
                     msg = 'Current tournament over!'
-                elif self._notify_tournament[1] is None:
+                elif old_data is None:
                     msg = 'Tournament starting!'
                 else:
                     msg = f'`{self.profile_guild}` leaderboard:\n'
 
                     _k = 'order'
-                    old_value = self._notify_tournament[1][_k]
+                    old_value = old_data[_k]
                     new_value = data[_k]
                     if old_value != new_value:
                         c = '🏆' if old_value > new_value else '💩'
@@ -778,7 +787,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         msg += f"*position* {new_value}\n"
 
                     _k = 'points'
-                    old_value = self._notify_tournament[1][_k]
+                    old_value = old_data[_k]
                     new_value = data[_k]
                     if old_value != new_value:
                         msg += f"*points* {old_value}📈{new_value}\n"
@@ -787,13 +796,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 self.notifier.notify(msg)
                 logger.info(msg)
 
+        old_next = _next
         if _next is None:
             # check again in 12h
             logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
             _next = _n + timedelta(hours=12)
         if self.report_as_main:
             logger.info('DELME SOON: checking again at %s (%s)', _next, data)
-        self._notify_tournament = (_next, data)
+        self._notify_tournament = (_next, data, old_next)
 
     def _bot_autoclaim(self):
         if self._notify_auto_claim is not None and self._notify_auto_claim > datetime.now():
