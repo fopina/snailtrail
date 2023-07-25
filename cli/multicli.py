@@ -333,9 +333,13 @@ SNAILS: {totals[2]}'''
         for c in self.clis:
             if self.args.snail in c.my_snails:
                 print(f'Found in {c.name}')
-                for i in range(400, 10000):
-                    if i in (8188, 8195):
-                        # do not try my own scrolls
+                owned_scrolls = set()
+                for v in c.cmd_inventory(verbose=False).values():
+                    for v1 in v:
+                        owned_scrolls.add(v1.id)
+                for i in range(10000):
+                    if i in owned_scrolls:
+                        # do not use own scrolls!
                         continue
                     print(f'Testing {i}')
                     try:

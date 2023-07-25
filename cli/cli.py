@@ -1105,6 +1105,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             print(f'{attr["trait_type"]}: {attr["value"]}')
         return False
 
+    @commands.argument('--ids', action='store_true', help='Print item IDs')
     @commands.command()
     def cmd_inventory(self, verbose=True):
         """
@@ -1118,7 +1119,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for f2 in v[1:]:
                 assert f.name == f2.name
             if verbose:
-                print(f'{f.name}: {len(v)}')
+                if self.args.ids:
+                    print(f'{f.name}: {len(v)} - {[f2.id for f2 in v]}')
+                else:
+                    print(f'{f.name}: {len(v)}')
         return type_group
 
     @commands.argument('-f', '--females', action='store_true', help='breeders in marketplace')
