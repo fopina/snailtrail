@@ -329,6 +329,22 @@ SNAILS: {totals[2]}'''
                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                 print(f'> fee: {fee}')
 
+    def cmd_utils_bruteforce_test(self):
+        for c in self.clis:
+            if self.args.snail in c.my_snails:
+                print(f'Found in {c.name}')
+                for i in range(400, 10000):
+                    if i in (8188, 8195):
+                        # do not try my own scrolls
+                        continue
+                    print(f'Testing {i}')
+                    try:
+                        print(c.client.apply_pressure(self.args.snail, i))
+                    except cli.client.gqlclient.APIError as e:
+                        print(f'fail with {e}')
+                break
+        return True
+
     def run(self):
         if not self.args.cmd:
             return

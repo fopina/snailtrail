@@ -232,6 +232,36 @@ class Client:
         """
         return self._sign_values(snail_id, race_id)
 
+    def _hash_values(self, *values, owner: str = None):
+        """
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
+        >>> o._hash_values(17802,[9183],[1],"pressure", owner="0xbd8EFe62b5D14aa4f81Fd02fc7b0920885B31A17").hex()
+        '1f2b1dfe97454bf32dd9dd3eb5a18134b9d301b220454c1c3b2968aa295a5817'
+        """
+        if owner is None:
+            owner = self.wallet
+
+        keccak_hash = keccak.new(digest_bits=256)
+
+        def _add_value(value):
+            if isinstance(value, int):
+                keccak_hash.update(value.to_bytes(32, "big"))
+            elif isinstance(value, str):
+                keccak_hash.update(value.encode())
+            elif isinstance(value, bytes):
+                keccak_hash.update(value)
+            elif isinstance(value, (list, tuple)):
+                for value_i in value:
+                    _add_value(value_i)
+            else:
+                raise NotImplementedError(type(value), 'not supported')
+
+        _add_value(values)
+        keccak_hash.update(bytes.fromhex(owner.replace("0x", "")))
+
+        return keccak_hash.digest()
+
     def _sign_values(self, *values, owner: str = None):
         """Hash and sign typed values
         >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
@@ -239,22 +269,8 @@ class Client:
         >>> o._sign_values(1816)
         '0xd608d3c0adde23a7ddeb94e3f15f742887249b87cae9e6c98c95422e72e9945410c5029efd815efc0d95c80dd05b119b8ac2b82b19b14e51580a9385356ed6881c'
         """
-        if owner is None:
-            owner = self.wallet
 
-        keccak_hash = keccak.new(digest_bits=256)
-        for value in values:
-            if isinstance(value, int):
-                keccak_hash.update(value.to_bytes(32, "big"))
-            elif isinstance(value, str):
-                keccak_hash.update(value.encode())
-            elif isinstance(value, bytes):
-                keccak_hash.update(value)
-            else:
-                raise NotImplementedError(type(value), 'not supported')
-        keccak_hash.update(bytes.fromhex(owner.replace("0x", "")))
-
-        sign_payload = keccak_hash.digest()
+        sign_payload = self._hash_values(*values, owner=owner)
         message = encode_defunct(sign_payload)
 
         return self.account.sign_message(message).signature.hex()
@@ -267,6 +283,15 @@ class Client:
         '0xb2e129e5e5b38243486394aa50247101c6c078f177b3362d672bc1739687e92a4de54ef9d522a6567e6e54b93ddd44a8ccf4463cab0ab053102f675171f793691b'
         """
         return self._sign_values(*snails, b'microwave', owner=owner)
+
+    def sign_pot(self, snail_id: int, scroll_id: int, owner: str = None):
+        """Generate and sign payload to join a daily mission
+        >>> a = Account.from_key('badbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad0')
+        >>> o = Client(wallet='0xbadbadbadbadbadbadbadbadbadbadbadbadbad0', web3_account=a, web3_provider='x')
+        >>> o.sign_pot(17802, 9183)
+        '0xf48fb9377cd38324e2073015a03e6c7e11b28155f5153544a8dc3066b65ba49f4bc8a1154f0af94feb913b0cafecbae464f3c8f281a7cdbafbfd658d8e7b4b0c1c'
+        """
+        return self._sign_values(snail_id, [scroll_id], [1], b'pressure', owner=owner)
 
     def auth_token(self, timestamp=None, owner=None) -> tuple[str, int]:
         """Generate an auth token for GraphQL API

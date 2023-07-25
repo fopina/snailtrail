@@ -1135,3 +1135,55 @@ class Client(requests.Session):
             """,
             auth=gql_token,
         )['incubate_promise']
+
+    def apply_pressure(
+        self,
+        address,
+        token_id,
+        scroll_id,
+        signature,
+        gql_token=None,
+    ):
+        return self.query(
+            "apply_pressure_promise",
+            {
+                "params": {
+                    "address": address,
+                    "items": [{"id": scroll_id, "count": 1}],
+                    "token_id": token_id,
+                    "signature": signature,
+                }
+            },
+            """
+            mutation apply_pressure_promise($params: PressureParams) {
+                apply_pressure_promise(params: $params) {
+                    ... on Problem {
+                    problem
+                    }
+                    ... on Pressure {
+                    snail {
+                        id
+                    }
+                    items {
+                        id
+                        type_id
+                        name
+                        description
+                        count
+                        expires_at
+                        coef
+                    }
+                    changes {
+                        name
+                        description
+                        _from
+                        _to
+                        src
+                        src_type
+                    }
+                    }
+                }
+            }
+            """,
+            auth=gql_token,
+        )['apply_pressure_promise']

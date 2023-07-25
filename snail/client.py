@@ -363,3 +363,8 @@ class Client:
             payload['salt'],
             data['signature'],
         )
+
+    def apply_pressure(self, token_id, scroll_id):
+        signature = self.web3.sign_pot(token_id, scroll_id)
+        data = self.gql.apply_pressure(self.web3.wallet, token_id, scroll_id, signature, gql_token=self.gql_token)
+        return data

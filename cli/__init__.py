@@ -141,6 +141,8 @@ def build_parser():
     )
     pmm.add_argument('stop', type=float, help='Stop amount that triggers transfer')
     pmm.add_argument('limit', type=float, help='Final balance every triggered account should have')
+    pmm = utils_parsers.add_parser('bruteforce_test', help='temp')
+    pmm.add_argument('snail', type=int, help='Snail ID')
     return parser
 
 
