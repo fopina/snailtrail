@@ -550,8 +550,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         coef = r['payload']['coef']
         if self._notify_burn_coefficent is not None and coef < self._notify_burn_coefficent[0]:
             msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self._notify_burn_coefficent[0]}*)'
-            self.notifier.notify(msg)
             logger.info(msg)
+            self.notifier.notify(msg)
 
         self._notify_burn_coefficent = (
             coef,
@@ -766,8 +766,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
             if old_next is None and _next is not None:
                 msg = f'{tour_data["name"]} week {week} starting!'
-                self.notifier.notify(msg)
                 logger.info(msg)
+                self.notifier.notify(msg)
 
             if old_data != data:
                 if data is None:
@@ -793,8 +793,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         msg += f"*points* {old_value}📈{new_value}\n"
                     else:
                         msg += f"*points* {new_value}\n"
-                self.notifier.notify(msg)
                 logger.info(msg)
+                self.notifier.notify(msg)
 
         old_next = _next
         if _next is None:
@@ -835,8 +835,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         if msg:
             msg.insert(0, f'`💰 {self.name}` (`{self.profile_guild}`)')
-            self.notifier.notify('\n'.join(msg))
             logger.info(msg)
+            self.notifier.notify('\n'.join(msg))
 
         self._notify_auto_claim = datetime.now() + timedelta(hours=24)
 
