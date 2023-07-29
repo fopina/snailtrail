@@ -829,9 +829,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if 'claim once per hour' not in str(e):
                         raise
             else:
-                msg.append(f'Claimed {amount} from {building}')
                 r = self.client.claim_building(self._profile['guild']['id'], building)
                 logger.info('claim data: %s', r)
+                if 'changes' in r:
+                    for c in r['changes']:
+                        _a = int(c['_to']) - int(c['_from'])
+                        msg.append(f'Claimed {_a} {c["name"]} from {c["src_type"]}')
+                else:
+                    msg.append(f'Claimed {amount} from {building}')
 
         if msg:
             msg.insert(0, f'`💰 {self.name}` (`{self.profile_guild}`)')
