@@ -129,6 +129,8 @@ def build_parser():
         action='store_true',
         help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
     )
+    pmm = utils_parsers.add_parser('boost_snail', help='Apply all slime boosts to this snail (transferring snail around)')
+    pmm.add_argument('snail', type=int, help='Snail ID')
     utils_parsers.add_parser('accounts', help='Just list accounts, quick function')
     pmm = utils_parsers.add_parser(
         'balance_balance', help='Take from the rich and give to the poor - balance wallet balances'

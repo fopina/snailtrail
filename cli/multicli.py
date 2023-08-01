@@ -349,6 +349,55 @@ SNAILS: {totals[2]}'''
                 break
         return True
 
+    def cmd_utils_boost_snail(self):
+        owner_c = None
+        snail = None
+
+        for c in tqdm(self.clis, desc='Searching snail'):
+            if self.args.snail in c.my_snails:
+                owner_c = c
+                snail = c.my_snails[self.args.snail]
+                break
+        else:
+            print('Snail not found')
+            return
+        print(f'Found snail in {c.name}')
+
+        totals = defaultdict(lambda: 0)
+        for c in tqdm(self.clis, desc='Loading inventory'):
+            for _, v in c.cmd_inventory(verbose=False).items():
+                if v[0].name.startswith('Slime Boost '):
+                    totals[c] = v
+
+        prev_c = owner_c
+        while totals:
+            c = list(totals.keys())[0] if owner_c not in totals else owner_c
+            if prev_c != c:
+                tx = prev_c.client.web3.transfer_snail(prev_c.owner, c.owner, self.args.snail)
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                print(f'{snail} transferred from {prev_c.name} to {c.name} for {fee}')
+
+            for v in totals[c]:
+                # try a few times
+                for _ in range(15):
+                    try:
+                        r = c.client.apply_pressure(self.args.snail, v.id)
+                        if not 'changes' in r:
+                            raise Exception('Unexpected reply', r)
+                        for chg in r['changes']:
+                            print(f'{snail} slime boost changed from {chg["_from"]} to {chg["_to"]}')
+                        break
+                    except cli.client.gqlclient.APIError as e:
+                        if 'You are not the holder of Snail' not in str(e):
+                            raise
+                        print('Retrying...')
+                        time.sleep(0.5)
+                else:
+                    raise Exception('too many retries, not the holder?!')
+
+            del totals[c]
+            prev_c = c
+
     def run(self):
         if not self.args.cmd:
             return
