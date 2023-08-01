@@ -13,4 +13,5 @@ from . import snail_preference
 from . import snail_race
 from . import snail_shop
 from . import snail_token
+from . import traderjoe
 from . import wavax

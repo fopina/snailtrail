@@ -154,6 +154,9 @@ ABI = {repr(abi_definition)}
     def update_multicall(self):
         return self._update_contract('0xca11bde05977b3631167028862be2a173976ca11', 'multicall')
 
+    def update_traderjoe(self):
+        return self._update_contract('0xb4315e873dbcf96ffd0acd8ea43f689d8c20fb30', 'traderjoe')
+
     def update_init(self):
         path = CONTRACT_DIR
         modules = [f'from . import {l.stem}' for l in path.glob('*.py') if l.stem != '__init__']
@@ -176,6 +179,8 @@ ABI = {repr(abi_definition)}
         self.update_bulk_transfer()
         time.sleep(5)
         self.update_multicall()
+        time.sleep(5)
+        self.update_traderjoe()
 
         self.update_init()
         self.black_em()
