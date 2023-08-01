@@ -1,5 +1,7 @@
 from enum import Enum
 from typing import Generator
+import requests
+from time import time
 
 from . import gqlclient, gqltypes, web3client
 
@@ -368,3 +370,31 @@ class Client:
         signature = self.web3.sign_pot(token_id, scroll_id)
         data = self.gql.apply_pressure(self.web3.wallet, token_id, scroll_id, signature, gql_token=self.gql_token)
         return data
+
+    def slime_avax_candles(
+        self,
+        first=1000,
+        period=3600,
+        skip=0,
+        days=7,
+        token0="0x5a15bdcf9a3a8e799fa4381e666466a516f2d9c8",
+        token1="0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+    ):
+        startTime = int(time()) - (days * 3600 * 24)
+        r = requests.post(
+            'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/dex-candles-v2',
+            json={
+                "query": "\n  query dexCandlesV2Query(\n    $token0: String!\n    $token1: String!\n    $period: Int!\n    $first: Int!\n    $skip: Int!\n    $startTime: Int!\n  ) {\n    candles(\n      first: $first\n      skip: $skip\n      orderBy: time\n      orderDirection: asc\n      where: {\n        token0: $token0\n        token1: $token1\n        period: $period\n        time_gt: $startTime\n      }\n    ) {\n      time\n      open\n      low\n      high\n      close\n    }\n  }\n",
+                "variables": {
+                    "first": first,
+                    "period": period,
+                    "skip": skip,
+                    "startTime": startTime,
+                    "token0": token0,
+                    "token1": token1,
+                },
+                "operationName": "dexCandlesV2Query",
+            },
+        )
+        r.raise_for_status()
+        return r.json()['data']['candles']

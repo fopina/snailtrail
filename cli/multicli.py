@@ -359,23 +359,77 @@ SNAILS: {totals[2]}'''
         else:
             raise Exception('not found')
 
-        # FIXME: WIP!!!
-        print(
-            final_c.client.web3.traderjoe_contract.encodeABI(
-                'swapExactTokensForNATIVE',
-                args=[
-                    0x6AAF7C8516D0C0000,
-                    0x4B053F8C3D6EA3,
-                    (
-                        [0x0],
-                        [0x0],
-                        [0x5A15BDCF9A3A8E799FA4381E666466A516F2D9C8, 0xB31F66AA3C1E785363F0875A1B74E27B85FD66C7],
-                    ),
-                    0x76E83242F3294E1EB64D7F4B8645C50B63BD767E,
-                    0x64C89C04,
-                ],
-            )
+        total_fees = 0.0
+
+        if not self.args.skip_claim:
+            # claim all
+            hash_queue = []
+            for c in self.clis:
+                h = c.client.web3.claim_rewards(wait_for_transaction_receipt=False)
+                hash_queue.append((c, h))
+            for c, hash in hash_queue:
+                try:
+                    r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+                    if r.get('status') == 1:
+                        bal = int(r['logs'][1]['data'], 16) / cli.DECIMALS
+                        fee = r['gasUsed'] * r['effectiveGasPrice'] / cli.DECIMALS
+                        total_fees += fee
+                        print(f'Claimed {bal} on {c.name} for {fee}')
+                except cli.client.web3client.exceptions.ContractLogicError as e:
+                    pass
+
+        if not self.args.skip_transfer:
+            # send all to swap account
+            hash_queue = []
+            for c in self.clis:
+                if c.owner == final_c.owner:
+                    continue
+                bal = c.client.web3.balance_of_slime(raw=True)
+                if bal:
+                    h = c.client.web3.transfer_slime(final_c.owner, bal, wait_for_transaction_receipt=False)
+                    hash_queue.append((c, h))
+            for c, hash in hash_queue:
+                try:
+                    r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+                    if r.get('status') == 1:
+                        if len(r['logs']) < 2:
+                            raise Exception('weird tx data', r)
+                        bal = int(r['logs'][1]['data'], 16) / cli.DECIMALS
+                        fee = r['gasUsed'] * r['effectiveGasPrice'] / cli.DECIMALS
+                        total_fees += fee
+                        print(f'Sent {bal} from {c.name} for {fee}')
+                except cli.client.web3client.exceptions.ContractLogicError as e:
+                    pass
+
+        # 2 hours deadline like website
+        deadline = int(datetime.utcnow().timestamp()) + 3600 * 2
+        balance = final_c.client.web3.balance_of_slime(raw=True)
+
+        call_args = [
+            balance,
+            0,
+            (
+                [0x0],
+                [0x0],
+                ['0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8', '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'],
+            ),
+            final_c.owner,
+            deadline,
+        ]
+
+        out_min = final_c.client.web3.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args).call(
+            {'from': final_c.owner}
         )
+        print(f'Swapping {balance / cli.DECIMALS} SLIME for (at least) {out_min / cli.DECIMALS} AVAX')
+        call_args[1] = out_min
+
+        tx = final_c.client.web3._bss(
+            final_c.client.web3.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args),
+        )
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+        total_fees += fee
+        print(f'Swapped for {fee}')
+        print(f'Total fees: {total_fees}')
 
     def cmd_utils_boost_snail(self):
         owner_c = None

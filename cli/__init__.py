@@ -137,6 +137,8 @@ def build_parser():
     pmm.add_argument(
         'account_id', type=commands.wallet_ext_or_int, help='Target account (to send ALL slime and to swap in)'
     )
+    pmm.add_argument('--skip-claim', action='store_true', help='Do not claim')
+    pmm.add_argument('--skip-transfer', action='store_true', help='Do not transfer')
     utils_parsers.add_parser('accounts', help='Just list accounts, quick function')
     pmm = utils_parsers.add_parser(
         'balance_balance', help='Take from the rich and give to the poor - balance wallet balances'
