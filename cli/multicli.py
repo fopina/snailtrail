@@ -349,6 +349,34 @@ SNAILS: {totals[2]}'''
                 break
         return True
 
+    def cmd_utils_css(self):
+        final_c = None
+
+        for c in self.clis:
+            if c.owner == self.args.account_id.address:
+                final_c = c
+                break
+        else:
+            raise Exception('not found')
+
+        # FIXME: WIP!!!
+        print(
+            final_c.client.web3.traderjoe_contract.encodeABI(
+                'swapExactTokensForNATIVE',
+                args=[
+                    0x6AAF7C8516D0C0000,
+                    0x4B053F8C3D6EA3,
+                    (
+                        [0x0],
+                        [0x0],
+                        [0x5A15BDCF9A3A8E799FA4381E666466A516F2D9C8, 0xB31F66AA3C1E785363F0875A1B74E27B85FD66C7],
+                    ),
+                    0x76E83242F3294E1EB64D7F4B8645C50B63BD767E,
+                    0x64C89C04,
+                ],
+            )
+        )
+
     def cmd_utils_boost_snail(self):
         owner_c = None
         snail = None

@@ -75,6 +75,10 @@ class Client:
         return self._contract(contracts.multicall)
 
     @cached_property
+    def traderjoe_contract(self):
+        return self._contract(contracts.traderjoe)
+
+    @cached_property
     def marketplace_contract(self):
         return self._contract(contracts.snail_gene_marketplace)
 
