@@ -195,11 +195,12 @@ class Notifier:
             try:
                 r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                 if r.get('status') == 1:
-                    if len(r['logs']) > 1:
+                    if len(r['logs']) not in (1, 3):
                         logger.error('weird tx data: %s', r)
                         bal = 0
                     else:
-                        bal = int(r['logs'][0]['data'], 16) / DECIMALS
+                        ind = 0 if len(r['logs']) == 1 else 1
+                        bal = int(r['logs'][ind]['data'], 16) / DECIMALS
                     cb(_cli, 1, f'claimed {bal} from {_cli.name}', [bal])
                 else:
                     cb(_cli, 2, f'claim FAILED for {_cli.name}')
