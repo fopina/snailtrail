@@ -337,6 +337,10 @@ class CLI:
             for snail in queueable:
                 if snail.level >= 15:
                     boosted.difference_update({snail.id})
+        if self.args.cheap and self.args.boost_not_cheap:
+            not_cheap = boosted.copy()
+        else:
+            not_cheap = set()
 
         if self.args.fair:
             # add snails with negative tickets to "boosted" to re-use logic
@@ -378,8 +382,9 @@ class CLI:
             )
 
             tx = None
+            cheap_snail = snail.id in boosted and snail.id not in not_cheap
             try:
-                if self.args.cheap and snail.id in boosted:
+                if self.args.cheap and cheap_snail:
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
@@ -574,6 +579,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--boost-to-15',
         action='store_true',
         help='When using --boost, only consider snails under lv15',
+    )
+    @commands.argument(
+        '--boost-not-cheap',
+        action='store_true',
+        help='For snails in --boost, --cheap is ignored (if enabled)',
     )
     @commands.argument(
         '--minimum-tickets',
