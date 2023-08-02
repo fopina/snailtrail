@@ -335,7 +335,7 @@ class CLI:
         if self.args.boost_to_15:
             # remove snails lv 15
             for snail in queueable:
-                if snail.level >= 15:
+                if snail.level >= 15 and snail.id in boosted:
                     self.notifier.notify(
                         f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
                     )
