@@ -392,9 +392,9 @@ SNAILS: {totals[2]}'''
                 try:
                     r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                     if r.get('status') == 1:
-                        if len(r['logs']) < 2:
+                        if len(r['logs']) > 1:
                             raise Exception('weird tx data', r)
-                        bal = int(r['logs'][1]['data'], 16) / cli.DECIMALS
+                        bal = int(r['logs'][0]['data'], 16) / cli.DECIMALS
                         fee = r['gasUsed'] * r['effectiveGasPrice'] / cli.DECIMALS
                         total_fees += fee
                         print(f'Sent {bal} from {c.name} for {fee}')
