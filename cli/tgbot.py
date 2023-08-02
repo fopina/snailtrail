@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -64,6 +64,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
             dispatcher.add_handler(CommandHandler("balance", self.cmd_balance))
             dispatcher.add_handler(CommandHandler("guild", self.cmd_guild))
+            dispatcher.add_handler(CommandHandler("css", self.cmd_css))
             dispatcher.add_handler(CommandHandler("claim", self.cmd_claim))
             dispatcher.add_handler(CommandHandler("swapsend", self.cmd_swapsend))
             dispatcher.add_handler(CommandHandler("incubate", self.cmd_incubate))
@@ -125,6 +126,8 @@ class Notifier:
             return self.handle_buttons_joinrace(opts, update, context)
         elif cmd == 'claim':
             return self.handle_buttons_claim(opts, update, context)
+        elif cmd == 'css':
+            return self.handle_buttons_css(opts, update, context)
         elif cmd == 'swapsend':
             return self.handle_buttons_swapsend(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
@@ -171,8 +174,132 @@ class Notifier:
                 query.message.text + f'\n❌ Race FAILED to join: {e}', reply_markup=query.message.reply_markup
             )
 
+    @staticmethod
+    def _async_claim(clis: 'List[cli.CLI]', cb: Callable[['cli.CLI', int, str, Optional[List[Any]]], None]):
+        hash_queue = []
+
+        for _cli in clis:
+            cb(_cli, 0, f'claiming from {_cli.name}...')
+            try:
+                h = _cli.client.web3.claim_rewards(wait_for_transaction_receipt=False)
+                hash_queue.append((_cli, h))
+            except cli.client.web3client.exceptions.ContractLogicError as e:
+                cb(_cli, 2, f'claim FAILED for {_cli.name}: {e}')
+                logger.exception('error claiming')
+
+        # check every receipt
+        for _cli, hash in hash_queue:
+            try:
+                r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+                if r.get('status') == 1:
+                    bal = int(r['logs'][1]['data'], 16) / DECIMALS
+                    cb(_cli, 1, f'claimed {bal} from {_cli.name}', [bal])
+                else:
+                    cb(_cli, 2, f'claim FAILED for {_cli.name}')
+                    logger.error('error claiming: %s', r)
+            except cli.client.web3client.exceptions.ContractLogicError as e:
+                cb(_cli, 2, f'claim FAILED for {_cli.name}')
+                logger.exception('error claiming')
+
     def handle_buttons_claim(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process claim buttons"""
+        query = update.callback_query
+        extra_text = []
+        final_status = {}
+        total_claimed = [0]
+
+        if not opts:
+            # claim every account
+            clis = list(self.clis.values())
+        else:
+            cli = self.clis.get(opts[0])
+            if cli is None:
+                query.edit_message_reply_markup()
+                return
+            clis = [cli]
+
+        def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
+            extra_text.append(msg)
+            query.edit_message_text('\n'.join(extra_text))
+            if st == 0:
+                final_status[_cli.name] = None
+            elif st == 1:
+                final_status[_cli.name] = extra_text[-1]
+                total_claimed[0] += args[0]
+            elif st == 2:
+                final_status[_cli.name] = extra_text[-1]
+
+        self._async_claim(clis, _cb)
+
+        # clean up message
+        query.edit_message_text(
+            '\n'.join(list(final_status.values()) + [f'*Total claimed*: {total_claimed[0]}']),
+            parse_mode='Markdown',
+        )
+
+    @staticmethod
+    def _async_swapsend(
+        _from: 'cli.CLI', clis: 'List[cli.CLI]', cb: Callable[['cli.CLI', int, str, Optional[List[Any]]], None]
+    ):
+        hash_queue = []
+
+        # submit transactions
+        for _cli in clis:
+            if _from.owner == _cli.owner:
+                continue
+            bal = _cli.client.web3.balance_of_slime(raw=True)
+            if not bal:
+                cb(_cli, 2, f'{_cli.name}: Nothing to send')
+            else:
+                cb(_cli, 0, f'{_cli.name}: sending {bal / DECIMALS}')
+                h = _cli.client.web3.transfer_slime(_from.owner, bal, wait_for_transaction_receipt=False)
+                hash_queue.append((_cli, h))
+
+        # wait for receipts
+        for _cli, hash in hash_queue:
+            r = _cli.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
+            sent = int(r['logs'][0]['data'], 16) / DECIMALS
+            cb(_cli, 1, f'{_cli.name}: sent {sent} SLIME', [sent])
+
+    def handle_buttons_swapsend(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process swapsend buttons"""
+        query = update.callback_query
+        if not opts:
+            query.edit_message_reply_markup()
+            return
+        cli = self.clis.get(opts[0])
+        if cli is None:
+            query.edit_message_reply_markup()
+            return
+
+        final_status = {}
+        total_sent = [0]
+
+        extra_text = [f'*Sending to {cli.name}*']
+        final_status['_'] = extra_text[-1]
+        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+
+        def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
+            extra_text.append(msg)
+            query.edit_message_text('\n'.join(extra_text))
+            if st == 0:
+                final_status[_cli.name] = None
+            elif st == 1:
+                final_status[_cli.name] = extra_text[-1]
+                total_sent[0] += args[0]
+            elif st == 2:
+                final_status[_cli.name] = extra_text[-1]
+
+        self._async_swapsend(cli, list(self.clis.values()), _cb)
+
+        # clean up message
+        query.edit_message_text(
+            '\n'.join(list(final_status.values()) + [f'*Total sent*: {total_sent[0]}']),
+            parse_mode='Markdown',
+        )
+
+    def handle_buttons_css(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process /css buttons"""
         query = update.callback_query
         extra_text = []
         hash_queue = []
@@ -219,54 +346,6 @@ class Notifier:
         # clean up message
         query.edit_message_text(
             '\n'.join(list(final_status.values()) + [f'*Total claimed*: {total_claimed}']),
-            parse_mode='Markdown',
-        )
-
-    def handle_buttons_swapsend(self, opts: str, update: Update, context: CallbackContext) -> None:
-        """Process swapsend buttons"""
-        query = update.callback_query
-        if not opts:
-            query.edit_message_reply_markup()
-            return
-        cli = self.clis.get(opts[0])
-        if cli is None:
-            query.edit_message_reply_markup()
-            return
-
-        hash_queue = []
-        final_status = {}
-
-        extra_text = [f'*Sending to {cli.name}*']
-        final_status['_'] = extra_text[-1]
-        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-
-        # submit transactions
-        for c in self.clis.values():
-            if cli.owner == c.owner:
-                continue
-            bal = c.client.web3.balance_of_slime(raw=True)
-            if not bal:
-                extra_text.append(f'{c.name}: Nothing to send')
-            else:
-                extra_text.append(f'{c.name}: sending {bal / DECIMALS}')
-                query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-                h = c.client.web3.transfer_slime(cli.owner, bal, wait_for_transaction_receipt=False)
-                final_status[c.name] = None
-                hash_queue.append((c, h))
-
-        total_sent = 0
-        # wait for receipts
-        for c, hash in hash_queue:
-            r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
-            sent = int(r['logs'][0]['data'], 16) / DECIMALS
-            total_sent += sent
-            extra_text.append(f'{c.name}: sent {sent} SLIME')
-            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-            final_status[c.name] = extra_text[-1]
-
-        # clean up message
-        query.edit_message_text(
-            '\n'.join(list(final_status.values()) + [f'*Total sent*: {total_sent}']),
             parse_mode='Markdown',
         )
 
@@ -424,6 +503,25 @@ class Notifier:
             msg.append('')
 
         m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_css(self, update: Update, context: CallbackContext) -> None:
+        """
+        Claim, send and swap all slime
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        keyboard = []
+        for c in self.clis.values():
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        c.name,
+                        callback_data=f'css {c.owner}',
+                    )
+                ]
+            )
+        keyboard.append([InlineKeyboardButton(f'❌ Niente', callback_data='toggle')])
+        update.message.reply_markdown('Choose an option', reply_markup=InlineKeyboardMarkup(keyboard))
 
     @bot_auth
     def cmd_claim(self, update: Update, context: CallbackContext) -> None:

@@ -33,6 +33,7 @@ class Test(TestCase):
             '''/nextmission - Show time to next daily mission
 /balance - Current balance (snail count, avax, slime)
 /guild - Guild stats and balance
+/css - Claim, send and swap all slime
 /claim - Claim rewards
 /swapsend - Send all slime to one account (for single swaps)
 /incubate - Show current incubation coefficent
