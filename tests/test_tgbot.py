@@ -80,6 +80,93 @@ class Test(TestCase):
             text='`wtv` Whatever', parse_mode='Markdown'
         )
 
+    def test_claim(self):
+        self.cli.client.web3.balance_of_slime = lambda: 1
+        self.cli.client.web3.claimable_slime = lambda: 1
+        self.cli.client.web3.get_balance = lambda: 2
+        cli2 = mock.MagicMock(
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        cli2.name = '0x3f'
+        cli2.client.web3.balance_of_slime = lambda: 3
+        cli2.client.web3.claimable_slime = lambda: 3
+        cli2.client.web3.get_balance = lambda: 4
+        self.bot.register_cli(cli2)
+
+        self.bot.cmd_claim(self.update, self.context)
+        expected_markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton('💰 0x2f: 1', callback_data=f'claim 0x2fff')],
+                [InlineKeyboardButton('💰 0x3f: 3', callback_data=f'claim 0x3fff')],
+                [InlineKeyboardButton('All', callback_data='claim')],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+        )
+        self.update.message.reply_markdown.assert_called_once()
+        self.assertEqual(self.update.message.reply_markdown.call_args_list[0][0], ('Choose an option',))
+        self.assertEqual(
+            str(self.update.message.reply_markdown.call_args_list[0][1]['reply_markup']),
+            str(expected_markup),
+        )
+
+    def test_handle_buttons_claim(self):
+        self.cli.client.web3.balance_of_slime = lambda raw=True: 1
+        self.cli.client.web3.get_balance = lambda: 2
+        self.cli.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x1'}]}
+        self.cli.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {
+            'status': 1,
+            'logs': [{}, {'data': '0x1'}],
+        }
+        cli2 = mock.MagicMock(
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        cli2.name = '0x3f'
+        cli2.client.web3.balance_of_slime = lambda raw=True: 3
+        cli2.client.web3.get_balance = lambda: 4
+        cli2.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x3'}]}
+        cli2.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {
+            'status': 2,
+            'logs': [{}, {'data': '0x3'}],
+        }
+        self.bot.register_cli(cli2)
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='claim 0x1')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_called_once_with()
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='claim 0x2fff')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 3)
+        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
+            'claimed 1e-18 from 0x2f\n*Total claimed*: 1e-18',
+        )
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='claim')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 5)
+        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
+            'claiming from 0x2f...\nclaiming from 0x3f...',
+        )
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
+            'claimed 1e-18 from 0x2f\nclaim FAILED for 0x3f\n*Total claimed*: 1e-18',
+        )
+
     def test_swapsend(self):
         self.cli.client.web3.balance_of_slime = lambda: 1
         self.cli.client.web3.get_balance = lambda: 2
