@@ -50,6 +50,7 @@ class Notifier:
         self.chat_id = chat_id
         self.clis = {}
         self._settings_list = settings_list
+        self._sent_messages = set()
         if owner_chat_id is None:
             self.owner_chat_id = self.chat_id
         else:
@@ -645,6 +646,7 @@ class Notifier:
         edit: dict[str] = None,
         actions: List[Tuple[str]] = None,
         chat_id: int = None,
+        only_once: bool = False,
     ):
         """Use this method to send text messages
 
@@ -657,6 +659,9 @@ class Notifier:
                 receive a notification with no sound.
             edit (:obj:`dict[str]`, optional): If not None, it should be the old `telegram.Message`
                 which will then be edited.
+            actions (:obj:`List[Tuple[str]]`, optional): If not None, used as inline keyboard buttons
+            chat_id (:obj:`int`, optional): If not None, target chat_id of the message (instead of default one)
+            only_once (:obj:`bool`, optional): If true, message with same text is not sent if it has already been processed
 
         Returns:
             :class:`telegram.Message`: On success, the sent message is returned.
@@ -665,6 +670,13 @@ class Notifier:
             :class:`telegram.error.TelegramError`
 
         """
+
+        if only_once:
+            _h = hash(message)
+            if _h in self._sent_messages:
+                return
+            self._sent_messages.add(_h)
+
         if chat_id is None:
             chat_id = self.chat_id
         if self.updater and chat_id:
