@@ -456,3 +456,42 @@ class Client:
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )
+
+    def swap_slime_avax(
+        self,
+        amount_in=None,
+        amount_out=None,
+        deadline=None,
+        preview=False,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+    ):
+        if deadline is None:
+            # 2 hours deadline like website
+            deadline = int(datetime.utcnow().timestamp()) + 3600 * 2
+
+        if amount_in is None:
+            amount_in = 1 * DECIMALS
+
+        call_args = [
+            amount_in,
+            amount_out,
+            (
+                [0x0],
+                [0x0],
+                ['0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8', '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'],
+            ),
+            self.wallet,
+            deadline,
+        ]
+
+        if preview or amount_out is None:
+            call_args[1] = 0
+            out_min = self.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args).call({'from': self.wallet})
+            if preview:
+                return out_min
+            call_args[1] = out_min
+
+        return self._bss(
+            self.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+        )

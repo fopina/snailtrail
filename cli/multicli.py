@@ -403,31 +403,11 @@ SNAILS: {totals[2]}'''
                 except cli.client.web3client.exceptions.ContractLogicError as e:
                     pass
 
-        # 2 hours deadline like website
-        deadline = int(datetime.utcnow().timestamp()) + 3600 * 2
         balance = final_c.client.web3.balance_of_slime(raw=True)
-
-        call_args = [
-            balance,
-            0,
-            (
-                [0x0],
-                [0x0],
-                ['0x5a15Bdcf9a3A8e799fa4381E666466a516F2d9C8', '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'],
-            ),
-            final_c.owner,
-            deadline,
-        ]
-
-        out_min = final_c.client.web3.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args).call(
-            {'from': final_c.owner}
-        )
+        out_min = final_c.client.web3.swap_slime_avax(amount_in=balance, preview=True)
         print(f'Swapping {balance / cli.DECIMALS} SLIME for (at least) {out_min / cli.DECIMALS} AVAX')
-        call_args[1] = out_min
 
-        tx = final_c.client.web3._bss(
-            final_c.client.web3.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args),
-        )
+        tx = final_c.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
         total_fees += fee
         print(f'Swapped for {fee}')

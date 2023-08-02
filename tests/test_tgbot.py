@@ -117,7 +117,7 @@ class Test(TestCase):
         self.cli.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x1'}]}
         self.cli.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {
             'status': 1,
-            'logs': [{}, {'data': '0x1'}],
+            'logs': [{'data': '0x1'}],
         }
         cli2 = mock.MagicMock(
             owner='0x3fff',
@@ -129,7 +129,7 @@ class Test(TestCase):
         cli2.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x3'}]}
         cli2.client.web3.web3.eth.wait_for_transaction_receipt = lambda *a, **b: {
             'status': 2,
-            'logs': [{}, {'data': '0x3'}],
+            'logs': [{'data': '0x3'}],
         }
         self.bot.register_cli(cli2)
 
@@ -234,6 +234,93 @@ class Test(TestCase):
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
             '*Sending to 0x2f*\n0x3f: sent 3e-18 SLIME\n*Total sent*: 3e-18',
+        )
+
+    def test_css(self):
+        cli2 = mock.MagicMock(
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        cli2.name = '0x3f'
+        self.bot.register_cli(cli2)
+
+        self.bot.cmd_css(self.update, self.context)
+        expected_markup = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton('0x2f', callback_data=f'css 0x2fff')],
+                [InlineKeyboardButton('0x3f', callback_data=f'css 0x3fff')],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+        )
+        self.update.message.reply_markdown.assert_called_once()
+        self.assertEqual(self.update.message.reply_markdown.call_args_list[0][0], ('Choose an option',))
+        self.assertEqual(
+            str(self.update.message.reply_markdown.call_args_list[0][1]['reply_markup']),
+            str(expected_markup),
+        )
+
+    def test_handle_buttons_css(self):
+        self.cli.client.web3.balance_of_slime = lambda raw=True: 1500000000000000000
+        self.cli.client.web3.get_balance = lambda: 2
+        self.cli.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x1'}]}
+        self.cli.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x1'}]}
+        self.cli.client.web3.web3.eth.wait_for_transaction_receipt.side_effect = [
+            {
+                'status': 1,
+                'logs': [{'data': '0x1'}],
+            },
+            {'logs': [{'data': '0x1'}]},
+        ]
+        cli2 = mock.MagicMock(
+            owner='0x3fff',
+            args=mock.MagicMock(wtv=False),
+        )
+        self.cli.client.web3.swap_slime_avax.return_value = 10000000000000000
+        cli2.name = '0x3f'
+        cli2.client.web3.balance_of_slime = lambda raw=True: 3000000000000000000
+        cli2.client.web3.get_balance = lambda: 4
+        cli2.client.web3.claim_rewards = lambda *a, **b: {'logs': [{'data': '0x3'}]}
+        cli2.client.web3.transfer_slime = lambda *a, **b: {'logs': [{'data': '0x3'}]}
+        cli2.client.web3.web3.eth.wait_for_transaction_receipt.side_effect = [
+            {
+                'status': 2,
+                'logs': [{'data': '0x3'}],
+            },
+            {'logs': [{'data': '0x3'}]},
+        ]
+        self.bot.register_cli(cli2)
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='css')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_called_once_with()
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='css 0x1')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_reply_markup.assert_called_once_with()
+
+        self.update.callback_query.reset_mock()
+        self.update.callback_query = mock.MagicMock(data='css 0x2fff')
+        self.update.callback_query.message.text = ''
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 10)
+        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
+            '''claimed 1e-18 from 0x2f
+claim FAILED for 0x3f
+*Total claimed*: 1e-18
+
+0x3f: sent 3e-18 SLIME
+*Total sent*: 3e-18
+
+Swapped 1.50 SLIME for 0.01 AVAX ✅''',
         )
 
     def test_cmd_balance(self):
