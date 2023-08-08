@@ -319,6 +319,7 @@ SNAILS: {totals[2]}'''
         donor: tuple[float, cli.CLI] = balances[0]
         poor: list[tuple[float, cli.CLI]] = [(x, self.args.limit - x, z) for (x, z) in balances if x < self.args.stop]
         total_transfer = sum(y for _, y, _ in poor)
+        total_fees = 0
         if donor[0] - self.args.limit < total_transfer:
             print(f'Donor has not enough balance: {total_transfer} required but only {donor[0]} available')
             return
@@ -327,7 +328,11 @@ SNAILS: {totals[2]}'''
             if self.args.force:
                 tx = donor[1].client.web3.transfer(p[2].owner, p[1])
                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                total_fees += fee
                 print(f'> fee: {fee}')
+        print(f'> Total transfer: {total_transfer}')
+        if total_fees:
+            print(f'> Total fees: {total_fees}')
 
     def cmd_utils_bruteforce_test(self):
         for c in self.clis:
