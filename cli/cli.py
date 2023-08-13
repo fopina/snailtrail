@@ -429,10 +429,10 @@ class CLI:
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     if tx['status'] == 1:
-                        logger.info(f'{msg} LAST SPOT - fee: {fee}')
+                        logger.info(f'{msg} LAST SPOT -  tx: {tx.transactionHash.hex()} - fee: {fee}')
                         self.notify_mission(f'{msg} *LAST SPOT*')
                     else:
-                        logger.error(f'Last spot transaction reverted - {tx.transactionHash.hex()} - fee: {fee}')
+                        logger.error(f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
                         _slow_snail(snail)
                         continue
             except client.ClientError as e:
