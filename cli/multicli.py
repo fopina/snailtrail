@@ -180,7 +180,7 @@ SNAILS: {totals[2]}'''
                         _r = e
                         time.sleep(0.5)
                     except cli.client.web3client.exceptions.ContractLogicError as e:
-                        if not 'Protocol coefficent changed' in str(e):
+                        if 'Protocol coefficent changed' not in str(e):
                             raise
                         time.sleep(1)
                         _r = e
