@@ -6,9 +6,10 @@ from ..types import Wallet, RaceJoin
 
 class FileOrString(str):
     def __new__(cls, content):
-        f = Path(content)
-        if f.exists():
-            return str.__new__(cls, f.read_text().strip())
+        if content:
+            f = Path(content)
+            if f.exists():
+                return str.__new__(cls, f.read_text().strip())
         return str.__new__(cls, content)
 
 
@@ -26,11 +27,15 @@ class AppendWalletAction(configargparse.argparse._AppendAction):
     FRIENDS = []
 
     def __call__(self, parser, namespace, value, option_string=None):
-        val = FileOrString(value)
-        if val[:2].lower() == '0x':
-            w = Wallet(val, None)
+        if not value:
+            w = None
         else:
-            w = Wallet.from_private_key(val)
+            val = FileOrString(value)
+            if val[:2].lower() == '0x':
+                w = Wallet(val, None)
+            else:
+                w = Wallet.from_private_key(val)
+
         if option_string == '--wallet':
             self.WALLETS.append(w)
         else:

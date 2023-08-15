@@ -28,6 +28,8 @@ class MultiCLI:
 
         first_one = True if len(wallets) > 1 else None
         for w in wallets:
+            if w is None:
+                continue
             c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
             first_one = False
             args.notify.register_cli(c)
@@ -35,7 +37,7 @@ class MultiCLI:
 
         # get original indices (so they remain constant in the name)
         # as "active" wallets might be restricted using -a flag
-        wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet)}
+        wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet) if w is not None}
 
         # get proper profile info
         profiles = [c.owner for c in self.clis]
