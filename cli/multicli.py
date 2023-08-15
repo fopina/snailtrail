@@ -289,7 +289,7 @@ SNAILS: {totals[2]}'''
 
     def cmd_utils_accounts(self):
         for c in self.clis:
-            print(f'{c.name} - {c.owner}')
+            print(f'{c.name} - {c.profile_guild} - {c.owner}')
 
     def cmd_utils_duplicates(self):
         sa = defaultdict(list)
