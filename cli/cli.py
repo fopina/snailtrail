@@ -842,7 +842,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if 'claim once per hour' not in str(e):
                         raise
             else:
-                r = self.client.claim_building(self._profile['guild']['id'], building)
+                try:
+                    r = self.client.claim_building(self._profile['guild']['id'], building)
+                except client.gqlclient.APIError as e:
+                    if 'You have joined this guild after the current cycle start, wait for next cycle' in str(e):
+                        continue
+                    raise
                 logger.info('claim data: %s', r)
                 if 'changes' in r:
                     for c in r['changes']:
