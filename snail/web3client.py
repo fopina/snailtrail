@@ -35,6 +35,10 @@ class Client:
         )
 
     @cached_property
+    def chain_id(self):
+        return self.web3.eth.chain_id
+
+    @cached_property
     def preferences_contract(self):
         return self._contract(contracts.snail_preference)
 
@@ -82,26 +86,44 @@ class Client:
     def marketplace_contract(self):
         return self._contract(contracts.snail_gene_marketplace)
 
-    def _bss(self, function_call: Any, wait_for_transaction_receipt: Union[bool, float] = None, estimate_only=False):
+    def _bss(
+        self,
+        function_call: Any,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        estimate_only=False,
+        priority_fee=0,
+    ):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
+        # FIXME: make this configurable (as max fee?)
+        gas_price = int(0.000000025 * DECIMALS)
+        actual_price = self.web3.eth.gas_price
+        mpf = int(gas_price * priority_fee / 100)
+        mf = gas_price + mpf
+        if actual_price != gas_price:
+            raise Exception(f'bad price: {actual_price}')
         if isinstance(function_call, dict):
             # raw transaction
             tx = {k: v for k, v in function_call.items()}
-            gas_price = int(0.000000025 * DECIMALS)
             tx.update(
                 {
                     'nonce': nonce,
                     'from': self.wallet,
                     'gas': 21000,
-                    'maxFeePerGas': gas_price,
-                    'maxPriorityFeePerGas': gas_price,
-                    'chainId': 43114,
+                    'maxFeePerGas': mf,
+                    'maxPriorityFeePerGas': mpf,
+                    'chainId': self.chain_id,
                 }
             )
         else:
             # function call
             tx = function_call.buildTransaction({'nonce': nonce, 'from': self.wallet})
+            tx.update(
+                {
+                    'maxFeePerGas': mf,
+                    'maxPriorityFeePerGas': mpf,
+                }
+            )
         if estimate_only:
             return self.web3.eth.estimate_gas(tx)
         signed_txn = self.account.sign_transaction(tx)

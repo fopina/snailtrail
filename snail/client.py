@@ -177,6 +177,8 @@ class Client:
             gql_payload['payload']['timeout'],
             gql_payload['payload']['salt'],
             gql_payload['signature'],
+            # FIXME: make this configurable
+            priority_fee=5,
             **kwargs,
         )
 
