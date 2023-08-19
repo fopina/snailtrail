@@ -20,6 +20,7 @@ class Client:
         web3_provider: str,
         web3_account: Optional[Account] = None,
         web3_provider_class: Any = None,
+        web3_base_fee: float = 25,
     ):
         if web3_provider_class is None:
             web3_provider_class = Web3.HTTPProvider
@@ -27,6 +28,7 @@ class Client:
         self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.account: Account = web3_account
         self.wallet = wallet
+        self._base_fee = web3_base_fee
 
     def _contract(self, module):
         return self.web3.eth.contract(
@@ -95,13 +97,10 @@ class Client:
     ):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
-        # FIXME: make this configurable (as max fee?)
-        gas_price = int(0.000000025 * DECIMALS)
-        actual_price = self.web3.eth.gas_price
-        mpf = int(gas_price * priority_fee / 100)
+        # expected value in nAVAX
+        gas_price = int(self._base_fee * 1000000000)
+        mpf = int(priority_fee * 1000000000)
         mf = gas_price + mpf
-        if actual_price != gas_price:
-            raise Exception(f'bad price: {actual_price}')
         if isinstance(function_call, dict):
             # raw transaction
             tx = {k: v for k, v in function_call.items()}

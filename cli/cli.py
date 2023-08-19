@@ -141,6 +141,8 @@ class CLI:
             web3_provider=args.web3_rpc,
             rate_limiter=args.rate_limit,
             gql_retry=args.retry if args.retry > 0 else None,
+            web3_base_fee=args.web3_base_fee,
+            web3_priority_fee=args.web3_priority_fee,
         )
         if graphql_endpoint:
             self.client.gql.url = graphql_endpoint

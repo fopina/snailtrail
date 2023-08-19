@@ -51,15 +51,22 @@ class Client:
         web3_account=None,
         web3_provider=None,
         web3_provider_class=None,
+        web3_base_fee=25,
+        web3_priority_fee=0,
         rate_limiter=None,
         gql_retry=None,
     ):
         self.gql = gqlclient.Client(http_token=http_token, proxy=proxy, rate_limiter=rate_limiter, retry=gql_retry)
         if wallet and web3_provider:
             self.web3 = web3client.Client(
-                wallet, web3_provider, web3_account=web3_account, web3_provider_class=web3_provider_class
+                wallet,
+                web3_provider,
+                web3_account=web3_account,
+                web3_provider_class=web3_provider_class,
+                web3_base_fee=web3_base_fee,
             )
         self._gql_token = None
+        self._priority_fee = web3_priority_fee
 
     @property
     def gql_token(self):
@@ -177,8 +184,7 @@ class Client:
             gql_payload['payload']['timeout'],
             gql_payload['payload']['salt'],
             gql_payload['signature'],
-            # FIXME: make this configurable
-            priority_fee=5,
+            priority_fee=self._priority_fee,
             **kwargs,
         )
 

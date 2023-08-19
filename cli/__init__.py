@@ -60,6 +60,15 @@ def build_parser():
         default='https://api.avax.network/ext/bc/C/rpc',
         help='web3 http endpoint (value or path to file with value)',
     )
+    parser.add_argument(
+        '--web3-base-fee', type=float, default=25, help='Base fee to be used for max fee calculation, in nAVAX'
+    )
+    parser.add_argument(
+        '--web3-priority-fee',
+        type=float,
+        default=1.25,
+        help='Priority fee to be used for time-sensitive transactions (such as joining last spots), in nAVAX',
+    )
     parser.add_argument('--proxy', help='Use this proxy for graphql (recommended: mitmproxy, burp)')
     parser.add_argument(
         '--graphql-endpoint',
