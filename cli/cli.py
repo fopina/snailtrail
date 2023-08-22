@@ -1649,15 +1649,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 text_nb = f' ({c}{rate_nb:.2f}{Fore.RESET})'
 
             rate_all = '-'
+            total_missions = 0
             for stat in snail.more_stats[0]['data']:
                 if stat['name'] == 'Mission':
                     for istat in stat['data']:
                         if istat['name'] == 'Race Type':
-                            rate_all = f"{snail.stats['earned_token'] / istat['data'][0]['count']:.2f}"
+                            total_missions = istat['data'][0]['count']
+                            rate_all = f"{snail.stats['earned_token'] / total_missions:.2f}"
                             break
                     break
             pb.write(
-                f"{snail.name_id} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all}){agg}"
+                f"{snail} - {len(races)} total missions, average {c}{rate:.2f}{Fore.RESET}{text_nb} reward (overall {rate_all} in {total_missions} missions){agg}"
             )
 
     def _join_race(self, join_arg: RaceJoin):
