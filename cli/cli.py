@@ -956,31 +956,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         Mission stuff
         """
         if self.args.join:
-            # join mission
-            try:
-                r, rcpt = self.client.join_mission_races(
-                    self.args.join.snail_id, self.args.join.race_id, allow_last_spot=self.args.last_spot
-                )
-                c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
-                if rcpt is None:
-                    logger.info(c)
-                else:
-                    logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
-            except client.RequiresTransactionClientError:
-                logger.error('only last spot available, use --last-spot')
-            except client.ClientError:
-                logger.exception('unexpected joinMission error')
-            return
+            return self.cmd_missions_join()
 
         if self.args.history is not None:
-            if self.args.history == 0:
-                for s in tqdm(self.my_snails.values()):
-                    self._history_missions(s)
-                return True
-            else:
-                s = list(self.client.iterate_all_snails(filters={'id': self.args.history}, more_stats=True))[0]
-                self._history_missions(s)
-                return False
+            return self.cmd_missions_history()
 
         # list missions
         snails = None
@@ -1002,6 +981,34 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if candidates:
                 c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
             print(c)
+
+    def cmd_missions_join(self):
+        """
+        join mission
+        """
+        try:
+            r, rcpt = self.client.join_mission_races(
+                self.args.join.snail_id, self.args.join.race_id, allow_last_spot=self.args.last_spot
+            )
+            c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
+            if rcpt is None:
+                logger.info(c)
+            else:
+                logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
+        except client.RequiresTransactionClientError:
+            logger.error('only last spot available, use --last-spot')
+        except client.ClientError:
+            logger.exception('unexpected joinMission error')
+
+    def cmd_missions_history(self):
+        if self.args.history == 0:
+            for s in tqdm(self.my_snails.values()):
+                self._history_missions(s)
+            return True
+        else:
+            s = list(self.client.iterate_all_snails(filters={'id': self.args.history}, more_stats=True))[0]
+            self._history_missions(s)
+            return False
 
     @commands.argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
     @commands.argument(
