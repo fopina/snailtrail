@@ -138,12 +138,28 @@ class Notifier:
         if not opts:
             query.edit_message_text(text="Did *nothing*, my favorite action", parse_mode='Markdown')
             return
+
+        preview = True
         opts = opts[0]
+        if opts[:3] == 'it ':
+            opts = opts[3:]
+            preview = False
 
         _cli = self.any_cli
 
         if opts == '__help':
-            m = [f'`{setting.dest}` {escape_markdown(setting.help)}' for setting in self._settings_list]
+            m = [
+                f'`{setting.dest}` {"🟢" if getattr(_cli.args, setting.dest) else "🔴"} {escape_markdown(setting.help)}'
+                for setting in self._settings_list
+            ]
+            query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
+            return
+
+        if opts == '__all':
+            m = [
+                f'`{setting.dest}` {"🟢" if getattr(_cli.args, setting.dest) else "🔴"} {escape_markdown(setting.help)}'
+                for setting in self._settings_list
+            ]
             query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
             return
 
@@ -151,10 +167,32 @@ class Notifier:
             query.edit_message_text(text=f"Unknown setting: {opts}")
             return
 
-        ov = getattr(_cli.args, opts)
-        setattr(_cli.args, opts, not ov)
-        query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
-        _cli.save_bot_settings()
+        if preview:
+            for setting in self._settings_list:
+                if setting.dest == opts:
+                    break
+            else:
+                raise Exception('invalid setting', opts)
+            ov = getattr(_cli.args, opts)
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "🔴 Disable" if ov else "🟢 Enable",
+                        callback_data=f'toggle it {setting.dest}',
+                    )
+                ],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+            query.edit_message_text(
+                text=f'`{opts}` {"🟢" if ov else "🔴"}\n{escape_markdown(setting.help)}',
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode='Markdown',
+            )
+        else:
+            ov = getattr(_cli.args, opts)
+            setattr(_cli.args, opts, not ov)
+            query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
+            _cli.save_bot_settings()
 
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process join race buttons"""
@@ -648,6 +686,7 @@ class Notifier:
             )
         keyboard.append(
             [
+                InlineKeyboardButton(f'📇 Show all', callback_data='toggle __all'),
                 InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
                 InlineKeyboardButton(f'❔ Help', callback_data='toggle __help'),
             ]

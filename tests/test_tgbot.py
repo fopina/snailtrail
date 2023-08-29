@@ -54,6 +54,7 @@ class Test(TestCase):
             [
                 [InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv')],
                 [
+                    InlineKeyboardButton(f'📇 Show all', callback_data='toggle __all'),
                     InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
                     InlineKeyboardButton(f'❔ Help', callback_data='toggle __help'),
                 ],
@@ -74,11 +75,47 @@ class Test(TestCase):
             text='Did *nothing*, my favorite action', parse_mode='Markdown'
         )
 
+        self.assertEqual(self.cli.args.wtv, False)
+        expected_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        '🟢 Enable',
+                        callback_data='toggle it wtv',
+                    )
+                ],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+        )
+        self.update.callback_query = mock.MagicMock(data='toggle wtv')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='`wtv` 🔴\nWhatever', reply_markup=expected_markup, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv, False)
+
+        self.assertEqual(self.cli.args.wtv, False)
+        self.update.callback_query = mock.MagicMock(data='toggle it wtv')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='Toggled *wtv* to *True*', parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv, True)
+
         self.update.callback_query = mock.MagicMock(data='toggle __help')
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`wtv` Whatever', parse_mode='Markdown'
+            text='`wtv` 🟢 Whatever', parse_mode='Markdown'
+        )
+
+        self.update.callback_query = mock.MagicMock(data='toggle __all')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='`wtv` 🟢 Whatever', parse_mode='Markdown'
         )
 
     def test_claim(self):
