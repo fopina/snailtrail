@@ -50,6 +50,7 @@ class Notifier:
         self.chat_id = chat_id
         self.clis = {}
         self._settings_list = settings_list
+        self._read_only_settings = None
         self._sent_messages = set()
         if owner_chat_id is None:
             self.owner_chat_id = self.chat_id
@@ -156,10 +157,13 @@ class Notifier:
             return
 
         if opts == '__all':
-            m = [
-                f'`{setting.dest}` {"🟢" if getattr(_cli.args, setting.dest) else "🔴"} {escape_markdown(setting.help)}'
-                for setting in self._settings_list
-            ]
+            if self._read_only_settings is None:
+                m = ['No settings available...']
+            else:
+                m = [
+                    f'`{setting.dest}` = `{getattr(_cli.args, setting.dest, None)}`\n{escape_markdown(setting.help)}'
+                    for setting in self._read_only_settings
+                ]
             query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
             return
 

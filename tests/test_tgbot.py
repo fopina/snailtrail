@@ -14,6 +14,7 @@ class Test(TestCase):
         self.cli.name = '0x2f'
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
         self.bot._settings_list = [mock.MagicMock(dest='wtv', help='Whatever')]
+        self.bot._read_only_settings = [mock.MagicMock(dest='wtv_other', help='Whatever Other')]
         self.bot.register_cli(self.cli)
         self.update = mock.MagicMock(effective_user=self.user)
         self.context = mock.MagicMock()
@@ -112,10 +113,11 @@ class Test(TestCase):
         )
 
         self.update.callback_query = mock.MagicMock(data='toggle __all')
+        self.cli.args.wtv_other = 2
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`wtv` 🟢 Whatever', parse_mode='Markdown'
+            text='`wtv_other` = `2`\nWhatever Other', parse_mode='Markdown'
         )
 
     def test_claim(self):

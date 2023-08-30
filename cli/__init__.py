@@ -25,6 +25,11 @@ class StoreBotConfig(configargparse.argparse._StoreAction):
             for x in parser._subparsers._actions[-1].choices['bot']._actions
             if isinstance(x, configargparse.argparse._StoreTrueAction)
         ]
+        bot._read_only_settings = [
+            x
+            for x in parser._subparsers._actions[-1].choices['bot']._actions
+            if not isinstance(x, configargparse.argparse._StoreTrueAction)
+        ]
         super().__call__(parser, namespace, bot, option_string)
 
 
