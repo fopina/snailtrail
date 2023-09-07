@@ -156,6 +156,7 @@ SNAILS: {totals[2]}'''
                     done.add(snail)
                 return fee
 
+            acc_indices = {c._profile['_i']: _i for _i, c in enumerate(self.clis)}
             # regroup per account
             new_plan = {}
             # reversed would be more profitable (more expensive first) but if it runs out of funds
@@ -167,7 +168,7 @@ SNAILS: {totals[2]}'''
 
             # approve incubator
             for acc in tqdm(new_plan, desc='Approve incubator'):
-                c = self.clis[acc - 1]
+                c = self.clis[acc_indices[acc]]
                 tx = c.client.web3.approve_slime_for_incubator()
                 if tx:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
@@ -196,7 +197,7 @@ SNAILS: {totals[2]}'''
 
             try:
                 for acc, acc_plan in new_plan.items():
-                    c = self.clis[acc - 1]
+                    c = self.clis[acc_indices[acc]]
                     if last_client is not None and last_client != c:
                         last_client.cmd_balance_transfer(c.owner)
                     last_client = c
