@@ -1858,15 +1858,15 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for fee, snail1, snail2 in snails:
                 print(
                     f'{snail1.id}:{snail2.id} - '
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} {snail1.family.gene} - '
-                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
+                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
             return True, snails
         else:
             for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
                 print(
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} {snail1.family.gene} - '
-                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
+                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
                 )
         return True
 
