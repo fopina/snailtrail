@@ -331,7 +331,7 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            query.edit_message_text('\n'.join(extra_text))
+            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
