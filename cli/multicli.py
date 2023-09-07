@@ -147,12 +147,14 @@ SNAILS: {totals[2]}'''
             done = set()
 
             def _transgender(c, snail, gender):
+                fee = 0
                 if snail not in done:
                     tx = c.client.web3.set_snail_gender(snail, gender.value)
                     if tx:
                         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                         print(f'{snail} changed gender to {gender} for {fee}')
                     done.add(snail)
+                return fee
 
             # regroup per account
             new_plan = {}
@@ -189,22 +191,40 @@ SNAILS: {totals[2]}'''
                 raise _r
 
             last_client = None
-            for acc, acc_plan in new_plan.items():
-                c = self.clis[acc - 1]
-                if last_client is not None and last_client != c:
-                    last_client.cmd_balance_transfer(c.owner)
-                last_client = c
-                for ms, fs, *rest in acc_plan:
-                    if rest:
-                        print(f'Skipping {ms, fs}')
-                        continue
-                    # transgender
-                    _transgender(c, ms, cli.Gender.MALE)
-                    _transgender(c, fs, cli.Gender.FEMALE)
-                    print(f'breeding {ms, fs}...')
-                    tx = retriable_breed(c, fs, ms)
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                    print(f'bred {ms, fs} for {fee}')
+            gender_fees = 0
+            breed_fees = 0
+
+            try:
+                for acc, acc_plan in new_plan.items():
+                    c = self.clis[acc - 1]
+                    if last_client is not None and last_client != c:
+                        last_client.cmd_balance_transfer(c.owner)
+                    last_client = c
+                    for ms, fs, *rest in acc_plan:
+                        if rest:
+                            print(f'Skipping {ms, fs}')
+                            continue
+                        # transgender
+                        fee = _transgender(c, ms, cli.Gender.MALE)
+                        gender_fees += fee
+                        fee = _transgender(c, fs, cli.Gender.FEMALE)
+                        gender_fees += fee
+                        # get coefficient just for displaying
+                        coef = c.client.web3.get_current_coefficent()
+                        print(f'breeding {ms, fs} (with coeff {coef})...')
+                        tx = retriable_breed(c, fs, ms)
+                        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                        breed_fees += fee
+                        print(f'bred {ms, fs} for {fee}')
+            finally:
+                print(
+                    f'''
+== Fees summary ==
+Transgender: {gender_fees}
+Breed: {breed_fees}
+Total: {breed_fees + gender_fees}
+'''
+                )
             return
         if self.args.fee is not None and self.args.plan:
             snails = []
