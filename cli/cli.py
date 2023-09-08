@@ -755,20 +755,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             day_i += 1
 
         stats = self.client.gql.tournament_guild_stats(self.owner)
-        if self.report_as_main:
-            # FIXME: take info for some of the stages?
-            # tournament starting: notify initial positions? when is this message triggered?
-            # pause week - data is None, when does it become NOT NONE? (same time as previous point :troll:)
-            # "time left for next race" - how do we see current day/race is over (stop monitoring)? where is the time left for next race?
-            logger.info('DELME SOON: %s', stats)
-            # copy is enough, not changing anything deep
-            c = tour_data.copy()
-            del c['weeks']
-            logger.info('DELME SOON: %s', c)
-            for wi, w in enumerate(tour_data['weeks']):
-                for ri, r in enumerate(w['days']):
-                    logger.info('DELME SOON: %d - %d - %s', wi, ri, r)
-
         data = stats['leaderboard']['my_guild']
 
         if self._notify_tournament != UNDEF:
@@ -776,8 +762,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for entry in tour_data['weeks'][week - 1]['days'][day_i - 1]['result']['entries']:
                 if entry['points'] == 0:
                     # then DO NOTHING (check again in few seconds)
-                    if self.report_as_main:
-                        logger.info('DELME SOON: race ongoing, check again in a few')
                     return
 
             if old_next is None and _next is not None:
@@ -817,8 +801,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # check again in 12h
             logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
             _next = _n + timedelta(hours=12)
-        if self.report_as_main:
-            logger.info('DELME SOON: checking again at %s (%s)', _next, data)
         self._notify_tournament = (_next, data, old_next)
 
     def _bot_autoclaim(self):
