@@ -329,6 +329,7 @@ class CLI:
 
     def join_missions(self) -> tuple[bool, datetime]:
         missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
+        missions.sort(key=lambda race: len(race.athletes), reverse=True)
         queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
         if not queueable:
             return True, closest

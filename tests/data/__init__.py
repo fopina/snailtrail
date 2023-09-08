@@ -357,22 +357,22 @@ GQL_MISSION_RACES = {
             '__typename': 'Race',
         },
         {
-            'id': 169405,
-            'conditions': ['Forest', 'Wind', 'Dodge'],
-            'distance': 'Treasury Run',
-            # 5 snails
-            'athletes': [6150, 6962, 8419, 8531, 9783],
-            'track': 'Circuit de Monaco',
-            'participation': False,
-            '__typename': 'Race',
-        },
-        {
             'id': 169406,
             'conditions': ['Desert', 'Hot', 'Jump'],
             'distance': 'Treasury Run',
             # 4 snails
             'athletes': [5439, 6449, 8915, 9342],
             'track': 'Silverstone Circuit',
+            'participation': False,
+            '__typename': 'Race',
+        },
+        {
+            'id': 169405,
+            'conditions': ['Forest', 'Wind', 'Dodge'],
+            'distance': 'Treasury Run',
+            # 5 snails
+            'athletes': [6150, 6962, 8419, 8531, 9783],
+            'track': 'Circuit de Monaco',
             'participation': False,
             '__typename': 'Race',
         },
