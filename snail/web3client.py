@@ -377,6 +377,31 @@ class Client:
             **kwargs,
         )
 
+    def stake_snails(
+        self,
+        order_id: int,
+        snail_ids: list[int],
+        timeout: int,
+        salt: int,
+        signature: str,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
+    ):
+        return self._bss(
+            self.snailguild_contract.functions.stakeSnails(
+                (
+                    order_id,
+                    self.wallet,
+                    snail_ids,
+                    timeout,
+                    salt,
+                ),
+                signature,
+            ),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
     def approve_all_snails_for_bulk(
         self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
     ):

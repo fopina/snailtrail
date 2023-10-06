@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Generator
+from typing import Generator, List
 import requests
 from time import time
 from datetime import datetime
@@ -407,3 +407,16 @@ class Client:
         )
         r.raise_for_status()
         return r.json()['data']['candles']
+
+    def stake_snails(self, guild_id: int, snail_ids: List[int]):
+        data = self.gql.stake_snails(guild_id, snail_ids, gql_token=self.gql_token)
+        if data['status'] != 1:
+            raise Exception(data)
+
+        return self.web3.stake_snails(
+            data['payload']['order_id'],
+            snail_ids,
+            data['payload']['timeout'],
+            data['payload']['salt'],
+            data['signature'],
+        )

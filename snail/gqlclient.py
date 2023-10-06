@@ -1,3 +1,4 @@
+from typing import List
 import requests
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
@@ -1187,3 +1188,41 @@ class Client(requests.Session):
             """,
             auth=gql_token,
         )['apply_pressure_promise']
+
+    def stake_snails(self, guild_id: int, snail_ids: List[int], gql_token=None):
+        return self.query(
+            "send_workers_promise",
+            {
+                "guild_id": guild_id,
+                "token_ids": snail_ids,
+            },
+            """
+            mutation send_workers_promise($guild_id: Int!, $token_ids: [Int]) {
+                send_workers_promise(guild_id: $guild_id, token_ids: $token_ids) {
+                    ... on Problem {
+                    problem
+                    __typename
+                    }
+                    ... on GenericResponse {
+                    status
+                    message
+                    signature
+                    payload {
+                        ... on WorkerPayload {
+                        order_id
+                        token_ids
+                        owner
+                        timeout
+                        salt
+                        __typename
+                        }
+                        __typename
+                    }
+                    __typename
+                    }
+                    __typename
+                }
+            }
+            """,
+            auth=gql_token,
+        )['send_workers_promise']

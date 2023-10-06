@@ -1221,6 +1221,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='Unstake all the snails',
     )
     @commands.argument(
+        '--stake',
+        action='store_true',
+        help='Stake all the snails',
+    )
+    @commands.argument(
         '-c',
         '--claim',
         action='store_true',
@@ -1242,6 +1247,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         """Guilds overview"""
         if self.args.unstake:
             return self.cmd_guild_unstake()
+
+        if self.args.stake:
+            return self.cmd_guild_stake()
 
         if self.args.other:
             data = self._cmd_guild_data(guild_id=self.args.other)
@@ -1292,6 +1300,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     logger.warn(str(e))
             else:
                 print(self.client.claim_building(self._profile['guild']['id'], building))
+
+    def cmd_guild_stake(self):
+        if not self.profile_guild:
+            print('No guild')
+            return
+        snails = list(self.client.iterate_my_snails(self.owner))
+        if not snails:
+            print('No one available to work')
+            return
+        snail_ids = [s.id for s in snails]
+        tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids)
+        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+        print(f'{len(snails)} snails staked for {fee} AVAX')
 
     def cmd_guild_unstake(self):
         if not self.profile_guild:
