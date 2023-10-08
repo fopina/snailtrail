@@ -820,7 +820,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         msg = []
         for building, amount in data['rewards']:
             if building == 'SINK':
-                # FIXME: check outputs from logs and make use of return data
                 try:
                     r = self.client.claim_tomato(self._profile['guild']['id'])['message']
                     msg.append(r)
@@ -834,11 +833,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if 'You have joined this guild after the current cycle start, wait for next cycle' in str(e):
                         continue
                     raise
-                logger.info('claim data: %s', r)
                 if 'changes' in r:
                     for c in r['changes']:
                         _a = int(c['_to']) - int(c['_from'])
-                        msg.append(f'Claimed {_a} {c["name"]} from {c["src_type"]}')
+                        if c["src_type"] == 'BUILDING':
+                            msg.append(f'Claimed {_a} {c["name"]}')
+                        else:
+                            msg.append(f'Claimed {_a} {c["name"]} from {c["src_type"]}')
                 else:
                     msg.append(f'Claimed {amount} from {building}')
 
