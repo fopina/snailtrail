@@ -5,7 +5,7 @@ from telegram.utils.helpers import escape_markdown
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 import logging
 
-from . import cli
+from . import cli, utils
 from .cli import DECIMALS
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
             dispatcher.add_handler(CommandHandler("inventory", self.cmd_inventory))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
+            dispatcher.add_handler(CommandHandler("balancebalance", self.cmd_balance_balance))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
@@ -131,6 +132,8 @@ class Notifier:
             return self.handle_buttons_css(opts, update, context)
         elif cmd == 'swapsend':
             return self.handle_buttons_swapsend(opts, update, context)
+        elif cmd == 'balance_balance':
+            return self.handle_buttons_balance_balance(opts, update, context)
         query.edit_message_text(text=f"Unknown option: {query.data}")
 
     def handle_buttons_toggle(self, opts: str, update: Update, context: CallbackContext) -> None:
@@ -348,6 +351,19 @@ class Notifier:
             parse_mode='Markdown',
         )
 
+    def handle_buttons_balance_balance(self, opts: str, update: Update, context: CallbackContext) -> None:
+        """Process /balancebalance confirmation"""
+        query = update.callback_query
+        query.message.reply_chat_action(constants.CHATACTION_TYPING)
+
+        msg = [query.message.text, '', '**for real**']
+
+        def _cb(_m):
+            msg.append(escape_markdown(_m))
+            query.message.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+        utils.balance_balance(self.clis.values(), 1.2, 1.0, _cb, force=True)
+
     def handle_buttons_css(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process /css buttons"""
         query = update.callback_query
@@ -552,6 +568,32 @@ class Notifier:
             msg.append('')
 
         m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_balance_balance(self, update: Update, context: CallbackContext) -> None:
+        """
+        Balance all accounts with 1.2 AVAX
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        msg = []
+        m = update.message.reply_markdown('Checking balances...')
+
+        def _cb(_m):
+            msg.append(_m)
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+        utils.balance_balance(self.clis.values(), 1.2, 1.0, _cb)
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    'Confirm',
+                    callback_data=f'balance_balance',
+                )
+            ],
+            [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+        ]
+        m.edit_text(text='\n'.join(msg), parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
     @bot_auth
     def cmd_css(self, update: Update, context: CallbackContext) -> None:

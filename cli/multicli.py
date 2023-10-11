@@ -7,7 +7,7 @@ from typing import List
 from colorama import Fore
 from tqdm import tqdm
 
-from . import cli
+from . import cli, utils
 
 logger = logging.getLogger(__name__)
 
@@ -333,29 +333,10 @@ Total: {breed_fees + gender_fees}
                 print(f'  {snail.name} {c.name}')
 
     def cmd_utils_balance_balance(self):
-        if self.args.limit <= self.args.stop:
-            raise Exception('stop must be lower than limit')
-        balances = []
-        for c in self.clis:
-            balances.append((c.client.web3.get_balance(), c))
-        balances.sort(key=lambda x: x[0], reverse=True)
-        donor: tuple[float, cli.CLI] = balances[0]
-        poor: list[tuple[float, cli.CLI]] = [(x, self.args.limit - x, z) for (x, z) in balances if x < self.args.stop]
-        total_transfer = sum(y for _, y, _ in poor)
-        total_fees = 0
-        if donor[0] - self.args.limit < total_transfer:
-            print(f'Donor has not enough balance: {total_transfer} required but only {donor[0]} available')
-            return
-        for p in poor:
-            print(f'{donor[1].name} to {p[2].name}: {p[1]}')
-            if self.args.force:
-                tx = donor[1].client.web3.transfer(p[2].owner, p[1])
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                total_fees += fee
-                print(f'> fee: {fee}')
-        print(f'> Total transfer: {total_transfer}')
-        if total_fees:
-            print(f'> Total fees: {total_fees}')
+        def _cb(msg):
+            print(msg)
+
+        utils.balance_balance(self.clis, self.args.limit, self.args.stop, _cb, force=self.args.force)
 
     def cmd_utils_bruteforce_test(self):
         for c in self.clis:
