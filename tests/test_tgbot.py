@@ -44,6 +44,7 @@ class Test(TestCase):
 /racepending - View pending races (that you joined)
 /inventory - Inventory items
 /stats - My snails stats
+/balancebalance - Balance all accounts with 1.2 AVAX
 /reloadsnails - Reset snails cache
 /settings - Toggle bot settings
 /usethisformissions - Use this chat for mission join notifications'''
