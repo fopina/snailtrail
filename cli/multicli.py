@@ -475,7 +475,7 @@ Total: {breed_fees + gender_fees}
         if not self.args.cmd:
             return
 
-        if self.is_multi:
+        if self.is_multi or not hasattr(cli.CLI, f'cmd_{self.args.cmd}'):
             m = getattr(self, f'cmd_{self.args.cmd}', None)
             if m is not None:
                 r = m()
