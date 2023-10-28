@@ -335,6 +335,9 @@ class CLI:
             return True, closest
 
         boosted = set(self.args.boost or [])
+        if self.args.boost_wallet and self.client.web3.wallet in self.args.boost_wallet:
+            # all snails are boosted
+            boosted.update(snail.id for snail in queueable)
         if self.args.boost_to_15:
             # remove snails lv 15
             for snail in queueable:
@@ -581,6 +584,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=int,
         action='append',
         help='If auto, these snail ids should always take last spots for missions (boost)',
+    )
+    @commands.argument(
+        '--boost-wallet',
+        type=commands.wallet_ext_or_int,
+        action='append',
+        help='If auto, all snails in these wallets should always take last spots for missions (boost)',
     )
     @commands.argument(
         '--boost-to-15',
