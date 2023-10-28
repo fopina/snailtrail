@@ -135,7 +135,7 @@ class TestBot(TestCase):
         self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.boost = [int(s['id']) for s in data.GQL_MISSION_SNAILS['snails']]
-        self.cli.args.boost_to_15 = True
+        self.cli.args.boost_to = 15
         self.cli.join_missions()
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
