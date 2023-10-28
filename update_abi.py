@@ -1,12 +1,13 @@
 #!/usr/bin/env python -u
 
-import requests
-import re
 import json
-import json5
-from pathlib import Path
+import re
 import subprocess
 import time
+from pathlib import Path
+
+import json5
+import requests
 
 EXPECTED_CONTRACTS = 12
 CONTRACT_DIR = Path(__file__).absolute().parent / 'snail' / 'contracts'

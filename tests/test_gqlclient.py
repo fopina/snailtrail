@@ -1,8 +1,10 @@
+from pathlib import Path
 from unittest import TestCase, mock
-from snail import gqlclient
+
 import gql
 from graphql.error.syntax_error import GraphQLSyntaxError
-from pathlib import Path
+
+from snail import gqlclient
 
 
 class Test(TestCase):

@@ -1,9 +1,12 @@
+import logging
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from telegram import Update, constants, InlineKeyboardButton, InlineKeyboardMarkup
+
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, Update,
+                      constants)
+from telegram.ext import (CallbackContext, CallbackQueryHandler,
+                          CommandHandler, Updater)
 from telegram.utils.helpers import escape_markdown
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
-import logging
 
 from . import cli, utils
 from .cli import DECIMALS

@@ -1,8 +1,8 @@
-import sys
-from pathlib import Path
-import unittest
-from unittest import TestCase
 import os
+import sys
+import unittest
+from pathlib import Path
+from unittest import TestCase
 
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 

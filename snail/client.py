@@ -1,8 +1,9 @@
-from enum import Enum
-from typing import Generator, List
-import requests
-from time import time
 from datetime import datetime
+from enum import Enum
+from time import time
+from typing import Generator, List
+
+import requests
 
 from . import gqlclient, gqltypes, web3client
 

@@ -5,23 +5,22 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from functools import cached_property
+from pathlib import Path
 from typing import Optional, Union
 from xmlrpc.client import Boolean
-from pathlib import Path
-import requests
 
-from tqdm import tqdm
+import requests
 from colorama import Fore
+from tqdm import tqdm
 
 from snail import VERSION, client
 from snail.gqltypes import Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
-from . import tgbot
+from . import commands, tgbot
 from .decorators import cached_property_with_ttl
 from .helpers import SetQueue
 from .types import RaceJoin, Wallet
-from . import commands
 
 logger = logging.getLogger(__name__)
 

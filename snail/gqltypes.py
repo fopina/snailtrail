@@ -1,8 +1,8 @@
-from collections import defaultdict, Counter
 import itertools
-from typing import Any
-from enum import Enum
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Any
 
 
 class Gender(Enum):

@@ -1,7 +1,9 @@
 from unittest import TestCase, mock
-from cli import tgbot
-from telegram.user import User
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.user import User
+
+from cli import tgbot
 
 
 class Test(TestCase):

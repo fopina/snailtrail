@@ -1,5 +1,6 @@
-from snail.web3client import DECIMALS
 from typing import TYPE_CHECKING
+
+from snail.web3client import DECIMALS
 
 if TYPE_CHECKING:
     from . import cli

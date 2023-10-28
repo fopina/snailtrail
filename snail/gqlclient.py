@@ -1,8 +1,9 @@
-from typing import List
-import requests
-from urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
 import time
+from typing import List
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 class APIError(Exception):

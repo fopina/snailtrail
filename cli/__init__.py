@@ -7,9 +7,10 @@ from pathlib import Path
 
 import configargparse
 from colorama import Fore
+
 from snail import proxy
 
-from . import multicli, tempconfigparser, tgbot, commands
+from . import commands, multicli, tempconfigparser, tgbot
 
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 

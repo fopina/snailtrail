@@ -1,7 +1,8 @@
-import configargparse
 from pathlib import Path
 
-from ..types import Wallet, RaceJoin
+import configargparse
+
+from ..types import RaceJoin, Wallet
 
 
 class FileOrString(str):

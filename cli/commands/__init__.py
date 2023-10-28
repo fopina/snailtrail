@@ -1,2 +1,2 @@
-from .types import *
 from .commands import *
+from .types import *

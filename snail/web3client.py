@@ -1,11 +1,12 @@
+import base64
+from datetime import datetime
 from functools import cached_property
 from typing import Any, Optional, Union
-from datetime import datetime
-import base64
 
 from Crypto.Hash import keccak
 from eth_account.messages import encode_defunct
-from web3 import Web3, Account, constants, exceptions  # noqa - for others to import from here
+from web3 import (Account, Web3,  # noqa - for others to import from here
+                  constants, exceptions)
 from web3.middleware import geth_poa_middleware
 
 from . import contracts
