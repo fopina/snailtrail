@@ -1,6 +1,10 @@
 test:
 	pytest --doctest-modules --cov
 
+lint:
+	black .
+	isort .
+
 all: test pub deploy
 
 build:
