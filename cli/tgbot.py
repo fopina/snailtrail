@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
-from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, Updater
+from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, Updater, MessageHandler
 from telegram.utils.helpers import escape_markdown
 
 from . import cli, utils
@@ -81,6 +81,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
             dispatcher.add_handler(CommandHandler("help", self.cmd_help))
+            dispatcher.add_handler(MessageHandler(None, self.cmd_invalid))
         else:
             self.updater = None
 
@@ -431,6 +432,23 @@ class Notifier:
         """
         m = [f'/{v[0]} - {v[1]}' for v in self._listed_commands() if v[0] != 'help']
         update.message.reply_text('\n'.join(m))
+
+    def cmd_invalid(self, update: Update, context: CallbackContext) -> None:
+        """
+        Help
+        """
+        update.effective_user['first_name'],
+        update.effective_user['last_name'],
+        update.effective_user['username'],
+        update.effective_user['id'],
+        logger.warning(
+            'New message: %s %s (%s / %d) said %s',
+            update.effective_user['first_name'],
+            update.effective_user['last_name'],
+            update.effective_user['username'],
+            update.effective_user['id'],
+            update.message.text,
+        )
 
     @bot_auth
     def cmd_stats(self, update: Update, context: CallbackContext) -> None:
