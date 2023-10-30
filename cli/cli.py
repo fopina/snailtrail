@@ -334,9 +334,13 @@ class CLI:
             return True, closest
 
         boosted = set(self.args.boost or [])
-        if self.args.boost_wallet and self.client.web3.wallet in self.args.boost_wallet:
-            # all snails are boosted
-            boosted.update(snail.id for snail in queueable)
+        if self.args.boost_wallet:
+            # FIXME: delete this
+            logger.info('BOOSTED (%s) (%s)', self.args.boost_wallet, self.client.web3.wallet)
+            if self.client.web3.wallet in self.args.boost_wallet:
+                # all snails are boosted
+                logger.info('BOOSTED MATCHED WALLET')
+                boosted.update(snail.id for snail in queueable)
         if self.args.boost_to:
             # remove snails >= than this level
             for snail in queueable:
@@ -351,7 +355,7 @@ class CLI:
             not_cheap = set()
 
         if self.args.fair:
-            # add snails with negative tickets to "boosted" to re-use logic
+            # add snails with few tickets to "boosted" to re-use logic
             for s in queueable:
                 if s.stats['mission_tickets'] < self.args.minimum_tickets:
                     boosted.add(s.id)
