@@ -336,10 +336,10 @@ class CLI:
         boosted = set(self.args.boost or [])
         if self.args.boost_wallet:
             # FIXME: delete this
-            logger.info('BOOSTED (%s) (%s)', self.args.boost_wallet, self.client.web3.wallet)
+            logger.debug('BOOSTED (%s) (%s) (%s)', self.args.boost_wallet, [self.client.web3.wallet], self.owner)
             if self.client.web3.wallet in self.args.boost_wallet:
                 # all snails are boosted
-                logger.info('BOOSTED MATCHED WALLET')
+                logger.debug('BOOSTED MATCHED WALLET')
                 boosted.update(snail.id for snail in queueable)
         if self.args.boost_to:
             # remove snails >= than this level
