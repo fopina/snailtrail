@@ -336,7 +336,7 @@ class CLI:
         boosted = set(self.args.boost or [])
         if self.args.boost_wallet:
             # FIXME: delete this
-            logger.debug('BOOSTED (%s) (%s) (%s)', self.args.boost_wallet, self.owner)
+            logger.debug('BOOSTED (%s) (%s)', self.args.boost_wallet, self.owner)
             if self.owner in {w.address for w in self.args.boost_wallet}:
                 # all snails are boosted
                 logger.debug('BOOSTED MATCHED WALLET')
