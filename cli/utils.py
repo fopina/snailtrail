@@ -10,8 +10,13 @@ def balance_balance(clis, limit, stop, callback, force=False):
     if limit <= stop:
         raise Exception('stop must be lower than limit')
     balances = []
+    main_c = clis[0]
+    wallets = [c.owner for c in clis] 
+    balances_d = main_c.client.web3.multicall_balances(wallets)
     for c in clis:
-        balances.append((c.client.web3.get_balance(), c))
+        # ignore wallets with 0 snails, no need for balance...
+        if balances_d[c.owner][0] > 0:
+            balances.append((balances_d[c.owner][3], c))
     balances.sort(key=lambda x: x[0], reverse=True)
     donor: tuple[float, 'cli.CLI'] = balances[0]
     poor: list[tuple[float, 'cli.CLI']] = [(x, limit - x, z) for (x, z) in balances if x < stop]

@@ -20,5 +20,9 @@ deploy:
 	# add portainer service webhook to portainer.conf
 	curl $(shell cat portainer.conf) -d tag=snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ')
 
+deploy-rent: pub
+	# add portainer service webhook to portainer.conf
+	curl $(shell cat portainer-rent.conf) -d tag=snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ')
+
 sit:
 	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
