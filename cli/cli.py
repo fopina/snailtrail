@@ -334,13 +334,9 @@ class CLI:
             return True, closest
 
         boosted = set(self.args.boost or [])
-        if self.args.boost_wallet:
-            # FIXME: delete this
-            logger.debug('BOOSTED (%s) (%s)', self.args.boost_wallet, self.owner)
-            if self.owner in {w.address for w in self.args.boost_wallet}:
-                # all snails are boosted
-                logger.debug('BOOSTED MATCHED WALLET')
-                boosted.update(snail.id for snail in queueable)
+        if self.args.boost_wallet and self.owner in {w.address for w in self.args.boost_wallet}:
+            # all snails are boosted
+            boosted.update(snail.id for snail in queueable)
         if self.args.boost_to:
             # remove snails >= than this level
             for snail in queueable:
