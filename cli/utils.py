@@ -12,7 +12,7 @@ def balance_balance(clis, limit, stop, callback, force=False):
     balances = []
     clis = list(clis)
     main_c = clis[0]
-    wallets = [c.owner for c in clis] 
+    wallets = [c.owner for c in clis]
     balances_d = main_c.client.web3.multicall_balances(wallets)
     for c in clis:
         # ignore wallets with 0 snails, no need for balance...

@@ -144,6 +144,11 @@ def build_parser():
         action='store_true',
         help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
     )
+    pmm.add_argument(
+        '--family',
+        action='store_true',
+        help='Compare per family (useful for guild races)',
+    )
     pmm = utils_parsers.add_parser(
         'boost_snail', help='Apply all slime boosts to this snail (transferring snail around)'
     )

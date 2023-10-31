@@ -317,21 +317,31 @@ Total: {breed_fees + gender_fees}
 
     def cmd_utils_duplicates(self):
         sa = defaultdict(list)
-        for c in self.clis:
+        for c in tqdm(self.clis):
             for _, snail in c.my_snails.items():
                 k = tuple(sorted(x.id for x in snail.adaptations))
+                if self.args.family:
+                    k = (snail.family, k)
                 sa[k].append((c, snail))
-        ordered = sorted(((k, len(v)) for k, v in sa.items()), key=lambda x: x[1])
+
+        ordered = sorted(
+            ((k, len(v)) for k, v in sa.items()), key=lambda x: (x[0][0].id, x[1]) if self.args.family else x[1]
+        )
         for k, _ in ordered:
             v = sa[k]
-            if len(k) != 3 and not self.args.all:
+            if not self.args.family and len(k) != 3 and not self.args.all:
+                continue
+            if self.args.family and len(k[1]) != 3 and not self.args.all:
                 continue
             if len(v) == 1 and not self.args.all:
                 continue
             adapt = v[0][1].adaptations
-            print(f'{adapt} ({len(v)}):')
+            if self.args.family:
+                print(f'[{k[0]}] {adapt} ({len(v)}):')
+            else:
+                print(f'{adapt} ({len(v)}):')
             for c, snail in v:
-                print(f'  {snail.name} {c.name}')
+                print(f'  {snail} ({c.name})')
 
     def cmd_utils_balance_balance(self):
         def _cb(msg):
