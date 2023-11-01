@@ -523,6 +523,7 @@ class Client(requests.Session):
                     snails {
                         id
                         adaptations
+                        purity
                         name
                         queueable_at
                         stats {
