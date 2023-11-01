@@ -319,6 +319,8 @@ Total: {breed_fees + gender_fees}
         sa = defaultdict(list)
         for c in tqdm(self.clis):
             for _, snail in c.my_snails.items():
+                if self.args.purity and snail.purity < self.args.purity:
+                    continue
                 k = tuple(sorted(x.id for x in snail.adaptations))
                 if self.args.family:
                     k = (snail.family, k)

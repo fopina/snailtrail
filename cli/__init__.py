@@ -149,6 +149,11 @@ def build_parser():
         action='store_true',
         help='Compare per family (useful for guild races)',
     )
+    pmm.add_argument(
+        '--purity',
+        type=int,
+        help='Minimum purity to consider',
+    )
     pmm = utils_parsers.add_parser(
         'boost_snail', help='Apply all slime boosts to this snail (transferring snail around)'
     )
