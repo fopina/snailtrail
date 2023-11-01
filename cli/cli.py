@@ -337,6 +337,8 @@ class CLI:
         if self.args.boost_wallet and self.owner in {w.address for w in self.args.boost_wallet}:
             # all snails are boosted
             boosted.update(snail.id for snail in queueable)
+        if self.args.boost_pure:
+            boosted.update(snail.id for snail in queueable if snail.purity >= self.args.boost_pure)
         if self.args.boost_to:
             # remove snails >= than this level
             for snail in queueable:
@@ -589,6 +591,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=commands.wallet_ext_or_int,
         action='append',
         help='If auto, all snails in these wallets should always take last spots for missions (boost)',
+    )
+    @commands.argument(
+        '--boost-pure',
+        type=int,
+        help='If auto, all snails with this purity or more should always take last spots for missions (boost)',
     )
     @commands.argument(
         '--boost-to',
