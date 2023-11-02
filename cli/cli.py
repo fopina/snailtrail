@@ -350,7 +350,7 @@ class CLI:
                     boosted.difference_update({snail.id})
             if len(boosted) < _ol:
                 self.notifier.notify(
-                    f'Current boosted snails: {", ".join(str(snail.id) for snail in boosted)}.', only_once=True
+                    f'Current boosted snails: {", ".join(str(snail) for snail in boosted)}.', only_once=True
                 )
         if self.args.cheap and self.args.boost_not_cheap:
             not_cheap = boosted.copy()
