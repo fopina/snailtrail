@@ -341,17 +341,12 @@ class CLI:
             boosted.update(snail.id for snail in queueable if snail.purity >= self.args.boost_pure)
         if self.args.boost_to:
             # remove snails >= than this level
-            _ol = len(boosted)
             for snail in queueable:
                 if snail.level >= self.args.boost_to and snail.id in boosted:
                     self.notifier.notify(
                         f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
                     )
                     boosted.difference_update({snail.id})
-            if len(boosted) < _ol:
-                self.notifier.notify(
-                    f'Current boosted snails: {", ".join(str(snail) for snail in boosted)}.', only_once=True
-                )
         if self.args.cheap and self.args.boost_not_cheap:
             not_cheap = boosted.copy()
         else:
