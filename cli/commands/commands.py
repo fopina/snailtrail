@@ -1,9 +1,10 @@
 from functools import partial
 
-commands = {}
-
 
 class command:
+    # class variable
+    commands = {}
+
     def __init__(self, name: str = None, help: str = None):
         self._name = name
         self.help = help
@@ -21,9 +22,9 @@ class command:
             raise ValueError(f'command methods must start with cmd_ ({name})')
         if self._name is None:
             self._name = name[4:]
-        if self._name in commands:
+        if self._name in self.commands:
             raise ValueError(f'{name} registered more than once')
-        commands[self._name] = self
+        self.commands[self._name] = self
 
     def __get__(self, instance, owner=None):
         return partial(self._func, instance)
@@ -49,7 +50,20 @@ class argument:
     def __set_name__(self, owner, name):
         # chain set_names
         self._func.__set_name__(owner, name)
-        commands[self._command._name].arguments.append((self._args, self._kwargs))
+        self._command.commands[self._command._name].arguments.append((self._args, self._kwargs))
 
     def __get__(self, instance, owner=None):
         return partial(self._command._func, instance)
+
+
+class util_command(command):
+    commands = {}
+
+    def __set_name__(self, owner, name):
+        if not name.startswith('cmd_utils_'):
+            raise ValueError(f'command methods must start with cmd_utils ({name})')
+        if self._name is None:
+            self._name = name[10:]
+        if self._name in self.commands:
+            raise ValueError(f'{name} registered more than once')
+        self.commands[self._name] = self

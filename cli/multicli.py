@@ -4,11 +4,12 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import List
+from pathlib import Path
 
 from colorama import Fore
 from tqdm import tqdm
 
-from . import cli, utils
+from . import cli, utils, commands
 
 logger = logging.getLogger(__name__)
 
@@ -310,11 +311,30 @@ Total: {breed_fees + gender_fees}
         m = getattr(self, f'cmd_utils_{self.args.util_cmd}')
         return m()
 
+    @commands.util_command()
     def cmd_utils_accounts(self):
+        """Just list accounts, quick function"""
         for c in self.clis:
             print(f'{c.name} - {c.profile_guild} - {c.owner}')
 
+    @commands.argument(
+        '--all',
+        action='store_true',
+        help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
+    )
+    @commands.argument(
+        '--family',
+        action='store_true',
+        help='Compare per family (useful for guild races)',
+    )
+    @commands.argument(
+        '--purity',
+        type=int,
+        help='Minimum purity to consider',
+    )
+    @commands.util_command()
     def cmd_utils_duplicates(self):
+        """Find snails with same adaptations"""
         sa = defaultdict(list)
         for c in tqdm(self.clis):
             for _, snail in c.my_snails.items():
@@ -344,14 +364,29 @@ Total: {breed_fees + gender_fees}
             for c, snail in v:
                 print(f'  {snail} ({c.name})')
 
+    @commands.argument(
+        '-f',
+        '--force',
+        action='store_true',
+        help='Do it (only simulates without this flag)',
+    )
+    @commands.argument('stop', type=float, help='Stop amount that triggers transfer')
+    @commands.argument('limit', type=float, help='Final balance every triggered account should have')
+    @commands.util_command()
     def cmd_utils_balance_balance(self):
+        """Take from the rich and give to the poor - balance wallet balances"""
+
         def _cb(msg):
             print(msg)
 
         utils.balance_balance(self.clis, self.args.limit, self.args.stop, _cb, force=self.args.force)
 
+    @commands.argument('file', type=Path, help='CSV filename')
+    @commands.util_command()
     def cmd_utils_dump_csv(self):
+        """Dump all snails to CSV"""
         import csv
+
         with self.args.file.open('w') as _f:
             csvf = csv.writer(_f)
             csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adaptations'])
@@ -361,7 +396,10 @@ Total: {breed_fees + gender_fees}
                     adapts = ', '.join(sorted(str(x) for x in snail.adaptations))
                     csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, adapts])
 
+    @commands.argument('snail', type=int, help='Snail ID')
+    @commands.util_command()
     def cmd_utils_bruteforce_test(self):
+        """test bruteforce apply inventory item"""
         for c in self.clis:
             if self.args.snail in c.my_snails:
                 print(f'Found in {c.name}')
@@ -381,7 +419,14 @@ Total: {breed_fees + gender_fees}
                 break
         return True
 
+    @commands.argument(
+        'account_id', type=commands.wallet_ext_or_int, help='Target account (to send ALL slime and to swap in)'
+    )
+    @commands.argument('--skip-claim', action='store_true', help='Do not claim')
+    @commands.argument('--skip-transfer', action='store_true', help='Do not transfer')
+    @commands.util_command()
     def cmd_utils_css(self):
+        """Claim, send and swap ALL SLIME for AVAX"""
         final_c = None
 
         for c in self.clis:
@@ -445,7 +490,12 @@ Total: {breed_fees + gender_fees}
         print(f'Swapped for {fee}')
         print(f'Total fees: {total_fees}')
 
+    @commands.argument('snail', type=int, help='Snail ID')
+    @commands.util_command()
     def cmd_utils_boost_snail(self):
+        """
+        Apply all slime boosts to this snail (transferring snail around)
+        """
         owner_c = None
         snail = None
 

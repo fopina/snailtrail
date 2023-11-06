@@ -131,55 +131,18 @@ def build_parser():
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
-    for k, v in commands.commands.items():
+    for k, v in commands.command.commands.items():
         pm = subparsers.add_parser(k, help=v.help)
         for a in reversed(v.arguments):
             pm.add_argument(*a[0], **a[1])
 
     pm = subparsers.add_parser('utils', help='Random set of utilities')
     utils_parsers = pm.add_subparsers(title='util command', dest='util_cmd')
-    pmm = utils_parsers.add_parser('duplicates', help='Find snails with same adaptations')
-    pmm.add_argument(
-        '--all',
-        action='store_true',
-        help='Also display duplicates with less than 3 adaptations and/or just one snail (not duplicated)',
-    )
-    pmm.add_argument(
-        '--family',
-        action='store_true',
-        help='Compare per family (useful for guild races)',
-    )
-    pmm.add_argument(
-        '--purity',
-        type=int,
-        help='Minimum purity to consider',
-    )
-    pmm = utils_parsers.add_parser(
-        'boost_snail', help='Apply all slime boosts to this snail (transferring snail around)'
-    )
-    pmm.add_argument('snail', type=int, help='Snail ID')
-    pmm = utils_parsers.add_parser('css', help='Claim, send and swap ALL SLIME for AVAX')
-    pmm.add_argument(
-        'account_id', type=commands.wallet_ext_or_int, help='Target account (to send ALL slime and to swap in)'
-    )
-    pmm.add_argument('--skip-claim', action='store_true', help='Do not claim')
-    pmm.add_argument('--skip-transfer', action='store_true', help='Do not transfer')
-    utils_parsers.add_parser('accounts', help='Just list accounts, quick function')
-    pmm = utils_parsers.add_parser(
-        'balance_balance', help='Take from the rich and give to the poor - balance wallet balances'
-    )
-    pmm.add_argument(
-        '-f',
-        '--force',
-        action='store_true',
-        help='Do it (only simulates without this flag)',
-    )
-    pmm.add_argument('stop', type=float, help='Stop amount that triggers transfer')
-    pmm.add_argument('limit', type=float, help='Final balance every triggered account should have')
-    pmm = utils_parsers.add_parser('bruteforce_test', help='temp')
-    pmm.add_argument('snail', type=int, help='Snail ID')
-    pmm = utils_parsers.add_parser('dump_csv', help='Dump all snails to CSV')
-    pmm.add_argument('file', type=Path, help='CSV filename')
+    for k, v in commands.util_command.commands.items():
+        pm = utils_parsers.add_parser(k, help=v.help)
+        for a in reversed(v.arguments):
+            pm.add_argument(*a[0], **a[1])
+
     return parser
 
 
