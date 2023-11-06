@@ -75,6 +75,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("racereview", self.cmd_race_review))
             dispatcher.add_handler(CommandHandler("racepending", self.cmd_race_pending))
             dispatcher.add_handler(CommandHandler("inventory", self.cmd_inventory))
+            dispatcher.add_handler(CommandHandler("boosted", self.cmd_boosted))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("balancebalance", self.cmd_balance_balance))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
@@ -543,6 +544,36 @@ class Notifier:
             msg.append('`Total`')
             for k, v in totals.items():
                 msg.append(f'_{k}_: {v}')
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_boosted(self, update: Update, context: CallbackContext) -> None:
+        """
+        List currently boosted snails
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        args = self.main_cli.args
+        if not args.boost and not args.boost_wallet and not args.boost_pure:
+            update.message.reply_markdown('No boosts')
+            return
+        msg = []
+        m = update.message.reply_markdown('Loading snails...')
+        boosted = set(args.boost or [])
+        boosted_wallets = set(w.address for w in (args.boost_wallet or []))
+        for c in self.clis.values():
+            self.tag_with_wallet(c, msg)
+            msg.append('...Loading...')
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            msg.pop()
+            for snail in c.my_snails.values():
+                if (
+                    (snail.id in boosted)
+                    or (c.owner in boosted_wallets)
+                    or (args.boost_pure and snail.purity >= args.boost_pure)
+                ):
+                    if args.boost_to and snail.level >= args.boost_to:
+                        continue
+                    msg.append(str(snail))
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth
