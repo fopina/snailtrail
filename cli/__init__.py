@@ -178,6 +178,8 @@ def build_parser():
     pmm.add_argument('limit', type=float, help='Final balance every triggered account should have')
     pmm = utils_parsers.add_parser('bruteforce_test', help='temp')
     pmm.add_argument('snail', type=int, help='Snail ID')
+    pmm = utils_parsers.add_parser('dump_csv', help='Dump all snails to CSV')
+    pmm.add_argument('file', type=Path, help='CSV filename')
     return parser
 
 

@@ -350,6 +350,17 @@ Total: {breed_fees + gender_fees}
 
         utils.balance_balance(self.clis, self.args.limit, self.args.stop, _cb, force=self.args.force)
 
+    def cmd_utils_dump_csv(self):
+        import csv
+        with self.args.file.open('w') as _f:
+            csvf = csv.writer(_f)
+            csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adaptations'])
+            for c in self.clis:
+                for snail in c.my_snails.values():
+                    print(snail)
+                    adapts = ', '.join(sorted(str(x) for x in snail.adaptations))
+                    csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, adapts])
+
     def cmd_utils_bruteforce_test(self):
         for c in self.clis:
             if self.args.snail in c.my_snails:
