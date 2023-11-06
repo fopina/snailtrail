@@ -3,13 +3,13 @@ import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import List
 from pathlib import Path
+from typing import List
 
 from colorama import Fore
 from tqdm import tqdm
 
-from . import cli, utils, commands
+from . import cli, commands, utils
 
 logger = logging.getLogger(__name__)
 

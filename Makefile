@@ -26,3 +26,7 @@ deploy-rent: pub
 
 sit:
 	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
+
+lint:
+	isort .
+	black .

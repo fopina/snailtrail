@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
-from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, Updater, MessageHandler
+from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
 from . import cli, utils
