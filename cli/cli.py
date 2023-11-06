@@ -741,14 +741,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             print(f'{Fore.GREEN}For week {week_pos}{Fore.RESET}')
             snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
             candidates = self.find_candidates(Race(week), snails)
-            for score, snail in candidates:
+            for candidate in candidates:
+                snail = candidate[3]
                 if snail.family not in per_family:
                     per_family[snail.family] = []
-                per_family[snail.family].append((score, snail))
+                per_family[snail.family].append(candidate)
 
             for family, snails in per_family.items():
                 print(f'{Fore.BLUE}{family}{Fore.RESET}')
-                for score, snail in snails:
+                for candidate in snails:
+                    score = candidate[0]
+                    snail = candidate[3]
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
@@ -988,7 +991,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 )
             candidates = self.find_candidates(x, snails)
             if candidates:
-                c += f': {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+                c += f': {", ".join((s[3].name_id+"⭐"*s[0]) for s in candidates)}'
             print(c)
 
     def cmd_missions_join(self):
@@ -1353,14 +1356,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'{len(snails)} snails unstaked for {fee} AVAX')
 
+    def find_candidates_sorting(self, candidates):
+        candidates.sort(key=lambda x: x[:3], reverse=True)
+
     def find_candidates(self, race, snails):
         candidates = []
         conditions = set(race.conditions)
         for s in snails:
             score = len(conditions.intersection(s.adaptations))
             if score:
-                candidates.append((score, s))
-        candidates.sort(key=lambda x: x[0], reverse=True)
+                candidates.append((score, len(s.adaptations), s.purity, s))
+        self.find_candidates_sorting(candidates)
         return candidates
 
     def find_races_in_league(self, league):
@@ -1401,18 +1407,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         cands = [
                             cand
                             for cand in race['candidates']
-                            if cand[0] >= self.args.race_matches and len(cand[1].adaptations) > 1
+                            if cand[0] >= self.args.race_matches and cand[1] > 1
                         ]
                         if not cands:
                             continue
                         candidate_list = ','.join(
-                            f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[1], race)}" for cand in cands
+                            f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[3], race)}" for cand in cands
                         )
                         msg = f"🏎️  Race {race} matched {candidate_list}"
                         if self.args.races_join:
                             join_actions = None
                             try:
-                                self.client.join_competitive_races(cands[0][1].id, race.id, self.owner)
+                                self.client.join_competitive_races(cands[0][3].id, race.id, self.owner)
                                 msg += '\nJOINED ✅'
                             except Exception:
                                 logger.exception('failed to join race')
@@ -1428,8 +1434,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                             # (if this code is ever used again - competitives suck!)
                             join_actions = [
                                 (
-                                    f'✅ Join with {cand[1].name_id} {cand[0] * "⭐"}',
-                                    f'joinrace {self.owner} {cand[1].id} {race.id}',
+                                    f'✅ Join with {cand[3].name_id} {cand[0] * "⭐"}',
+                                    f'joinrace {self.owner} {cand[3].id} {race.id}',
                                 )
                                 for cand in cands
                             ] + [
@@ -1515,7 +1521,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
                 candidates = race['candidates']
                 if candidates:
-                    c = f' - candidates: {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+                    c = f' - candidates: {", ".join((s[3].name_id+"⭐"*s[0]) for s in candidates)}'
                 else:
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
@@ -1542,7 +1548,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
                 candidates = race['candidates']
                 if candidates:
-                    c = f' - candidates: {", ".join((s[1].name_id+"⭐"*s[0]) for s in candidates)}'
+                    c = f' - candidates: {", ".join((s[3].name_id+"⭐"*s[0]) for s in candidates)}'
                 else:
                     c = ''
                 print(f'{color}{x_str}{Fore.RESET}{c}')
