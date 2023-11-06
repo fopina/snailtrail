@@ -157,6 +157,7 @@ class CLI:
         self._next_mission = False, -1
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
+        self._snail_levels = {}
 
     @staticmethod
     def _now():
@@ -332,6 +333,14 @@ class CLI:
         queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
         if not queueable:
             return True, closest
+
+        # level notifications
+        if self.args.level_ups:
+            for snail in queueable:
+                pl = self._snail_levels.get(snail.id)
+                self._snail_levels[snail.id] = snail.level
+                if pl is not None and pl != snail.level:
+                    self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
 
         boosted = set(self.args.boost or [])
         if self.args.boost_wallet and self.owner in {w.address for w in self.args.boost_wallet}:
@@ -672,6 +681,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
     )
     @commands.argument('--auto-claim', action='store_true', help='Auto claim any guild rewards')
+    @commands.argument('--level-ups', action='store_true', help='Notify when a snail levels up (during missions)')
     @commands.command()
     def cmd_bot(self):
         """
