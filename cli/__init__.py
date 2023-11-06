@@ -229,7 +229,7 @@ def main(argv=None):
         args.graphql_endpoint = p.url()
 
     if args.tg_bot_owner is not None:
-        args.notifier.owner_chat_id = args.tg_bot_owner
+        args.notify.owner_chat_id = args.tg_bot_owner
 
     if not args.wallet:
         args.wallet = [cli.Wallet(commands.FileOrString('owner.conf'), commands.FileOrString('pkey.conf'))]
