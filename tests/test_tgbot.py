@@ -45,6 +45,7 @@ class Test(TestCase):
 /racereview - Review all races to join (that were already notified)
 /racepending - View pending races (that you joined)
 /inventory - Inventory items
+/boosted - List currently boosted snails
 /stats - My snails stats
 /balancebalance - Balance all accounts with 1.2 AVAX
 /reloadsnails - Reset snails cache
