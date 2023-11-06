@@ -250,15 +250,14 @@ Total: {breed_fees + gender_fees}
             c._header()
             _, res, data = c.cmd_tournament(data=data)
             for family, snails in res.items():
-                for score, snail in snails:
-                    all_snails[family].append((score, snail, c))
+                for cand in snails:
+                    all_snails[family].append(cand + (c,))
 
         print(f'\n{Fore.GREEN}Summary for all{Fore.RESET}')
         for family, snails in all_snails.items():
             print(f'{Fore.BLUE}{family}{Fore.RESET}')
-            # sort according to https://docs.snailtrail.art/racing/speed/
-            snails.sort(key=lambda x: (x[0], int(x[1].purity), int(x[1].level)), reverse=True)
-            for score, snail, c in snails:
+            self.main_cli.find_candidates_sorting(snails)
+            for score, _, _, snail, c in snails:
                 print(
                     f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity_str}/{snail.level_str}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
                 )

@@ -1405,9 +1405,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if not first_run:
                         # report on just required minimum matches, but use only snails with 2 adaptations (stronger)
                         cands = [
-                            cand
-                            for cand in race['candidates']
-                            if cand[0] >= self.args.race_matches and cand[1] > 1
+                            cand for cand in race['candidates'] if cand[0] >= self.args.race_matches and cand[1] > 1
                         ]
                         if not cands:
                             continue
