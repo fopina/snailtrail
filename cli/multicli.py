@@ -396,6 +396,35 @@ Total: {breed_fees + gender_fees}
                     adapts = ', '.join(sorted(str(x) for x in snail.adaptations))
                     csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, adapts])
 
+    @commands.util_command()
+    def cmd_utils_all_adapts(self):
+        """Print out all possible adaptation combinations"""
+        weather = [
+            'Hot',
+            'Wind',
+            'Storm',
+            'Snow',
+            'Cold',
+            'Wet',
+        ]
+
+        location = [
+            'Glacier',
+            'Desert',
+            'Mountain',
+            'Beach',
+            'Space',
+            'Forest',
+        ]
+
+        athletic = ['Roll', 'Dodge', 'Slide', 'Jump']
+
+        for a in weather:
+            for b in location:
+                for c in athletic:
+                    x = ', '.join(sorted([a, b, c]))
+                    print(x)
+
     @commands.argument('snail', type=int, help='Snail ID')
     @commands.util_command()
     def cmd_utils_bruteforce_test(self):
