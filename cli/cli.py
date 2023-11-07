@@ -440,10 +440,13 @@ class CLI:
                         logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         if not self.args.fair:
                             continue
+                        # join last spot anyway (if --cheap-soon), even if not needing tickets
+                        if not self.args.cheap_soon:
+                            continue
 
                         r = e.args[1]
-                        # join last spot anyway, even if not "boosted" (negative tickets)
-                        if self.args.cheap and not r['payload']['size'] == 0:
+                        if not r['payload']['size'] == 0:
+                            # not cheap
                             continue
 
                         tx = self.client.rejoin_mission_races(r)
@@ -649,6 +652,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         action='store_true',
         help='Cheap mode - only take --fair/--boost last spots if they are low-fee races. Other cheap stuff to be added',
     )
+    @commands.argument(
+        '--cheap-soon',
+        action='store_true',
+        help='If non-last spot fails and last spot is CHEAP, join anyway',
+    )
     @commands.argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     @commands.argument(
         '--races-join',
@@ -682,13 +690,15 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--mission-matches',
         type=int,
         default=1,
-        help='Minimum adaptation matches to join mission - 1 might be worthy, higher might be crazy',
+        help='Minimum adaptation matches to join mission - only applies to lv15+ snails',
     )
     @commands.argument('--market', action='store_true', help='Monitor marketplace stats')
     @commands.argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
     @commands.argument('--burn', action='store_true', help='Monitor burn coefficent drops')
     @commands.argument('--tournament', action='store_true', help='Monitor tournament changes for own guild')
-    @commands.argument('--no-adapt', action='store_true', help='If auto, ignore --mission-matches for boosted snails in missions')
+    @commands.argument(
+        '--no-adapt', action='store_true', help='If auto, ignore --mission-matches for boosted snails in missions'
+    )
     @commands.argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
     @commands.argument(
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'

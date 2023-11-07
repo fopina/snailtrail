@@ -473,7 +473,16 @@ AVAX: 1.000 / SNAILS: 1
     def test_find_candidates(self):
         snails = [
             Snail({'id': 1, 'adaptations': ['Mountain', 'Cold', 'Slide'], 'purity': 13}),
-            Snail({'id': 2,'adaptations': ['Mountain','Cold',],'purity': 12,}),
+            Snail(
+                {
+                    'id': 2,
+                    'adaptations': [
+                        'Mountain',
+                        'Cold',
+                    ],
+                    'purity': 12,
+                }
+            ),
             Snail({'id': 3, 'adaptations': ['Mountain', 'Cold', 'Dodge'], 'purity': 12}),
             Snail({'id': 4, 'adaptations': ['Mountain', 'Hot', 'Dodge'], 'purity': 12}),
             Snail({'id': 5, 'adaptations': ['Mountain', 'Hot', 'Dodge'], 'purity': 14}),
