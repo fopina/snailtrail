@@ -338,10 +338,26 @@ class CLI:
             # remove snails >= than this level
             for snail in queueable:
                 if snail.level >= self.args.boost_to and snail.id in boosted:
-                    self.notifier.notify(
-                        f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
-                    )
+                    # use level notifications cache to reduce initial spam (this has to run before cache is updated)
+                    if (
+                        # not the first run
+                        snail.id in self._snail_levels
+                        and
+                        # old level was under boost_to (meaning we just leveled)
+                        self._snail_levels[snail.id] < self.args.boost_to
+                    ):
+                        self.notifier.notify(
+                            f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
+                        )
                     boosted.difference_update({snail.id})
+
+        # level notifications - cache even if disabled as it is used above (with boost_to)
+        for snail in queueable:
+            pl = self._snail_levels.get(snail.id)
+            self._snail_levels[snail.id] = snail.level
+            if self.args.level_ups and pl is not None and pl != snail.level:
+                self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
+
         return boosted
 
     def _join_missions_race_snail(self, race, queueable, boosted):
@@ -377,14 +393,6 @@ class CLI:
         queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
         if not queueable:
             return True, closest
-
-        # level notifications
-        if self.args.level_ups:
-            for snail in queueable:
-                pl = self._snail_levels.get(snail.id)
-                self._snail_levels[snail.id] = snail.level
-                if pl is not None and pl != snail.level:
-                    self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
 
         boosted = self._join_missions_compute_boosted(queueable)
         if self.args.cheap and self.args.boost_not_cheap:

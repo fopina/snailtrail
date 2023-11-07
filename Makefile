@@ -3,6 +3,8 @@ test:
 
 all: test pub deploy
 
+all-rent: all deploy-rent
+
 build:
 	docker build -t x .
 
