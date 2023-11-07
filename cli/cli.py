@@ -353,11 +353,8 @@ class CLI:
             # race full
             return None
 
-        # candidates = self.find_candidates(race, queueable, include_zero=True)
-        # for score, _, _, snail in candidates:
-        conditions = set(race.conditions)
-        for snail in queueable:
-            score = len(conditions.intersection(snail.adaptations))
+        candidates = self.find_candidates(race, queueable, include_zero=True)
+        for score, _, _, snail in candidates:
             if athletes == 9:
                 # don't queue non-boosted!
                 if snail.id in boosted and (self.args.mission_matches <= score or self.args.no_adapt):

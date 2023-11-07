@@ -77,7 +77,7 @@ class TestBot(TestCase):
             self.cli.client.gql.join_mission_races.call_args_list,
             [
                 mock.call(8922, 169405, self._wallet, 'signed'),
-                mock.call(9104, 169406, self._wallet, 'signed'),
+                mock.call(8851, 169406, self._wallet, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
@@ -101,11 +101,10 @@ class TestBot(TestCase):
             self.cli.client.gql.join_mission_races.call_args_list,
             [
                 mock.call(8667, 169396, self._wallet, 'signed'),
-                mock.call(8851, 169399, self._wallet, 'signed'),
+                mock.call(8392, 169399, self._wallet, 'signed'),
                 mock.call(8416, 169400, self._wallet, 'signed'),
-                mock.call(9104, 169401, self._wallet, 'signed'),
-                mock.call(8267, 169402, self._wallet, 'signed'),
-                mock.call(8663, 169403, self._wallet, 'signed'),
+                mock.call(8267, 169401, self._wallet, 'signed'),
+                mock.call(8663, 169402, self._wallet, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
@@ -115,16 +114,34 @@ class TestBot(TestCase):
         self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.boost_wallet = [self._wallet]
+
         self.cli.join_missions()
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
             [
                 mock.call(8667, 169396, self._wallet, 'signed'),
-                mock.call(8851, 169399, self._wallet, 'signed'),
+                mock.call(8392, 169399, self._wallet, 'signed'),
                 mock.call(8416, 169400, self._wallet, 'signed'),
-                mock.call(9104, 169401, self._wallet, 'signed'),
-                mock.call(8267, 169402, self._wallet, 'signed'),
-                mock.call(8663, 169403, self._wallet, 'signed'),
+                mock.call(8267, 169401, self._wallet, 'signed'),
+                mock.call(8663, 169402, self._wallet, 'signed'),
+            ],
+        )
+        self.cli.client.web3.join_daily_mission.assert_not_called()
+
+        # enable no-adaptations for boosted snails and 9104 pops up
+        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.join_mission_races.reset_mock()
+        self.cli.args.no_adapt = True
+        self.cli.join_missions()
+        self.assertEqual(
+            self.cli.client.gql.join_mission_races.call_args_list,
+            [
+                mock.call(8667, 169396, self._wallet, 'signed'),
+                mock.call(8392, 169399, self._wallet, 'signed'),
+                mock.call(8416, 169400, self._wallet, 'signed'),
+                mock.call(8267, 169401, self._wallet, 'signed'),
+                mock.call(8663, 169402, self._wallet, 'signed'),
+                mock.call(8922, 169403, self._wallet, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()
@@ -145,11 +162,10 @@ class TestBot(TestCase):
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
             [
-                mock.call(8851, 169399, self._wallet, 'signed'),
+                mock.call(8392, 169399, self._wallet, 'signed'),
                 mock.call(8416, 169400, self._wallet, 'signed'),
-                mock.call(9104, 169401, self._wallet, 'signed'),
-                mock.call(8267, 169402, self._wallet, 'signed'),
-                mock.call(8663, 169403, self._wallet, 'signed'),
+                mock.call(8267, 169401, self._wallet, 'signed'),
+                mock.call(8663, 169402, self._wallet, 'signed'),
                 mock.call(8667, 169405, self._wallet, 'signed'),
             ],
         )
