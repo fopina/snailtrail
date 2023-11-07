@@ -354,14 +354,16 @@ class CLI:
             return None
 
         candidates = self.find_candidates(race, queueable, include_zero=True)
-        for score, _, _, snail in candidates:
+        for score, adapts, _, snail in candidates:
+            # mission-matches only applies to <lv15
+            score_match = adapts < 3 or self.args.mission_matches <= score
             if athletes == 9:
                 # don't queue non-boosted!
-                if snail.id in boosted and (self.args.mission_matches <= score or self.args.no_adapt):
+                if snail.id in boosted and (score_match or self.args.no_adapt):
                     break
             else:
                 # don't queue boosted here, so they wait for a last spot
-                if snail.id not in boosted and self.args.mission_matches <= score:
+                if snail.id not in boosted and score_match:
                     break
         else:
             # no snail for this track

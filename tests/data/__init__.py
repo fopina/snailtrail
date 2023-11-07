@@ -152,7 +152,7 @@ GQL_MISSION_SNAILS = {
     'snails': [
         {
             'id': 8922,
-            'adaptations': ['Wind', 'Slide'],
+            'adaptations': ['Wind', 'Slide', 'Desert'],
             'name': 'Snail #8922',
             'queueable_at': '2021-08-09 23:32:27.108936',
             'stats': {
