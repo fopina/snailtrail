@@ -487,8 +487,27 @@ wallet: [{self.wallet_file.name}]
 
     @mock.patch('cli.multicli.MultiCLI')
     def test_tg_bot_owner(self, multi_mock: mock.MagicMock):
+        TOKEN = '999999999:abcdef/test'
         cli.main(['-c', self.config_file.name, 'missions'])
         multi_mock.assert_called_once_with(wallets=[TEST_WALLET_WALLET], proxy_url=None, args=mock.ANY)
+        notifier = multi_mock.mock_calls[0][2]['args'].notify
+        self.assertEqual(notifier._Notifier__token, '')
+        self.assertEqual(notifier.chat_id, '')
+        self.assertEqual(notifier.owner_chat_id, '')
+
+        multi_mock.reset_mock()
+        cli.main(['-c', self.config_file.name, '--notify', TOKEN, '2', 'missions'])
+        notifier = multi_mock.mock_calls[0][2]['args'].notify
+        self.assertEqual(notifier._Notifier__token, TOKEN)
+        self.assertEqual(notifier.chat_id, 2)
+        self.assertEqual(notifier.owner_chat_id, 2)
+
+        multi_mock.reset_mock()
+        cli.main(['-c', self.config_file.name, '--notify', TOKEN, '2', '--tg-bot-owner', '3', 'missions'])
+        notifier = multi_mock.mock_calls[0][2]['args'].notify
+        self.assertEqual(notifier._Notifier__token, TOKEN)
+        self.assertEqual(notifier.chat_id, 2)
+        self.assertEqual(notifier.owner_chat_id, 3)
 
     @mock.patch('cli.multicli.MultiCLI')
     def test_default_wallet(self, multi_mock: mock.MagicMock):
