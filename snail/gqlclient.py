@@ -618,20 +618,41 @@ class Client(requests.Session):
             ) {
                 ... on Problem {
                 problem
-                __typename
                 }
                 ... on Snails {
                 snails {
                     id
                     name
-                    image_headshot
                     purity
-                    __typename
+                    gender {
+                        id
+                        can_change_at
+                    }
+                    new_born
+                    genome
+                    klass
+                    family
+                    work_boost
+                    slime_boost
+                    purity
+                    breeding {
+                        breed_detail {
+                            cycle_end
+                            monthly_breed_available
+                            monthly_breed_limit
+                            breed_count_total
+                        }
+                    }
+                    stats {
+                        elo
+                        experience {level, xp, remaining}
+                        mission_tickets
+                        earned_token
+                        earned_avax
+                    }
                 }
                 count
-                __typename
                 }
-                __typename
             }
             }
             """,

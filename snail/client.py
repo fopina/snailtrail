@@ -1,11 +1,13 @@
-from datetime import datetime
 from enum import Enum
 from time import time
 from typing import Generator, List
+import logging
 
 import requests
 
 from . import gqlclient, gqltypes, web3client
+
+logger = logging.getLogger(__name__)
 
 
 class League(int, Enum):
@@ -81,6 +83,7 @@ class Client:
         c = 0
         calls = 0
         while True:
+            logger.debug('fetching offset %d (call %d) for %s', c, calls, method.__name__)
             kwargs['offset'] = c
             objs = method(*args, **kwargs)
             if not objs[key]:

@@ -1070,6 +1070,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         metavar='snail',
         help='Fetch snail metadata',
     )
+    @commands.argument(
+        '--workers',
+        action='store_true',
+        help='Include workers (when listing snails)',
+    )
     @commands.command()
     def cmd_snails(self):
         """
@@ -1106,6 +1111,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     snail['tmp_total_races'] = -1
         else:
             it = list(self.my_snails.values())
+
+        if self.args.workers:
+            it.extend(list(self.client.iterate_my_snails(self.owner, filters={'status': 5})))
 
         if self.args.sort:
             if self.args.sort == 'breed':

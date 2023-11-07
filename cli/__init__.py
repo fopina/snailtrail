@@ -184,6 +184,7 @@ def main(argv=None):
         logging.addLevelName(logging.DEBUG, f'{Fore.LIGHTRED_EX}{logging.getLevelName(logging.DEBUG)}{Fore.RESET}')
 
     if args.debug:
+        logging.getLogger('snail').setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
         logger.debug('debug enabled')
 
