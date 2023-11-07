@@ -1,4 +1,4 @@
-# generated automatically from https://www.snailtrail.art/main.d3905bf907602c39.js - DO NOT MODIFY
+# generated automatically from https://www.snailtrail.art/main.44a30b30721e5995.js - DO NOT MODIFY
 
 CONTRACT = '0xfDC483EE4ff24d3a8580504a5D04128451972e1e'
 
