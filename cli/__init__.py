@@ -10,7 +10,7 @@ from colorama import Fore
 
 from snail import proxy
 
-from . import commands, multicli, tempconfigparser, tgbot
+from . import commands, multicli, tempconfigparser, tgbot, types
 
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 
@@ -43,7 +43,8 @@ def build_parser():
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        '-c', '--config',
+        '-c',
+        '--config',
         default='main.conf',
         is_config_file_arg=True,
     )
@@ -201,7 +202,7 @@ def main(argv=None):
         args.notify.owner_chat_id = args.tg_bot_owner
 
     if not args.wallet:
-        args.wallet = [cli.Wallet(commands.FileOrString('owner.conf'), commands.FileOrString('pkey.conf'))]
+        args.wallet = [types.Wallet.from_private_key(commands.FileOrString('pkey.conf'))]
     wallets = args.wallet
     if args.friends:
         wallets.extend(args.friend)

@@ -6,9 +6,14 @@ from datetime import datetime, timezone
 from unittest import TestCase, mock
 
 import cli
+from cli import types
 from snail.gqltypes import Race
 
 from . import data
+
+TEST_WALLET = '0xbad43dfb19C6Ab77D9eC30704b89879F1e6d3081'
+TEST_WALLET_PKEY = 'bacc489be509e5463399feb27097af41580344053c7e62c70d1d2a2291d032e0'
+TEST_WALLET_WALLET = types.Wallet.from_private_key(TEST_WALLET_PKEY)
 
 
 class Test(TestCase):
@@ -36,7 +41,7 @@ class Test(TestCase):
 class TestBot(TestCase):
     def setUp(self) -> None:
         args = cli.build_parser().parse_args(['bot'], config_file_contents='')
-        wallet = cli.cli.Wallet('0x76e83242f32721952eba2df6c72aa27b63bd44ff', 'pkey1')
+        wallet = cli.cli.Wallet(TEST_WALLET, 'pkey1')
         self._wallet = wallet
         c = cli.cli.CLI(wallet, 'http://localhost:99999', args, True)
         c.client.gql = mock.MagicMock()
@@ -46,7 +51,7 @@ class TestBot(TestCase):
         self.cli = c
 
     def test_masked_owner(self):
-        self.assertEqual(self.cli.masked_wallet, '0x76e...4ff')
+        self.assertEqual(self.cli.masked_wallet, '0xbad...081')
 
     def test_join_missions(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
@@ -448,3 +453,48 @@ AVAX: 1.000 / SNAILS: 1
 *points* 1📈20
 '''
         )
+
+
+class TestMain(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.wallet_file = tempfile.NamedTemporaryFile(mode='w+')
+        self.wallet_file.write(TEST_WALLET_PKEY)
+        self.wallet_file.seek(0)
+        self.config_file = tempfile.NamedTemporaryFile(mode='w+')
+        self.config_file.write(
+            f'''
+wallet: [{self.wallet_file.name}]
+'''
+        )
+        self.config_file.seek(0)
+        self.proxy_patch = mock.patch('snail.proxy.Proxy')
+        self.proxy_mock = self.proxy_patch.start()
+        self.proxy_mock.return_value.url.return_value = ''
+
+    def tearDown(self) -> None:
+        self.config_file.close()
+        self.proxy_patch.stop()
+        super().tearDown()
+
+    @mock.patch('cli.multicli.MultiCLI')
+    def test_main(self, multi_mock: mock.MagicMock):
+        cli.main(['-c', self.config_file.name, 'missions'])
+        multi_mock.assert_called_once_with(wallets=[TEST_WALLET_WALLET], proxy_url=None, args=mock.ANY)
+
+    def test_just_empty_wallet_no_action(self):
+        cli.main(['--wallet', [], 'missions'])
+
+    @mock.patch('cli.multicli.MultiCLI')
+    def test_tg_bot_owner(self, multi_mock: mock.MagicMock):
+        cli.main(['-c', self.config_file.name, 'missions'])
+        multi_mock.assert_called_once_with(wallets=[TEST_WALLET_WALLET], proxy_url=None, args=mock.ANY)
+
+    @mock.patch('cli.multicli.MultiCLI')
+    def test_default_wallet(self, multi_mock: mock.MagicMock):
+        # hardcoded filename, shortcut and then assert call
+        with mock.patch('cli.commands.FileOrString') as wallet_mock:
+            wallet_mock.return_value = TEST_WALLET_PKEY
+            cli.main(['-c', '', 'missions'])
+        multi_mock.assert_called_once_with(wallets=[TEST_WALLET_WALLET], proxy_url=None, args=mock.ANY)
+        wallet_mock.assert_called_with('pkey.conf')
