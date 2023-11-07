@@ -7,7 +7,7 @@ from unittest import TestCase, mock
 
 import cli
 from cli import types
-from snail.gqltypes import Race
+from snail.gqltypes import Race, Snail
 
 from . import data
 
@@ -452,6 +452,36 @@ AVAX: 1.000 / SNAILS: 1
 *position* 10🏆3
 *points* 1📈20
 '''
+        )
+
+    def test_find_candidates(self):
+        snails = [
+            Snail({'id': 1, 'adaptations': ['Mountain', 'Cold', 'Slide'], 'purity': 13}),
+            Snail(
+                {
+                    'id': 2,
+                    'adaptations': [
+                        'Mountain',
+                        'Cold',
+                    ],
+                    'purity': 12,
+                }
+            ),
+            Snail({'id': 3, 'adaptations': ['Mountain', 'Cold', 'Dodge'], 'purity': 12}),
+            Snail({'id': 4, 'adaptations': ['Mountain', 'Hot', 'Dodge'], 'purity': 12}),
+            Snail({'id': 5, 'adaptations': ['Mountain', 'Hot', 'Dodge'], 'purity': 14}),
+        ]
+        race = Race({'id': -1, 'conditions': ['Mountain', 'Cold', 'Slide']})
+        candidates = self.cli.find_candidates(race, snails)
+        self.assertEqual(
+            [(c1, c2, c3, c4.id) for c1, c2, c3, c4 in candidates],
+            [
+                (3, 3, 13, 1),
+                (2, 3, 12, 3),
+                (2, 2, 12, 2),
+                (1, 3, 14, 5),
+                (1, 3, 12, 4),
+            ],
         )
 
 
