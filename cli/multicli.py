@@ -42,11 +42,12 @@ class MultiCLI:
         wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet) if w is not None}
 
         # get proper profile info
-        profiles = [c.owner for c in self.clis]
-        data = self.clis[0].client.gql.profile(profiles)
-        for i, c in enumerate(self.clis):
-            c._profile = data[f'profile{i}']
-            c._profile['_i'] = wallet_indices[c.owner]
+        if self.main_cli:
+            profiles = [c.owner for c in self.clis]
+            data = self.main_cli.client.gql.profile(profiles)
+            for i, c in enumerate(self.clis):
+                c._profile = data[f'profile{i}']
+                c._profile['_i'] = wallet_indices[c.owner]
 
     @property
     def is_multi(self) -> bool:
@@ -54,7 +55,9 @@ class MultiCLI:
 
     @property
     def main_cli(self) -> cli.CLI:
-        return self.clis[0]
+        if self.clis:
+            return self.clis[0]
+        return None
 
     def cmd_bot(self):
         # disable tournament check in all accounts with repeated guilds

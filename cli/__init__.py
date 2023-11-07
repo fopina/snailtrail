@@ -38,10 +38,14 @@ def build_parser():
     parser = configargparse.ArgParser(
         prog=__name__,
         auto_env_var_prefix='snailbot_',
-        default_config_files=['./main.conf', '~/.snailbot.conf'],
-        args_for_setting_config_path=['-c', '--config'],
+        default_config_files=['~/.snailbot.conf'],
         args_for_writing_out_config_file=['--output-config'],
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '-c', '--config',
+        default='main.conf',
+        is_config_file_arg=True,
     )
     parser.add_argument(
         '--wallet',
