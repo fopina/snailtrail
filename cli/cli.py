@@ -327,6 +327,51 @@ class CLI:
                 logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
         return queueable, closest
 
+    def _join_missions_compute_boosted(self, queueable):
+        boosted = set(self.args.boost or [])
+        if self.args.boost_wallet and self.owner in {w.address for w in self.args.boost_wallet}:
+            # all snails are boosted
+            boosted.update(snail.id for snail in queueable)
+        if self.args.boost_pure:
+            boosted.update(snail.id for snail in queueable if snail.purity >= self.args.boost_pure)
+        if self.args.boost_to:
+            # remove snails >= than this level
+            for snail in queueable:
+                if snail.level >= self.args.boost_to and snail.id in boosted:
+                    self.notifier.notify(
+                        f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
+                    )
+                    boosted.difference_update({snail.id})
+        return boosted
+
+    def _join_missions_race_snail(self, race, queueable, boosted):
+        if race.participation:
+            # already joined
+            return None
+        athletes = len(race.athletes)
+        if athletes == 10:
+            # race full
+            return None
+
+        # candidates = self.find_candidates(race, queueable, include_zero=True)
+        # for score, _, _, snail in candidates:
+        conditions = set(race.conditions)
+        for snail in queueable:
+            score = len(conditions.intersection(snail.adaptations))
+            if athletes == 9:
+                # don't queue non-boosted!
+                if snail.id in boosted and (self.args.mission_matches <= score or self.args.no_adapt):
+                    break
+            else:
+                # don't queue boosted here, so they wait for a last spot
+                if snail.id not in boosted and self.args.mission_matches <= score:
+                    break
+        else:
+            # no snail for this track
+            return None
+
+        return snail
+
     def join_missions(self) -> tuple[bool, datetime]:
         missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
         missions.sort(key=lambda race: len(race.athletes), reverse=True)
@@ -342,20 +387,7 @@ class CLI:
                 if pl is not None and pl != snail.level:
                     self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
 
-        boosted = set(self.args.boost or [])
-        if self.args.boost_wallet and self.owner in {w.address for w in self.args.boost_wallet}:
-            # all snails are boosted
-            boosted.update(snail.id for snail in queueable)
-        if self.args.boost_pure:
-            boosted.update(snail.id for snail in queueable if snail.purity >= self.args.boost_pure)
-        if self.args.boost_to:
-            # remove snails >= than this level
-            for snail in queueable:
-                if snail.level >= self.args.boost_to and snail.id in boosted:
-                    self.notifier.notify(
-                        f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
-                    )
-                    boosted.difference_update({snail.id})
+        boosted = self._join_missions_compute_boosted(queueable)
         if self.args.cheap and self.args.boost_not_cheap:
             not_cheap = boosted.copy()
         else:
@@ -374,33 +406,17 @@ class CLI:
             queueable.remove(snail)
 
         for race in missions:
-            if race.participation:
-                # already joined
-                continue
-            athletes = len(race.athletes)
-            if athletes == 10:
-                # race full
-                continue
-            conditions = set(race.conditions)
-            for snail in queueable:
-                score = len(conditions.intersection(snail.adaptations))
-                # FIXME: merge with find_races_in_league / reduce complexity
-                if athletes == 9:
-                    # don't queue non-boosted!
-                    if snail.id in boosted and (self.args.mission_matches <= score or self.args.no_adapt):
-                        break
-                else:
-                    # don't queue boosted here, so they wait for a last spot
-                    if snail.id not in boosted and self.args.mission_matches <= score:
-                        break
-            else:
-                # no snail for this track
+            snail = self._join_missions_race_snail(race, queueable, boosted)
+            if snail is None:
                 continue
             logger.info(
                 f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
 
             tx = None
+
+            # "boosted" includes explicitly boosted and the ones that need tickets
+            # not_cheap will only include the explicitly boosted (and if --cheap is used)
             cheap_snail = snail.id in boosted and snail.id not in not_cheap
             try:
                 if self.args.cheap and cheap_snail:
@@ -675,7 +691,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')
     @commands.argument('--burn', action='store_true', help='Monitor burn coefficent drops')
     @commands.argument('--tournament', action='store_true', help='Monitor tournament changes for own guild')
-    @commands.argument('--no-adapt', action='store_true', help='If auto, ignore adaptations for boosted snails')
+    @commands.argument('--no-adapt', action='store_true', help='If auto, ignore --mission-matches for boosted snails in missions')
     @commands.argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
     @commands.argument(
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
@@ -1359,12 +1375,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def find_candidates_sorting(self, candidates):
         candidates.sort(key=lambda x: x[:3], reverse=True)
 
-    def find_candidates(self, race, snails):
+    def find_candidates(self, race, snails, include_zero=False):
         candidates = []
         conditions = set(race.conditions)
         for s in snails:
             score = len(conditions.intersection(s.adaptations))
-            if score:
+            if score or include_zero:
                 candidates.append((score, len(s.adaptations), s.purity, s))
         self.find_candidates_sorting(candidates)
         return candidates
