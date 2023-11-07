@@ -45,7 +45,9 @@ def build_parser():
     parser.add_argument(
         '-c',
         '--config',
-        default='main.conf',
+        # FIXME: I do not want main.conf to be part of the merged ones but I also do not want it to cause failure if doesn't exist
+        # dirty hack for now...
+        default='main.conf' if Path('main.conf').exists() else '',
         is_config_file_arg=True,
     )
     parser.add_argument(
