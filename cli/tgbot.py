@@ -105,7 +105,7 @@ class Notifier:
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.multi_cli:
             return ''
-        m = f'`{cli.name}`'
+        m = f'`>> {cli.name}`'
         if output is not None:
             output.append(m)
         return m
@@ -560,11 +560,13 @@ class Notifier:
         m = update.message.reply_markdown('Loading snails...')
         boosted = set(args.boost or [])
         boosted_wallets = set(w.address for w in (args.boost_wallet or []))
+        total = 0
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
             msg.pop()
+            ltotal = 0
             for snail in c.my_snails.values():
                 if (
                     (snail.id in boosted)
@@ -573,8 +575,14 @@ class Notifier:
                 ):
                     if args.boost_to and snail.level >= args.boost_to:
                         continue
+                    ltotal += 1
                     msg.append(str(snail))
+            if ltotal:
+                msg.append(f'🐌 {ltotal}')
+            total += ltotal
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+        msg.append(f'🐌🐌 {total}')
+        m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth
     def cmd_guild(self, update: Update, context: CallbackContext) -> None:

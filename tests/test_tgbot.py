@@ -414,11 +414,11 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
             reply.edit_text.call_args_list[-1],
             mock.call(
                 text='''\
-`0x2f`
+`>> 0x2f`
 🧪 1 / 1.000
 *WAVAX*: 1 / 1
 🔺 1.000 / 🐌 1
-`0x3f`
+`>> 0x3f`
 🧪 2 / 2.000
 *WAVAX*: 2 / 2
 🔺 2.000 / 🐌 2
