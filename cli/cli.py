@@ -1055,7 +1055,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self._history_missions(s)
             return False
 
-    @commands.argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur'], help='Sort snails by')
+    @commands.argument('-s', '--sort', choices=['breed', 'lvl', 'stats', 'pur', 'tickets'], help='Sort snails by')
     @commands.argument(
         '-t',
         '--transfer',
@@ -1124,13 +1124,15 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 it.sort(key=lambda x: x.tmp_stat_top3)
             elif self.args.sort == 'pur':
                 it.sort(key=lambda x: x.purity)
+            elif self.args.sort == 'tickets':
+                it.sort(key=lambda x: x.stats['mission_tickets'])
         for snail in it:
             if self.args.sort == 'stats':
                 print(
                     f'{snail} - {snail.stats["elo"]} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}'
                 )
             else:
-                print(snail, self._breed_status_str(snail.breed_status))
+                print(f"{snail} {self._breed_status_str(snail.breed_status)} 🎫 {snail.stats['mission_tickets']}")
         print(f'==> {len(it)} snails')
 
     def cmd_snails_transfer(self):
