@@ -83,7 +83,7 @@ class Client:
         c = 0
         calls = 0
         while True:
-            logger.debug('fetching offset %d (call %d) for %s', c, calls, method.__name__)
+            logger.debug('fetching offset %d (call %d) for %s', c, calls, getattr(method, "__name__", str(method)))
             kwargs['offset'] = c
             objs = method(*args, **kwargs)
             if not objs[key]:

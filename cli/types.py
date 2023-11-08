@@ -18,3 +18,6 @@ class Wallet:
     def from_private_key(cls, private_key):
         a = Account.from_key(private_key)
         return cls(a.address, a)
+
+    def __str__(self) -> str:
+        return f'Wallet({self.address})'
