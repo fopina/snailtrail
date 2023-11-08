@@ -1,7 +1,7 @@
+import logging
 from enum import Enum
 from time import time
 from typing import Generator, List
-import logging
 
 import requests
 

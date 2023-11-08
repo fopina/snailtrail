@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import logging
 import time
 from collections import defaultdict
@@ -394,7 +395,9 @@ Total: {breed_fees + gender_fees}
             csvf = csv.writer(_f)
             csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adaptations'])
             for c in self.clis:
-                for snail in c.my_snails.values():
+                for snail in itertools.chain(
+                    c.my_snails.values(), c.client.iterate_my_snails(c.owner, filters={'status': 5})
+                ):
                     print(snail)
                     adapts = ', '.join(sorted(str(x) for x in snail.adaptations))
                     csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, adapts])

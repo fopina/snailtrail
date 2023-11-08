@@ -629,6 +629,7 @@ class Client(requests.Session):
                         can_change_at
                     }
                     new_born
+                    adaptations
                     genome
                     klass
                     family
