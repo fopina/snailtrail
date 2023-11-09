@@ -437,6 +437,7 @@ class CLI:
                         if r['payload']['size'] == 0:
                             tx = self.client.rejoin_mission_races(r)
                         else:
+                            logger.error('RACE NOT CHEAP - %s on %d', snail.name, race.id)
                             _slow_snail(snail)
                             continue
                     except client.gqlclient.RaceAlreadyFullAPIError:
