@@ -1,4 +1,5 @@
 import base64
+import logging
 from datetime import datetime
 from functools import cached_property
 from typing import Any, Optional, Union
@@ -11,6 +12,23 @@ from web3.middleware import geth_poa_middleware
 from . import contracts
 
 DECIMALS = 1000000000000000000
+
+logger = logging.getLogger(__name__)
+
+
+class Web3Error(Exception):
+    """For expected web3 errors"""
+
+    @classmethod
+    def make(cls, error):
+        if 'insufficient funds' in str(error):
+            logger.error('TEMP: funds error - args: %s - type arg0: %s', error.args, type(error.args[0]))
+            return InsufficientFundsWeb3Error(error)
+        return cls(error)
+
+
+class InsufficientFundsWeb3Error(Web3Error):
+    """Not enough balance to complete transaction"""
 
 
 class Client:
@@ -126,7 +144,11 @@ class Client:
         if estimate_only:
             return self.web3.eth.estimate_gas(tx)
         signed_txn = self.account.sign_transaction(tx)
-        tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        try:
+            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        except ValueError as e:
+            raise Web3Error.make(e)
+
         if wait_for_transaction_receipt is False:
             return tx_hash
         return self.web3.eth.wait_for_transaction_receipt(
