@@ -20,4 +20,14 @@ class Wallet:
         return cls(a.address, a)
 
     def __str__(self) -> str:
+        """
+        >>> w = Wallet('aa', Account())
+        >>> str(w)
+        'Wallet(aa)'
+        >>> f'x{w}x'
+        'xWallet(aa)x'
+        """
         return f'Wallet({self.address})'
+    
+    def __repr__(self) -> str:
+        return f'Wallet({self.address} - repr)'
