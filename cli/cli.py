@@ -371,10 +371,11 @@ class CLI:
 
         candidates = self.find_candidates(race, queueable, include_zero=True)
         for score, adapts, _, snail in candidates:
-            # mission-matches only applies to <lv15
+            # mission-matches only applies to lv15+
             score_match = adapts < 3 or self.args.mission_matches <= score
             if athletes == 9:
                 # don't queue non-boosted!
+                # ignore required matches if "--no-adapt" (both for boosted and for need-tickets)
                 if snail.id in boosted and (score_match or self.args.no_adapt):
                     break
             else:
