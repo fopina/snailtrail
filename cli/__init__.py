@@ -99,7 +99,7 @@ def build_parser():
         nargs=2,
         action=StoreBotConfig,
         metavar=('TOKEN', 'CHAT_ID'),
-        default=tgbot.Notifier('', ''),
+        default=tgbot.Notifier('', None),
         help='Telegram bot token and target chat id to use for notifications (value or path to file with value)',
     )
     parser.add_argument(
@@ -110,6 +110,7 @@ def build_parser():
     parser.add_argument(
         '--tg-bot-owner',
         type=int,
+        action='append',
         metavar='CHAT_ID',
         help='Telegram bot will only reply to this chat id (defaults to chat_id in --notify)',
     )

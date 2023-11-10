@@ -28,6 +28,6 @@ class Wallet:
         'xWallet(aa)x'
         """
         return f'Wallet({self.address})'
-    
+
     def __repr__(self) -> str:
         return str(self)

@@ -18,7 +18,7 @@ def escmv2(*a, **b):
 
 def bot_auth(func):
     def wrapper_func(notifier, update: Update, context: CallbackContext):
-        if not notifier.owner_chat_id or update.effective_user['id'] != notifier.owner_chat_id:
+        if not notifier.owner_chat_id or update.effective_user['id'] not in notifier.owner_chat_id:
             logger.error(
                 '%s %s (%s / %d) not in allow list',
                 update.effective_user['first_name'],
@@ -45,6 +45,7 @@ def bot_auth(func):
 
 class Notifier:
     clis: Dict[str, 'cli.CLI']
+    _owner_chat_id = None
 
     def __init__(self, token, chat_id, owner_chat_id=None, settings_list=None):
         self.__token = token
@@ -54,7 +55,7 @@ class Notifier:
         self._read_only_settings = None
         self._sent_messages = set()
         if owner_chat_id is None:
-            self.owner_chat_id = self.chat_id
+            self.owner_chat_id = {self.chat_id} if self.chat_id else None
         else:
             self.owner_chat_id = owner_chat_id
 
@@ -85,6 +86,21 @@ class Notifier:
             dispatcher.add_handler(MessageHandler(None, self.cmd_invalid))
         else:
             self.updater = None
+
+    @property
+    def owner_chat_id(self):
+        return self._owner_chat_id
+
+    @owner_chat_id.setter
+    def owner_chat_id(self, value):
+        if value is None:
+            self._owner_chat_id = None
+        elif isinstance(value, int):
+            self._owner_chat_id = {value}
+        elif isinstance(value, (list, tuple, set)):
+            self._owner_chat_id = set(value)
+        else:
+            raise ValueError('invalid owner_chat_id type')
 
     @property
     def any_cli(self) -> 'cli.CLI':
