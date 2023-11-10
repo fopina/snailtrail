@@ -30,4 +30,4 @@ class Wallet:
         return f'Wallet({self.address})'
     
     def __repr__(self) -> str:
-        return f'Wallet({self.address} - repr)'
+        return str(self)
