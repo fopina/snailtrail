@@ -417,7 +417,7 @@ class CLI:
             if snail is None:
                 continue
             logger.info(
-                f'{Fore.CYAN}Joining {race.id} ({race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
+                f'{Fore.CYAN}Joining {race.id} ({len(race.athletes)} - {race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
 
             tx = None
@@ -427,6 +427,7 @@ class CLI:
             cheap_snail = snail.id in boosted and snail.id not in not_cheap
             try:
                 if self.args.cheap and cheap_snail:
+                    # if it is a cheap snail, it is also boosted / needs tickets
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
@@ -440,10 +441,6 @@ class CLI:
                             logger.error('RACE NOT CHEAP - %s on %d', snail.name, race.id)
                             _slow_snail(snail)
                             continue
-                    except client.gqlclient.RaceAlreadyFullAPIError:
-                        logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
-                        _slow_snail(snail)
-                        continue
                 else:
                     try:
                         r, tx = self.client.join_mission_races(snail.id, race.id, allow_last_spot=(snail.id in boosted))
@@ -491,7 +488,11 @@ class CLI:
                 _slow_snail(snail, seconds=e.seconds)
                 continue
             except (client.gqlclient.RaceEntryFailedAPIError, client.gqlclient.RaceInnacurateRegistrantsAPIError):
-                logger.exception('failed to join mission')
+                logger.exception('failed to join mission - %s on %d', snail.name, race.id)
+                continue
+            except client.gqlclient.RaceAlreadyFullAPIError:
+                logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
+                _slow_snail(snail)
                 continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
