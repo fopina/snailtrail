@@ -389,7 +389,8 @@ class Notifier:
             msg.append(escape_markdown(_m))
             query.message.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
-        utils.balance_balance(self.clis.values(), 1.2, 1.0, _cb, force=True)
+        stop, limit = self.main_cli.args.balance_balance
+        utils.balance_balance(self.clis.values(), limit, stop, _cb, force=True)
 
     def handle_buttons_css(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process /css buttons"""
@@ -659,12 +660,13 @@ class Notifier:
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         msg = []
         m = update.message.reply_markdown('Checking balances...')
+        stop, limit = self.main_cli.args.balance_balance
 
         def _cb(_m):
             msg.append(_m)
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
-        utils.balance_balance(self.clis.values(), 1.2, 1.0, _cb)
+        utils.balance_balance(self.clis.values(), limit, stop, _cb)
 
         keyboard = [
             [

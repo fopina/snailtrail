@@ -736,6 +736,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--level-ups-to-15', action='store_true', help='Notify when a snail levels up (during missions) - until lv15!'
     )
+    @commands.argument(
+        '--balance-balance',
+        type=float,
+        nargs=2,
+        metavar=('STOP', 'LIMIT'),
+        default=(1, 1.2),
+        help='Pre-defined values for /balancebalance - when wallet under STOP, fund up to LIMIT',
+    )
     @commands.command()
     def cmd_bot(self):
         """
