@@ -771,10 +771,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             assert len(data['prize_pool']) == 1
             print(f"Prize: {data['prize_pool'][0]['amount']} {data['prize_pool'][0]['symbol']}")
             for week in data['weeks']:
-                print(f"\nWeek {week['week']}")
-                print(f"Conditions: {week['conditions']}")
-                print(f"Distance: {week['distance']}")
-                print(f"Registered guilds: {week['guild_count']}")
+                print(f"Week {week['week']}: {week['conditions']} {week['distance']}m ({week['guild_count']} guilds)")
         if self.args.stats:
             # only print stats
             return False
@@ -813,13 +810,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return True, per_family, data
 
     def _cmd_tournament_preview(self, week):
-        conditions = week['conditions']
+        race = Race({'conditions': week['conditions']})
         for day in week['days']:
-            print(f"== Day {day['order']} - {day['family']}")
-            for entry in day['result']['entries']:
+            print(f"\n== Day {day['order']} - {day['family']}")
+            snail_data = {}
+            snails = []
+            for pos, entry in enumerate(day['result']['entries']):
                 snail = Snail(entry['snail'])
-                guild = entry['guild']
-                print(f'{snail} ({guild["name"]})')
+                snail_data[snail.id] = (entry['guild']['name'], pos + 1)
+                snails.append(snail)
+            candidates = self.find_candidates(race, snails, include_zero=True)
+            for m1, m2, _, snail in candidates:
+                print(f'{snail} ({snail_data[snail.id][0]}) - Score: {m1}/{m2}, Pos: {snail_data[snail.id][1]}')
         return False
 
     def _bot_tournament(self):
