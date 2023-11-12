@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -46,6 +47,9 @@ def bot_auth(func):
 class Notifier:
     clis: Dict[str, 'cli.CLI']
     _owner_chat_id = None
+
+    SNAIL_ID1_RE = re.compile(r'(Snail \#(\d+))')
+    SNAIL_ID2_RE = re.compile(r'(\(#(\d+)\))')
 
     def __init__(self, token, chat_id, owner_chat_id=None, settings_list=None):
         self.__token = token
@@ -945,6 +949,9 @@ class Notifier:
                 return
             self._sent_messages.add(_h)
 
+        if format == 'Markdown':
+            message = self._link_snails(message)
+
         if chat_id is None:
             chat_id = self.chat_id
         if self.updater and chat_id:
@@ -961,3 +968,8 @@ class Notifier:
                 return self.updater.bot.edit_message_text(
                     message, edit['chat']['id'], edit['message_id'], parse_mode=format
                 )
+
+    def _link_snails(self, message):
+        _r = r'[\1](https://www.snailtrail.art/snails/\2/about)'
+        m = self.SNAIL_ID1_RE.sub(_r, message)
+        return self.SNAIL_ID2_RE.sub(_r, m)

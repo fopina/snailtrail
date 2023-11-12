@@ -430,3 +430,36 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
                 parse_mode='Markdown',
             ),
         )
+
+    def test_notify(self):
+        send_mock = mock.MagicMock()
+        self.bot.updater.bot.send_message = send_mock
+
+        self.bot.notify('hello #12345, how are you?')
+        send_mock.assert_called_once_with(
+            999999999,
+            'hello #12345, how are you?',
+            parse_mode='Markdown',
+            disable_notification=False,
+            reply_markup=None,
+        )
+
+        send_mock.reset_mock()
+        self.bot.notify('hello Snail #12345, how are you?')
+        send_mock.assert_called_once_with(
+            999999999,
+            'hello [Snail #12345](https://www.snailtrail.art/snails/12345/about), how are you?',
+            parse_mode='Markdown',
+            disable_notification=False,
+            reply_markup=None,
+        )
+
+        send_mock.reset_mock()
+        self.bot.notify('hello John (#12345), how are you?')
+        send_mock.assert_called_once_with(
+            999999999,
+            'hello John [(#12345)](https://www.snailtrail.art/snails/12345/about), how are you?',
+            parse_mode='Markdown',
+            disable_notification=False,
+            reply_markup=None,
+        )
