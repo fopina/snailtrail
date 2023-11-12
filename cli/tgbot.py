@@ -655,7 +655,7 @@ class Notifier:
     @bot_auth
     def cmd_balance_balance(self, update: Update, context: CallbackContext) -> None:
         """
-        Balance all accounts with 1.2 AVAX
+        Distribute AVAX balance from richest wallet to the others
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         msg = []
