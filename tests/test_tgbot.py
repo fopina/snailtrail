@@ -103,6 +103,7 @@ class Test(TestCase):
 
         self.assertEqual(self.cli.args.wtv, False)
         self.update.callback_query = mock.MagicMock(data='toggle it wtv')
+        self.update.callback_query.message.chat.id = self.user.id
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(

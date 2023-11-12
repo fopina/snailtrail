@@ -223,7 +223,7 @@ class Notifier:
             setattr(_cli.args, opts, not ov)
             msg = f"Toggled *{opts}* to *{not ov}*"
             query.edit_message_text(text=msg, parse_mode='Markdown')
-            if update.message.chat.id != self.chat_id:
+            if query.message.chat.id != self.chat_id:
                 # also notify main chat
                 self.notify(msg)
             _cli.save_bot_settings()
