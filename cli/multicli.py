@@ -247,7 +247,7 @@ Total: {breed_fees + gender_fees}
         return False
 
     def cmd_tournament(self):
-        if self.args.stats:
+        if self.args.stats or self.args.preview:
             return False
         all_snails = defaultdict(list)
         data = None

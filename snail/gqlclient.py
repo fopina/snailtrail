@@ -861,6 +861,11 @@ class Client(requests.Session):
                                 family
                                 adaptations
                                 purity
+                                klass
+                                gender {id}
+                                stats {
+                                    experience {level, xp, remaining}
+                                }
                             }
                             guild {
                                 name

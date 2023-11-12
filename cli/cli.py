@@ -757,6 +757,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     @commands.argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
+    @commands.argument('--preview', action='store_true', help='Attempt to predict race results for given week')
     @commands.command()
     def cmd_tournament(self, data=None):
         """Tournament info"""
@@ -791,6 +792,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             else:
                 raise Exception(f'week {week_pos} not found')
             print(f'{Fore.GREEN}For week {week_pos}{Fore.RESET}')
+            if self.args.preview:
+                return self._cmd_tournament_preview(week)
             snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
             candidates = self.find_candidates(Race(week), snails)
             for candidate in candidates:
@@ -806,6 +809,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     snail = candidate[3]
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
+
+    def _cmd_tournament_preview(self, week):
+        conditions = week['conditions']
+        for day in week['days']:
+            print(f"== Day {day['order']} - {day['family']}")
+            for entry in day['result']['entries']:
+                snail = Snail(entry['snail'])
+                guild = entry['guild']
+                print(f'{snail} ({guild["name"]})')
+        return False
 
     def _bot_tournament(self):
         _n: datetime = self._now()
