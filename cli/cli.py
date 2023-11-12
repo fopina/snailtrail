@@ -355,7 +355,11 @@ class CLI:
         for snail in queueable:
             pl = self._snail_levels.get(snail.id)
             self._snail_levels[snail.id] = snail.level
-            if self.args.level_ups and pl is not None and pl != snail.level:
+            if (
+                pl is not None
+                and pl != snail.level
+                and (self.args.level_ups or (self.args.level_ups_to_15 and snail.level <= 15))
+            ):
                 self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
 
         return boosted
@@ -717,7 +721,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
     )
     @commands.argument('--auto-claim', action='store_true', help='Auto claim any guild rewards')
-    @commands.argument('--level-ups', action='store_true', help='Notify when a snail levels up (during missions)')
+    @commands.argument(
+        '--level-ups',
+        action='store_true',
+        help='Notify when a snail levels up (during missions) - this takes precedence over --level-ups-to-15',
+    )
+    @commands.argument(
+        '--level-ups-to-15', action='store_true', help='Notify when a snail levels up (during missions) - until lv15!'
+    )
     @commands.command()
     def cmd_bot(self):
         """
