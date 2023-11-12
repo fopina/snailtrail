@@ -217,7 +217,11 @@ class Notifier:
         else:
             ov = getattr(_cli.args, opts)
             setattr(_cli.args, opts, not ov)
-            query.edit_message_text(text=f"Toggled *{opts}* to *{not ov}*", parse_mode='Markdown')
+            msg = f"Toggled *{opts}* to *{not ov}*"
+            query.edit_message_text(text=msg, parse_mode='Markdown')
+            if update.message.chat.id != self.chat_id:
+                # also notify main chat
+                self.notify(msg)
             _cli.save_bot_settings()
 
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:

@@ -19,6 +19,7 @@ class Test(TestCase):
         self.bot._read_only_settings = [mock.MagicMock(dest='wtv_other', help='Whatever Other')]
         self.bot.register_cli(self.cli)
         self.update = mock.MagicMock(effective_user=self.user)
+        self.update.message.chat.id = self.user.id
         self.context = mock.MagicMock()
 
     def test_authorized(self):
