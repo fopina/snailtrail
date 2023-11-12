@@ -468,15 +468,17 @@ class CLI:
                 msg = (
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
                 )
+                # FIXME: remove tickets for link replacement in notify_mission... re-use same message after fixing filters in Grafana
+                notify_msg = msg.replace('`', '')
                 if r.get('status') == 0:
                     logger.info(f'{msg}')
-                    self.notify_mission(msg)
+                    self.notify_mission(notify_msg)
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     if tx['status'] == 1:
                         cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
                         logger.info(f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
-                        self.notify_mission(f'{msg} *LAST SPOT*')
+                        self.notify_mission(f'{notify_msg} *LAST SPOT*')
                     else:
                         logger.error(f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
                         _slow_snail(snail)
