@@ -499,6 +499,11 @@ class CLI:
                 logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
                 _slow_snail(snail)
                 continue
+            except client.web3client.InsufficientFundsWeb3Error:
+                # FIXME: other last spots will also fail if there are no funds... should it just join normal spots (works in case of boosted), at least for the current tick?
+                logger.exception('No funds for %s on %d', snail.name, race.id)
+                _slow_snail(snail)
+                continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
                 if 'Race already submitted' in str(e):

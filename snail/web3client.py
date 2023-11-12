@@ -21,9 +21,8 @@ class Web3Error(Exception):
 
     @classmethod
     def make(cls, error):
-        if 'insufficient funds' in str(error):
-            logger.error('TEMP: funds error - args: %s - type arg0: %s', error.args, type(error.args[0]))
-            return InsufficientFundsWeb3Error(error)
+        if 'insufficient funds' in str(error) and error.args[0]['code'] == -32000:
+            return InsufficientFundsWeb3Error(error.args[0]['message'])
         return cls(error)
 
 
