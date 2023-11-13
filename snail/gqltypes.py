@@ -100,12 +100,14 @@ class Adaptation(Enum):
     GLACIER = 4, 'Glacier'
     FOREST = 5, 'Forest'
     SPACE = 6, 'Space'
+
     HOT = 40, 'Hot'
     COLD = 41, 'Cold'
     WIND = 42, 'Wind'
     WET = 43, 'Wet'
     SNOW = 44, 'Snow'
     STORM = 45, 'Storm'
+
     SLIDE = 80, 'Slide'
     JUMP = 81, 'Jump'
     ROLL = 82, 'Roll'
@@ -116,6 +118,15 @@ class Adaptation(Enum):
 
     def __repr__(self) -> str:
         return str(self)
+
+    def is_athletics(self):
+        return int(self.value[0] / 10) == 8
+
+    def is_landscape(self):
+        return int(self.value[0] / 10) == 0
+
+    def is_weather(self):
+        return int(self.value[0] / 10) == 4
 
     @property
     def id(self):

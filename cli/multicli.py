@@ -10,6 +10,8 @@ from typing import List
 from colorama import Fore
 from tqdm import tqdm
 
+from snail.gqltypes import Adaptation
+
 from . import cli, commands, utils
 
 logger = logging.getLogger(__name__)
@@ -393,42 +395,41 @@ Total: {breed_fees + gender_fees}
 
         with self.args.file.open('w') as _f:
             csvf = csv.writer(_f)
-            csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adaptations'])
+            csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adapt Landscape', 'Adapt Weather', 'Adapt Athletics'])
             for c in self.clis:
                 for snail in itertools.chain(
                     c.my_snails.values(), c.client.iterate_my_snails(c.owner, filters={'status': 5})
                 ):
                     print(snail)
-                    adapts = ', '.join(sorted(str(x) for x in snail.adaptations))
-                    csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, adapts])
+                    landscape = weather = athletics = ''
+                    for x in snail.adaptations:
+                        if x.is_landscape():
+                            landscape = str(x)
+                        elif x.is_weather():
+                            weather = str(x)
+                        else:
+                            athletics = str(x)
+                    csvf.writerow(
+                        [snail.name_id, snail.family, snail.level, snail.purity, landscape, weather, athletics]
+                    )
 
     @commands.util_command()
     def cmd_utils_all_adapts(self):
         """Print out all possible adaptation combinations"""
-        weather = [
-            'Hot',
-            'Wind',
-            'Storm',
-            'Snow',
-            'Cold',
-            'Wet',
-        ]
+        adapt_types = [[], [], []]
 
-        location = [
-            'Glacier',
-            'Desert',
-            'Mountain',
-            'Beach',
-            'Space',
-            'Forest',
-        ]
+        for x in Adaptation:
+            if x.is_landscape():
+                adapt_types[0].append(x)
+            elif x.is_weather():
+                adapt_types[1].append(x)
+            else:
+                adapt_types[2].append(x)
 
-        athletic = ['Roll', 'Dodge', 'Slide', 'Jump']
-
-        for a in weather:
-            for b in location:
-                for c in athletic:
-                    x = ', '.join(sorted([a, b, c]))
+        for a in adapt_types[0]:
+            for b in adapt_types[1]:
+                for c in adapt_types[2]:
+                    x = ', '.join(sorted(map(str, [a, b, c])))
                     print(x)
 
     @commands.argument('snail', type=int, help='Snail ID')
