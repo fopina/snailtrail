@@ -429,7 +429,7 @@ Total: {breed_fees + gender_fees}
         for a in adapt_types[0]:
             for b in adapt_types[1]:
                 for c in adapt_types[2]:
-                    x = ', '.join(sorted(map(str, [a, b, c])))
+                    x = ', '.join(map(str, [a, b, c]))
                     print(x)
 
     @commands.argument('snail', type=int, help='Snail ID')
