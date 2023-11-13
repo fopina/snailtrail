@@ -966,6 +966,7 @@ class Client(requests.Session):
                         resources {
                             id
                             symbol
+
                             amount
                         }
                     }
@@ -974,6 +975,7 @@ class Client(requests.Session):
                             id
                             name
                             type
+                            level
                             %s
                         }
                         stats {

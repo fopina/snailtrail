@@ -831,19 +831,38 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
+    def _cmd_tournament_preview_guild_drinks(self, guilds):
+        data = {}
+        for guild_id in tqdm(guilds, desc='Guild drinks'):
+            data[guild_id] = {}
+            d = self.client.gql.guild_details(guild_id)
+            for b in d['research']['buildings']:
+                if b['type'].startswith('DRINK_'):
+                    data[guild_id][b['type'][6:]] = b['level']
+        return data
+
     def _cmd_tournament_preview(self, week):
         race = Race({'conditions': week['conditions']})
+        drinks = self._cmd_tournament_preview_guild_drinks(
+            {entry['guild']['id'] for day in week['days'] for entry in day['result']['entries']}
+        )
+
         for day in week['days']:
             print(f"\n== Day {day['order']} - {day['family']}")
             snail_data = {}
             snails = []
+            extra_sorting = {}
             for pos, entry in enumerate(day['result']['entries']):
                 snail = Snail(entry['snail'])
                 snail_data[snail.id] = (entry['guild']['name'], pos + 1)
+                extra_sorting[snail.id] = drinks[entry['guild']["id"]].get(day["family"], 0)
                 snails.append(snail)
-            candidates = self.find_candidates(race, snails, include_zero=True)
+            candidates = self.find_candidates(race, snails, include_zero=True, extra_sorting=extra_sorting)
             for m1, m2, _, snail in candidates:
-                print(f'{snail} ({snail_data[snail.id][0]}) - Score: {m1}/{m2}, Pos: {snail_data[snail.id][1]}')
+                print(
+                    f'{Fore.GREEN}{snail_data[snail.id][0]}: {Fore.YELLOW}{snail.name_id} {Fore.BLUE}{snail.purity_str} {Fore.YELLOW}{snail.klass} '
+                    f'{Fore.RED} Score: {m1}/{m2} Drink: {extra_sorting[snail.id]}% {Fore.CYAN} Pos: {snail_data[snail.id][1]}{Fore.RESET}'
+                )
         return False
 
     def _bot_tournament(self):
@@ -1457,17 +1476,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'{len(snails)} snails unstaked for {fee} AVAX')
 
-    def find_candidates_sorting(self, candidates):
-        candidates.sort(key=lambda x: x[:3], reverse=True)
+    def find_candidates_sorting(self, candidates, extra_sorting=None):
+        candidates.sort(key=lambda x: (x[0], extra_sorting[x[3].id], x[1], x[2]), reverse=True)
 
-    def find_candidates(self, race, snails, include_zero=False):
+    def find_candidates(self, race, snails, include_zero=False, **kwargs):
         candidates = []
         conditions = set(race.conditions)
         for s in snails:
             score = len(conditions.intersection(s.adaptations))
             if score or include_zero:
                 candidates.append((score, len(s.adaptations), s.purity, s))
-        self.find_candidates_sorting(candidates)
+        self.find_candidates_sorting(candidates, **kwargs)
         return candidates
 
     def find_races_in_league(self, league):
