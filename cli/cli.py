@@ -831,21 +831,45 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
-    def _cmd_tournament_preview_guild_drinks(self, guilds):
+    def _cmd_tournament_preview_guild_drinks_latest(self, guilds):
         data = {}
-        drinks = self.client.gql.guild_research(guilds)
-        for i, guild_id in enumerate(guilds):
-            data[guild_id] = {}
-            d = drinks[f'guild_promise{i}']
-            for b in d['research']['buildings']:
-                if b['type'].startswith('DRINK_'):
-                    data[guild_id][b['type'][6:]] = b['level']
+        for chunk_s in tqdm(range(0, len(guilds), 10), desc='Latest drinks'):
+            guild_chunk = guilds[chunk_s : chunk_s + 5]
+            drinks = self.client.gql.guild_research(guild_chunk)
+            for i, guild_id in enumerate(guild_chunk):
+                data[guild_id] = {}
+                d = drinks[f'guild_promise{i}']
+                for b in d['research']['buildings']:
+                    if b['type'].startswith('DRINK_'):
+                        data[guild_id][b['type'][6:]] = b['level']
         return data
+
+    def _cmd_tournament_preview_guild_drinks_at(self, guilds, date):
+        guilds = list(guilds)
+        latest_data = self._cmd_tournament_preview_guild_drinks_latest(guilds)
+
+        # FIXME: add quick check for "future"
+        # # no need to go through history
+        # if date is in future:
+        #     return latest_data
+
+        # data = {}
+        # for guild in guilds:
+        #     drinks = self.client.gql.guild_research(guilds)
+        #     for i, guild_id in enumerate(guilds):
+        #         data[guild_id] = {}
+        #         d = drinks[f'guild_promise{i}']
+        #         for b in d['research']['buildings']:
+        #             if b['type'].startswith('DRINK_'):
+        #                 data[guild_id][b['type'][6:]] = b['level']
+        # return data
+        return latest_data
 
     def _cmd_tournament_preview(self, week):
         race = Race({'conditions': week['conditions']})
-        drinks = self._cmd_tournament_preview_guild_drinks(
-            {entry['guild']['id'] for day in week['days'] for entry in day['result']['entries']}
+        drinks = self._cmd_tournament_preview_guild_drinks_at(
+            {entry['guild']['id'] for day in week['days'] for entry in day['result']['entries']},
+            week['team_select_ends_at'],
         )
 
         for day in week['days']:
