@@ -10,7 +10,7 @@ class Test(TestCase):
     def setUp(self) -> None:
         self.user = User(999999999, 'John', False, 'Valium', 'jval')
         self.cli = mock.MagicMock(
-            args=mock.MagicMock(wtv=False),
+            args=mock.MagicMock(wtv=False, css_minimum=0),
             owner='0x2fff',
         )
         self.cli.name = '0x2f'

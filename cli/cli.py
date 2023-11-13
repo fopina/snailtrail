@@ -744,6 +744,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         default=(1, 1.2),
         help='Pre-defined values for /balancebalance - when wallet under STOP, fund up to LIMIT',
     )
+    @commands.argument(
+        '--css-minimum',
+        type=int,
+        metavar='SLIME',
+        default=0,
+        help='Minimum unclaimed SLIME to be claimed',
+    )
     @commands.command()
     def cmd_bot(self):
         """

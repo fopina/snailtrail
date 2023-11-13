@@ -247,11 +247,21 @@ class Notifier:
             )
 
     @staticmethod
-    def _async_claim(clis: 'List[cli.CLI]', cb: Callable[['cli.CLI', int, str, Optional[List[Any]]], None]):
+    def _async_claim(
+        clis: 'List[cli.CLI]', cb: Callable[['cli.CLI', int, str, Optional[List[Any]]], None], minimum=None
+    ):
         hash_queue = []
 
         for _cli in clis:
-            cb(_cli, 0, f'claiming from {_cli.name}...')
+            if minimum:
+                _b = _cli.client.web3.claimable_slime()
+                if _b > minimum:
+                    cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
+                else:
+                    cb(_cli, 0, f'skipping {_cli.name}, only {_b}...')
+                    continue
+            else:
+                cb(_cli, 0, f'claiming from {_cli.name}...')
             try:
                 h = _cli.client.web3.claim_rewards(wait_for_transaction_receipt=False)
                 hash_queue.append((_cli, h))
@@ -418,7 +428,7 @@ class Notifier:
             elif st == 2:
                 final_status[_cli.name] = extra_text[-1]
 
-        self._async_claim(list(self.clis.values()), _cb)
+        self._async_claim(list(self.clis.values()), _cb, minimum=self.main_cli.args.css_minimum)
 
         extra_text = list(final_status.values()) + [f'*Total claimed*: {total_claimed[0]}', '']
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
