@@ -839,6 +839,7 @@ type InventoryItem {
   count: Int
   status: Int
   expires_at: String
+  subtext: String
 }
 
 enum ViewFlag {
@@ -1031,6 +1032,7 @@ type ActivityBoard {
 
 type GuildMessageBoard {
   board(cursor: Int): BoardPage
+  board_message(message_id: Int!): GuildMessage
 }
 
 type BoardPage {
@@ -1311,11 +1313,11 @@ enum GuildOrder {
   NAME_ASC
   NAME_DESC
   SIZE_ASC
-
-  # Should be default
   SIZE_DESC
   LEVEL_ASC
   LEVEL_DESC
+  SNAIL_DESC
+  MEMBER_DESC
 }
 
 enum GuildStatus {
