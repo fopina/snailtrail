@@ -258,7 +258,7 @@ class Notifier:
                 if _b > minimum:
                     cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
                 else:
-                    cb(_cli, 0, f'skipping {_cli.name}, only {_b}...')
+                    cb(_cli, 1, f'skipping {_cli.name}, only {_b}...', [0])
                     continue
             else:
                 cb(_cli, 0, f'claiming from {_cli.name}...')
@@ -430,7 +430,8 @@ class Notifier:
 
         self._async_claim(list(self.clis.values()), _cb, minimum=self.main_cli.args.css_minimum)
 
-        extra_text = list(final_status.values()) + [f'*Total claimed*: {total_claimed[0]}', '']
+        slime_claimed = total_claimed[0]
+        extra_text = list(final_status.values()) + [f'*Total claimed*: {slime_claimed}', '']
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
 
         final_status = {}
@@ -440,6 +441,14 @@ class Notifier:
 
         extra_text = extra_text[:sti] + list(final_status.values()) + [f'*Total sent*: {total_claimed[0]}', '']
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+
+        if self.main_cli.args.css_fee:
+            creditor, rate = self.main_cli.args.css_fee
+            fee = int(slime_claimed * float(rate) * DECIMALS)
+            r = cli.client.web3.transfer_slime(creditor, fee)
+            sent = int(r['logs'][0]['data'], 16) / DECIMALS
+            extra_text.append(f'*Paid fee of {sent}*')
+            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
 
         balance = cli.client.web3.balance_of_slime(raw=True)
         out_min = cli.client.web3.swap_slime_avax(amount_in=balance, preview=True)

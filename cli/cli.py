@@ -751,6 +751,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         default=0,
         help='Minimum unclaimed SLIME to be claimed',
     )
+    @commands.argument(
+        '--css-fee',
+        type=str,
+        nargs=2,
+        metavar=('WALLET', 'FEE'),
+        help='Whenever claiming slime, send FEE percentage to WALLET before swapping',
+    )
     @commands.command()
     def cmd_bot(self):
         """
