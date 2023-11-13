@@ -833,9 +833,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _cmd_tournament_preview_guild_drinks(self, guilds):
         data = {}
-        for guild_id in tqdm(guilds, desc='Guild drinks'):
+        drinks = self.client.gql.guild_research(guilds)
+        for i, guild_id in enumerate(guilds):
             data[guild_id] = {}
-            d = self.client.gql.guild_details(guild_id)
+            d = drinks[f'guild_promise{i}']
             for b in d['research']['buildings']:
                 if b['type'].startswith('DRINK_'):
                     data[guild_id][b['type'][6:]] = b['level']

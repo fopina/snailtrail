@@ -1257,3 +1257,39 @@ class Client(requests.Session):
             """,
             auth=gql_token,
         )['send_workers_promise']
+
+    def guild_research(self, guild_ids: list[int]):
+        query = ''
+        vars = {}
+
+        for i, guild in enumerate(guild_ids):
+            query += '''
+            guild_promise%d: guild_promise(guild_id: $guild%d) {
+                ... on Guild {
+                    research {
+                        buildings {
+                            type
+                            level
+                        }
+                    }
+                }
+            }
+            ''' % (
+                i,
+                i,
+            )
+            vars['guild%d' % i] = guild
+
+        return self.query(
+            "research_center_reward",
+            vars,
+            """
+            query research_center_reward(%s) {
+            %s
+            }
+            """
+            % (
+                ','.join([f'${v}: Int!' for v in vars]),
+                query,
+            ),
+        )
