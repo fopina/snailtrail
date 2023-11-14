@@ -1293,3 +1293,48 @@ class Client(requests.Session):
                 query,
             ),
         )
+
+    def guild_messages(
+        self,
+        guild_id,
+        cursor=0,
+    ):
+        return self.query(
+            "guildTreasuryLedger",
+            {
+                "guild_id": guild_id,
+                "cursor": cursor,
+            },
+            """
+            query guildTreasuryLedger($guild_id: Int!, $cursor: Int!) {
+                guild_promise(guild_id: $guild_id) {
+                    ... on Problem {
+                        problem
+                    }
+                    ... on Guild {
+                    treasury {
+                        ledger(cursor: $cursor) {
+                        total_count
+                        page_info {
+                            has_next_page
+                            end_cursor
+                        }
+                        messages {
+                            id
+                            cursor
+                            content
+                            created_at
+                            topic
+                            subjects {
+                                type
+                                value
+                                hidden
+                            }
+                        }
+                        }
+                    }
+                    }
+                }
+                }
+            """,
+        )['guild_promise']

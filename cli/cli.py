@@ -833,8 +833,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _cmd_tournament_preview_guild_drinks_latest(self, guilds):
         data = {}
-        for chunk_s in tqdm(range(0, len(guilds), 10), desc='Latest drinks'):
-            guild_chunk = guilds[chunk_s : chunk_s + 5]
+        CS = 10
+        for chunk_s in tqdm(range(0, len(guilds), CS), desc='Latest drinks'):
+            guild_chunk = guilds[chunk_s : chunk_s + CS]
             drinks = self.client.gql.guild_research(guild_chunk)
             for i, guild_id in enumerate(guild_chunk):
                 data[guild_id] = {}
@@ -847,22 +848,36 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def _cmd_tournament_preview_guild_drinks_at(self, guilds, date):
         guilds = list(guilds)
         latest_data = self._cmd_tournament_preview_guild_drinks_latest(guilds)
+        date = _parse_datetime(date)
 
-        # FIXME: add quick check for "future"
-        # # no need to go through history
-        # if date is in future:
-        #     return latest_data
+        # no need to go through history
+        # FIXME: confirm timezones and stuff...
+        if date > self._now():
+            return latest_data
 
-        # data = {}
-        # for guild in guilds:
-        #     drinks = self.client.gql.guild_research(guilds)
-        #     for i, guild_id in enumerate(guilds):
-        #         data[guild_id] = {}
-        #         d = drinks[f'guild_promise{i}']
-        #         for b in d['research']['buildings']:
-        #             if b['type'].startswith('DRINK_'):
-        #                 data[guild_id][b['type'][6:]] = b['level']
-        # return data
+        FAMILY_MAP = {
+            'Coffee': 'GARDEN',
+            'Tea': 'HELIX',
+            'Milkshake': 'MILK',
+            'Beer': 'AGATE',
+            'Espresso': 'ATLANTIS',
+        }
+
+        for guild in tqdm(guilds, desc='History drinks'):
+            history_data = {}
+            for m in self.client.iterate_guild_messages(guild):
+                if _parse_datetime(m['created_at']) < date:
+                    # done
+                    break
+                if m['topic'] != 'T_RESEARCH_UPGRADE':
+                    continue
+                building = m['subjects'][0]['value']
+                if building not in FAMILY_MAP:
+                    # not a drink
+                    continue
+                history_data[building] = int(m['subjects'][1]['value'])
+            for k, v in history_data.items():
+                latest_data[guild][FAMILY_MAP[k]] = v
         return latest_data
 
     def _cmd_tournament_preview(self, week):
@@ -880,7 +895,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for pos, entry in enumerate(day['result']['entries']):
                 snail = Snail(entry['snail'])
                 snail_data[snail.id] = (entry['guild']['name'], pos + 1)
-                extra_sorting[snail.id] = drinks[entry['guild']["id"]].get(day["family"], 0)
+                extra_sorting[snail.id] = drinks[entry['guild']['id']].get(day['family'], 0)
                 snails.append(snail)
             candidates = self.find_candidates(race, snails, include_zero=True, extra_sorting=extra_sorting)
             for m1, m2, _, snail in candidates:

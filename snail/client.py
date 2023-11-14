@@ -98,6 +98,40 @@ class Client:
             if max_calls and calls >= max_calls:
                 break
 
+    def _iterate_cursor(self, method, key, cursor, klass=None, args=None, kwargs=None, max_calls=None):
+        args = args or []
+        kwargs = kwargs or {}
+        c = 0
+        calls = 0
+        while True:
+            logger.debug(
+                'fetching cursor %d (call %d) for %s (args %s)',
+                c,
+                calls,
+                getattr(method, "__name__", str(method)),
+                args,
+            )
+            kwargs['cursor'] = c
+            objs = method(*args, **kwargs)
+            c = cursor(objs)
+            objs = key(objs)
+            _r = map(klass, objs) if klass else objs
+            yield from _r
+            calls += 1
+            if max_calls and calls >= max_calls:
+                break
+            if c is None:
+                break
+            c = int(c)
+
+    def iterate_guild_messages(self, guild_id) -> Generator[any, None, None]:
+        yield from self._iterate_cursor(
+            self.gql.guild_messages,
+            lambda x: x['treasury']['ledger']['messages'],
+            lambda x: x['treasury']['ledger']['page_info']['end_cursor'],
+            args=(guild_id,),
+        )
+
     def iterate_all_genes_marketplace(self, filters={}) -> Generator[gqltypes.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_all_genes_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
