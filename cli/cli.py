@@ -893,6 +893,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     [
                         'Day',
                         'Family',
+                        'Real Position',
                         'Guild',
                         'Snail',
                         'Drink',
@@ -924,6 +925,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                                 [
                                     day['order'],
                                     day['family'],
+                                    snail_data[snail.id][1],
                                     snail_data[snail.id][0],
                                     snail.name_id,
                                     extra_sorting[snail.id],
