@@ -512,7 +512,7 @@ class Notifier:
 
         args = self.any_cli.args
         try:
-            nv = update.message.text
+            nv = setting.type(update.message.text)
             setattr(args, keyword, nv)
             msg = f"Toggled *{keyword}* to *{nv}*"
         except ValueError:
