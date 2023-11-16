@@ -781,6 +781,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
     @commands.argument('--preview', action='store_true', help='Attempt to predict race results for given week')
+    @commands.argument('--csv', action='store_true', help='Output in csv format - only for --preview')
     @commands.command()
     def cmd_tournament(self, data=None):
         """Tournament info"""
@@ -886,8 +887,25 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             week['team_select_ends_at'],
         )
 
+        if self.args.csv:
+            print(
+                ','.join(
+                    [
+                        'Day',
+                        'Family',
+                        'Guild',
+                        'Snail',
+                        'Drink',
+                        'Adaptations',
+                        'Matches',
+                        'Purity',
+                        'Class',
+                    ]
+                )
+            )
         for day in week['days']:
-            print(f"\n== Day {day['order']} - {day['family']}")
+            if not self.args.csv:
+                print(f"\n== Day {day['order']} - {day['family']}")
             snail_data = {}
             snails = []
             extra_sorting = {}
@@ -898,10 +916,30 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 snails.append(snail)
             candidates = self.find_candidates(race, snails, include_zero=True, extra_sorting=extra_sorting)
             for m1, m2, _, snail in candidates:
-                print(
-                    f'{Fore.GREEN}{snail_data[snail.id][0]}: {Fore.YELLOW}{snail.name_id} {Fore.BLUE}{snail.purity_str} {Fore.YELLOW}{snail.klass} '
-                    f'{Fore.RED} Score: {m1}/{m2} Drink: {extra_sorting[snail.id]}% {Fore.CYAN} Pos: {snail_data[snail.id][1]}{Fore.RESET}'
-                )
+                if self.args.csv:
+                    print(
+                        ','.join(
+                            map(
+                                str,
+                                [
+                                    day['order'],
+                                    day['family'],
+                                    snail_data[snail.id][0],
+                                    snail.name_id,
+                                    extra_sorting[snail.id],
+                                    m2,
+                                    m1,
+                                    snail.purity,
+                                    snail.klass,
+                                ],
+                            )
+                        )
+                    )
+                else:
+                    print(
+                        f'{Fore.GREEN}{snail_data[snail.id][0]}: {Fore.YELLOW}{snail.name_id} {Fore.BLUE}{snail.purity_str} {Fore.YELLOW}{snail.klass} '
+                        f'{Fore.RED} Score: {m1}/{m2} Drink: {extra_sorting[snail.id]}% {Fore.CYAN} Pos: {snail_data[snail.id][1]}{Fore.RESET}'
+                    )
         return False
 
     def _bot_tournament(self):
