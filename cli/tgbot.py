@@ -434,7 +434,10 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+            try:
+                query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+            except Exception:
+                """ignore telegram message updates"""
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -455,7 +458,10 @@ class Notifier:
         self._async_swapsend(cli, list(self.clis.values()), _cb)
 
         extra_text = extra_text[:sti] + list(final_status.values()) + [f'*Total sent*: {total_claimed[0]}', '']
-        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+        try:
+            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+        except Exception:
+            """ignore telegram message updates"""
 
         if self.main_cli.args.css_fee:
             creditor, rate = self.main_cli.args.css_fee
