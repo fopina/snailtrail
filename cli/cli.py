@@ -1535,7 +1535,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         print(f'{len(snails)} snails unstaked for {fee} AVAX')
 
     def find_candidates_sorting(self, candidates, extra_sorting=None):
-        candidates.sort(key=lambda x: (x[0], extra_sorting[x[3].id], x[1], x[2]), reverse=True)
+        candidates.sort(
+            key=lambda x: (x[0], extra_sorting[x[3].id] if extra_sorting else None, x[1], x[2]), reverse=True
+        )
 
     def find_candidates(self, race, snails, include_zero=False, **kwargs):
         candidates = []

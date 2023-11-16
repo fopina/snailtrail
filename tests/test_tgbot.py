@@ -123,7 +123,7 @@ class Test(TestCase):
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`wtv_other` = `2`\nWhatever Other', parse_mode='Markdown'
+            text='`wtv_other` = `2`\nWhatever Other\n', parse_mode='Markdown'
         )
 
     def test_claim(self):
