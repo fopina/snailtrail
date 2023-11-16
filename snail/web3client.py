@@ -398,6 +398,21 @@ class Client:
             **kwargs,
         )
 
+    def approve_all_snails_for_stake(
+        self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        current = self.snailnft_contract.functions.isApprovedForAll(self.wallet, self.snailguild_contract.address).call(
+            {'from': self.wallet}
+        )
+        target = not remove
+        if current is target:
+            return
+        return self._bss(
+            self.snailnft_contract.functions.setApprovalForAll(self.snailguild_contract.address, target),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
     def stake_snails(
         self,
         order_id: int,

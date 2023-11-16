@@ -7,7 +7,6 @@ from datetime import datetime, timedelta, timezone
 from functools import cached_property
 from pathlib import Path
 from typing import Optional, Union
-from xmlrpc.client import Boolean
 
 import requests
 from colorama import Fore
@@ -118,7 +117,7 @@ class CLI:
         wallet: Wallet,
         proxy_url: str,
         args: argparse.Namespace,
-        main_one: Optional[Boolean] = None,
+        main_one: Optional[bool] = None,
         graphql_endpoint: Optional[str] = None,
         profile: dict = None,
     ):
@@ -1494,14 +1493,33 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not self.profile_guild:
             print('No guild')
             return
-        snails = list(self.client.iterate_my_snails(self.owner))
-        if not snails:
-            print('No one available to work')
-            return
-        snail_ids = [s.id for s in snails]
-        tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids)
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-        print(f'{len(snails)} snails staked for {fee} AVAX')
+
+        def chunked_snails(n):
+            # always restart iterating call (not iterate) as staked snails affect the ongoing query results...
+            while True:
+                s = []
+                for snail in self.client.iterate_my_snails(self.owner):
+                    s.append(snail)
+                    if len(s) >= n:
+                        break
+                if s:
+                    yield s
+
+        tx = self.client.web3.approve_all_snails_for_stake()
+        if tx:
+            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            print(f'Approved staking for {fee} AVAX')
+
+        # need to stake in chunks, too many  have the execution reverted
+        for snails in chunked_snails(100):
+            if not snails:
+                print('No one available to work')
+                return
+
+            snail_ids = [s.id for s in snails]
+            tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids)
+            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            print(f'{len(snails)} snails staked for {fee} AVAX')
 
     def cmd_guild_unstake(self):
         if not self.profile_guild:
