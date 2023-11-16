@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
@@ -87,7 +87,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
             dispatcher.add_handler(CommandHandler("usethisformissions", self.cmd_usethisformissions))
             dispatcher.add_handler(CommandHandler("help", self.cmd_help))
-            dispatcher.add_handler(MessageHandler(None, self.cmd_invalid))
+            dispatcher.add_handler(MessageHandler(None, self.cmd_message))
         else:
             self.updater = None
 
@@ -176,7 +176,7 @@ class Notifier:
 
         if opts == '__help':
             m = [
-                f'`{setting.dest}` {"🟢" if getattr(_cli.args, setting.dest) else "🔴"} {escape_markdown(setting.help)}'
+                f'`{setting.dest}` {escape_markdown(self.__setting_value(setting))} {escape_markdown(setting.help)}'
                 for setting in self._settings_list
             ]
             query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
@@ -187,7 +187,7 @@ class Notifier:
                 m = ['No settings available...']
             else:
                 m = [
-                    f'`{setting.dest}` = `{getattr(_cli.args, setting.dest, None)}`\n{escape_markdown(setting.help)}'
+                    f'`{setting.dest}` = `{getattr(_cli.args, setting.dest, None)}`\n{escape_markdown(setting.help)}\n'
                     for setting in self._read_only_settings
                 ]
             query.edit_message_text(text='\n'.join(m), parse_mode='Markdown')
@@ -203,21 +203,36 @@ class Notifier:
                     break
             else:
                 raise Exception('invalid setting', opts)
+
             ov = getattr(_cli.args, opts)
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "🔴 Disable" if ov else "🟢 Enable",
-                        callback_data=f'toggle it {setting.dest}',
-                    )
-                ],
-                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
-            ]
-            query.edit_message_text(
-                text=f'`{opts}` {"🟢" if ov else "🔴"}\n{escape_markdown(setting.help)}',
-                reply_markup=InlineKeyboardMarkup(keyboard),
-                parse_mode='Markdown',
-            )
+            if setting.type in (int, float):
+                query.edit_message_text(
+                    text=f'`{opts}` = {ov}\n{escape_markdown(setting.help)}',
+                    reply_markup=None,
+                    parse_mode='Markdown',
+                )
+                self.updater.bot.send_message(
+                    query.message.chat.id,
+                    text=f'New value for `{opts}`',
+                    reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
+                    reply_to_message_id=query.message.message_id,
+                    parse_mode='Markdown',
+                )
+            else:
+                keyboard = [
+                    [
+                        InlineKeyboardButton(
+                            "🔴 Disable" if ov else "🟢 Enable",
+                            callback_data=f'toggle it {setting.dest}',
+                        )
+                    ],
+                    [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+                ]
+                query.edit_message_text(
+                    text=f'`{opts}` {"🟢" if ov else "🔴"}\n{escape_markdown(setting.help)}',
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode='Markdown',
+                )
         else:
             ov = getattr(_cli.args, opts)
             setattr(_cli.args, opts, not ov)
@@ -478,10 +493,43 @@ class Notifier:
         m = [f'/{v[0]} - {v[1]}' for v in self._listed_commands() if v[0] != 'help']
         update.message.reply_text('\n'.join(m))
 
-    def cmd_invalid(self, update: Update, context: CallbackContext) -> None:
+    def cmd_message(self, update: Update, context: CallbackContext) -> None:
         """
         Help
         """
+        if update.message.reply_to_message:
+            return self._cmd_replies(update, context)
+        return self._cmd_invalid(update, context)
+
+    def _cmd_replies(self, update: Update, context: CallbackContext) -> None:
+        # only non-boolean settings handled here, for now
+        keyword = update.message.reply_to_message.text.split()[-1]
+        for setting in self._settings_list:
+            if setting.dest == keyword:
+                break
+        else:
+            return self._cmd_invalid(update, context)
+
+        args = self.any_cli.args
+        try:
+            nv = update.message.text
+            setattr(args, keyword, nv)
+            msg = f"Toggled *{keyword}* to *{nv}*"
+        except ValueError:
+            msg = f'`{update.message.text}` is not valid value for `{keyword}`'
+
+        self.updater.bot.send_message(
+            update.message.chat.id,
+            text=msg,
+            reply_to_message_id=update.message.message_id,
+            parse_mode='Markdown',
+        )
+        if update.message.chat.id != self.chat_id:
+            # also notify main chat
+            self.notify(msg)
+        self.any_cli.save_bot_settings()
+
+    def _cmd_invalid(self, update: Update, context: CallbackContext) -> None:
         update.effective_user['first_name'],
         update.effective_user['last_name'],
         update.effective_user['username'],
@@ -814,6 +862,15 @@ class Notifier:
             c.reset_cache_my_snails()
         update.message.reply_text('✅')
 
+    def __setting_value(self, setting):
+        v = getattr(self.any_cli.args, setting.dest)
+        if setting.type in (int, float):
+            if v is None:
+                return '❌'
+            return f'[{v}]'
+        # otherwise it's a bool setting
+        return "🟢" if v else "🔴"
+
     @bot_auth
     def cmd_settings(self, update: Update, context: CallbackContext) -> None:
         """
@@ -827,7 +884,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'🔧 {"🟢" if getattr(self.any_cli.args, setting.dest) else "🔴"} {setting.dest}',
+                        f'🔧 {self.__setting_value(setting)} {setting.dest}',
                         callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]
