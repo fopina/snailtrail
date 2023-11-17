@@ -1457,7 +1457,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '-c',
         '--claim',
         action='store_true',
-        help='Claim guild rewards (only tomato for now)',
+        help='Claim guild rewards',
     )
     @commands.argument(
         '-v',
@@ -1519,15 +1519,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not data['rewards']:
             return
         for building, _ in data['rewards']:
-            if building == 'SINK':
-                try:
-                    print(self.client.claim_tomato(self._profile['guild']['id'])['message'])
-                except client.gqlclient.APIError as e:
-                    if 'claim once per hour' not in str(e):
-                        raise
-                    logger.warn(str(e))
-            else:
-                print(self.client.claim_building(self._profile['guild']['id'], building))
+            try:
+                if building == 'SINK':
+                    try:
+                        print(self.client.claim_tomato(self._profile['guild']['id'])['message'])
+                    except client.gqlclient.APIError as e:
+                        if 'claim once per hour' not in str(e):
+                            raise
+                        logger.warn(str(e))
+                else:
+                    print(self.client.claim_building(self._profile['guild']['id'], building))
+            except client.gqlclient.APIError as e:
+                logger.error(e)
 
     def cmd_guild_stake(self):
         if not self.profile_guild:
