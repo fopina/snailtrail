@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from functools import cached_property
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import requests
 from colorama import Fore
@@ -20,9 +20,7 @@ from . import commands, tgbot
 from .decorators import cached_property_with_ttl
 from .helpers import SetQueue
 from .types import RaceJoin, Wallet
-
-logger = logging.getLogger(__name__)
-
+from .utils import CachedSnailHistory
 
 GENDER_COLORS = {
     Gender.MALE: Fore.BLUE,
@@ -31,82 +29,6 @@ GENDER_COLORS = {
 }
 
 UNDEF = object()
-
-
-class CachedSnailHistory:
-    def __init__(self, cli: 'CLI'):
-        self.cli = cli
-        self._cache = {}
-
-    @staticmethod
-    def race_stats(snail_id, race):
-        for p, i in enumerate(race.results):
-            if i['token_id'] == snail_id:
-                break
-        else:
-            logger.error('snail not found, NOT POSSIBLE')
-            return None, None, None
-        time_on_first = race.results[0]['time'] * 100 / race.results[p]['time']
-        time_on_third = race.results[2]['time'] * 100 / race.results[p]['time']
-        p += 1
-        return time_on_first, time_on_third, p
-
-    def get(self, snail_id: Union[int, Snail], limit=None):
-        """
-        Return snail race history plus a stats summary
-        """
-        if isinstance(snail_id, Snail):
-            snail_id = snail_id.id
-        # FIXME: make this prettier with a TTLed lru_cache
-        key = (snail_id, limit)
-        data, last_update = self._cache.get(key, (None, 0))
-        _now = time.time()
-        # re-fetch only once per 30min
-        # TODO: make configurable? update only once and use race notifications to keep it up to date?
-        if _now - last_update < 1800:
-            return data
-
-        races = []
-        stats = defaultdict(lambda: [0, 0, 0, 0])
-        total = 0
-
-        for race in self.cli.client.iterate_race_history(filters={'token_id': snail_id, 'category': 3}):
-            time_on_first, time_on_third, p = self.race_stats(snail_id, race)
-            if time_on_first is None:
-                continue
-            if p < 4:
-                stats[race.distance][p - 1] += 1
-            stats[race.distance][3] += 1
-            races.append((race, p, time_on_first, time_on_third))
-            total += 1
-            if limit and total >= limit:
-                break
-
-        data = (races, stats)
-        self._cache[(snail_id, limit)] = (data, _now)
-        return self._cache[key][0]
-
-    def update(self, snail_id: Union[int, Snail], race: Race, limit=None):
-        if isinstance(snail_id, Snail):
-            snail_id = snail_id.id
-
-        key = (snail_id, limit)
-        data, last_update = self._cache.get(key, (None, 0))
-        _now = time.time()
-        if _now - last_update >= 1800:
-            # do not update anything as cache already expired
-            return False
-
-        time_on_first, time_on_third, p = self.race_stats(snail_id, race)
-        if time_on_first is None:
-            return False
-
-        races, stats = data
-        if p < 4:
-            stats[race.distance][p - 1] += 1
-        stats[race.distance][3] += 1
-        races.append((race, p, time_on_first, time_on_third))
-        return True
 
 
 class CLI:
@@ -132,6 +54,7 @@ class CLI:
         self.owner = wallet.address
         self.main_one = main_one
         self._profile = profile
+        self.logger = logging.getLogger(f'{__name__}.{self.masked_wallet}')
         self.client = client.Client(
             proxy=proxy_url,
             wallet=self.owner,
@@ -203,7 +126,7 @@ class CLI:
         try:
             settings = json.loads(settings_file.read_text())
         except FileNotFoundError:
-            logger.warning('no initial settings found at %s', settings_file)
+            self.logger.warning('no initial settings found at %s', settings_file)
             return
         for k, v in settings.items():
             setattr(self.args, k, v)
@@ -255,14 +178,14 @@ class CLI:
                 if snail.market_price > price_filter:
                     break
                 all_snails[snail.id] = snail
-        logger.debug('Fetching details for %d snails', len(all_snails))
+        self.logger.debug('Fetching details for %d snails', len(all_snails))
         keys = list(all_snails.keys())
         for i in range(0, len(keys), 20):
             for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
                 all_snails[x.id].update(x)
 
         for snail_id, snail in all_snails.items():
-            logger.info(
+            self.logger.info(
                 f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.market_price}{Fore.RESET}"
             )
 
@@ -274,14 +197,14 @@ class CLI:
             all_snails[snail.id] = snail
             if len(all_snails) == 20:
                 break
-        logger.debug('Fetching details for %d snails', len(all_snails))
+        self.logger.debug('Fetching details for %d snails', len(all_snails))
         keys = list(all_snails.keys())
         for i in range(0, len(keys), 20):
             for x in self.client.iterate_all_snails(filters={'id': keys[i : i + 20]}):
                 all_snails[x.id].update(x)
 
         for snail_id, snail in all_snails.items():
-            logger.info(
+            self.logger.info(
                 f"{snail} - {self._breed_status_str(snail.breed_status)} - [https://www.snailtrail.art/snails/{snail_id}/about] for {Fore.LIGHTRED_EX}{snail.gene_market_price}{Fore.RESET}"
             )
 
@@ -319,11 +242,11 @@ class CLI:
             base_msg = f"{x.name_id} : ({x.level_str} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
-                logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
+                self.logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
             else:
                 if closest is None or to_queue < closest:
                     closest = to_queue
-                logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
+                self.logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
         return queueable, closest
 
     def _join_missions_compute_boosted(self, queueable):
@@ -420,7 +343,7 @@ class CLI:
             snail = self._join_missions_race_snail(race, queueable, boosted)
             if snail is None:
                 continue
-            logger.info(
+            self.logger.info(
                 f'{Fore.CYAN}Joining {race.id} ({len(race.athletes)} - {race.conditions}) with {snail.name_id} ({snail.adaptations}){Fore.RESET}'
             )
 
@@ -436,20 +359,20 @@ class CLI:
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
                         r, _ = self.client.join_mission_races(snail.id, race.id, allow_last_spot=False)
-                        logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
+                        self.logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
                     except client.RequiresTransactionClientError as e:
                         r = e.args[1]
                         if r['payload']['size'] == 0:
                             tx = self.client.rejoin_mission_races(r)
                         else:
-                            logger.error('RACE NOT CHEAP - %s on %d', snail.name, race.id)
+                            self.logger.error('RACE NOT CHEAP - %s on %d', snail.name, race.id)
                             _slow_snail(snail)
                             continue
                 else:
                     try:
                         r, tx = self.client.join_mission_races(snail.id, race.id, allow_last_spot=(snail.id in boosted))
                     except client.RequiresTransactionClientError as e:
-                        logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
+                        self.logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         if not self.args.fair:
                             continue
                         # join last spot anyway (if --cheap-soon), even if not needing tickets
@@ -462,7 +385,7 @@ class CLI:
                             continue
 
                         tx = self.client.rejoin_mission_races(r)
-                        logger.info('Joined cheap last spot without need - %s on %d', snail.name, race.id)
+                        self.logger.info('Joined cheap last spot without need - %s on %d', snail.name, race.id)
 
                 msg = (
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
@@ -470,45 +393,49 @@ class CLI:
                 # FIXME: remove tickets for link replacement in notify_mission... re-use same message after fixing filters in Grafana
                 notify_msg = msg.replace('`', '')
                 if r.get('status') == 0:
-                    logger.info(f'{msg}')
+                    self.logger.info(f'{msg}')
                     self.notify_mission(notify_msg)
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     if tx['status'] == 1:
                         cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
-                        logger.info(f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
+                        self.logger.info(
+                            f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
+                        )
                         self.notify_mission(f'{notify_msg} *LAST SPOT*')
                     else:
-                        logger.error(f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
+                        self.logger.error(
+                            f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
+                        )
                         _slow_snail(snail)
                         continue
             except client.ClientError as e:
-                logger.exception('failed to join mission')
+                self.logger.exception('failed to join mission')
                 self.notifier.notify(
                     f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}',
                     chat_id=self.args.mission_chat_id,
                 )
             except client.gqlclient.NeedsToRestAPIError as e:
                 # handle re-join timeout errors
-                logger.exception('re-join as last error for %s', snail.name_id)
+                self.logger.exception('re-join as last error for %s', snail.name_id)
                 _slow_snail(snail, seconds=e.seconds)
                 continue
             except (client.gqlclient.RaceEntryFailedAPIError, client.gqlclient.RaceInnacurateRegistrantsAPIError):
-                logger.exception('failed to join mission - %s on %d', snail.name, race.id)
+                self.logger.exception('failed to join mission - %s on %d', snail.name, race.id)
                 continue
             except client.gqlclient.RaceAlreadyFullAPIError:
-                logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
+                self.logger.error('TOO SLOW TO JOIN LAST - %s on %d', snail.name, race.id)
                 _slow_snail(snail)
                 continue
             except client.web3client.InsufficientFundsWeb3Error:
                 # FIXME: other last spots will also fail if there are no funds... should it just join normal spots (works in case of boosted), at least for the current tick?
-                logger.exception('No funds for %s on %d', snail.name, race.id)
+                self.logger.exception('No funds for %s on %d', snail.name, race.id)
                 _slow_snail(snail)
                 continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
                 if 'Race already submitted' in str(e):
-                    logger.error('Too late for the race, try next one')
+                    self.logger.error('Too late for the race, try next one')
                     _slow_snail(snail)
                     continue
                 raise
@@ -517,7 +444,7 @@ class CLI:
             queueable.remove(snail)
 
         if queueable:
-            logger.info(f'{len(queueable)} without matching race')
+            self.logger.info(f'{len(queueable)} without matching race')
             return False, len(queueable)
         return True, closest
 
@@ -599,7 +526,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if self._notify_coefficent is not None and coef < self._notify_coefficent:
             msg = f'🍆 Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
             self.notifier.notify(msg)
-            logger.info(msg)
+            self.logger.info(msg)
         self._notify_coefficent = coef
 
     def _bot_burn_coefficent(self):
@@ -609,12 +536,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         r = self._burn_coef()
         if r is None:
-            logger.error('No snail available for burn coefficient')
+            self.logger.error('No snail available for burn coefficient')
             return
         coef = r['payload']['coef']
         if self._notify_burn_coefficent is not None and coef < self._notify_burn_coefficent[0]:
             msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self._notify_burn_coefficent[0]}*)'
-            logger.info(msg)
+            self.logger.info(msg)
             self.notifier.notify(msg)
 
         self._notify_burn_coefficent = (
@@ -984,7 +911,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
             if old_next is None and _next is not None:
                 msg = f'{tour_data["name"]} week {week} starting!'
-                logger.info(msg)
+                self.logger.info(msg)
                 self.notifier.notify(msg)
 
             if old_data != data:
@@ -1011,13 +938,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         msg += f"*points* {old_value}📈{new_value}\n"
                     else:
                         msg += f"*points* {new_value}\n"
-                logger.info(msg)
+                self.logger.info(msg)
                 self.notifier.notify(msg)
 
         old_next = _next
         if _next is None:
             # check again in 12h
-            logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
+            self.logger.error('NEXT tournament check is NONE, is this saturday or a break week?')
             _next = _n + timedelta(hours=12)
         self._notify_tournament = (_next, data, old_next)
 
@@ -1062,7 +989,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         if msg:
             msg.insert(0, f'`💰 {self.name}` (`{self.profile_guild}`)')
-            logger.info(msg)
+            self.logger.info(msg)
             self.notifier.notify('\n'.join(msg))
 
         self._notify_auto_claim = datetime.now() + timedelta(hours=24)
@@ -1081,7 +1008,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                             msg = f'no snails'
                         else:
                             msg = str(self._next_mission[1])
-                        logger.info('next mission in at %s', msg)
+                        self.logger.info('next mission in at %s', msg)
                     if self._next_mission[0] and self._next_mission[1] is not None:
                         # if wait for next mission is lower than wait argument, use it
                         _w = (self._next_mission[1] - now).total_seconds()
@@ -1109,18 +1036,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if self.args.auto_claim:
                     self._bot_autoclaim()
 
-            logger.debug('waiting %d seconds', w)
+            self.logger.debug('waiting %d seconds', w)
             return w
         except client.gqlclient.requests.exceptions.HTTPError as e:
             if e.response.status_code in (502, 504):
                 # log stacktrace to check if specific calls cause this more frequently
-                logger.exception('site %d... waiting', e.response.status_code)
+                self.logger.exception('site %d... waiting', e.response.status_code)
                 return 20
 
             if e.response.status_code == 429:
                 # FIXME: handle retry-after header after checking it out
                 # should not happen as requests retry adapter handles this?
-                logger.exception(
+                self.logger.exception(
                     'site %d... waiting: %s - %s',
                     e.response.status_code,
                     e.response.headers,
@@ -1128,13 +1055,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 )
                 return 120
 
-            logger.exception('crash, waiting 2min: %s', e)
+            self.logger.exception('crash, waiting 2min: %s', e)
             return 120
         except client.gqlclient.APIError as e:
-            logger.exception('crash, waiting 2min (logged)')
+            self.logger.exception('crash, waiting 2min (logged)')
             return 120
         except Exception as e:
-            logger.exception('crash, waiting 2min: %s', e)
+            self.logger.exception('crash, waiting 2min: %s', e)
             self.notifier.notify(
                 f'''bot unknown error, check logs
 ```
@@ -1193,13 +1120,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             )
             c = f'{Fore.CYAN}{r["message"]}{Fore.RESET}'
             if rcpt is None:
-                logger.info(c)
+                self.logger.info(c)
             else:
-                logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
+                self.logger.info(f'{c} - LASTSPOT (tx: {rcpt.transactionHash.hex()})')
         except client.RequiresTransactionClientError:
-            logger.error('only last spot available, use --last-spot')
+            self.logger.error('only last spot available, use --last-spot')
         except client.ClientError:
-            logger.exception('unexpected joinMission error')
+            self.logger.exception('unexpected joinMission error')
 
     def cmd_missions_history(self):
         if self.args.history == 0:
@@ -1526,11 +1453,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     except client.gqlclient.APIError as e:
                         if 'claim once per hour' not in str(e):
                             raise
-                        logger.warn(str(e))
+                        self.logger.warn(str(e))
                 else:
                     print(self.client.claim_building(self._profile['guild']['id'], building))
             except client.gqlclient.APIError as e:
-                logger.error(e)
+                self.logger.error(e)
 
     def cmd_guild_stake(self):
         if not self.profile_guild:
@@ -1642,7 +1569,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                                 self.client.join_competitive_races(cands[0][3].id, race.id, self.owner)
                                 msg += '\nJOINED ✅'
                             except Exception:
-                                logger.exception('failed to join race')
+                                self.logger.exception('failed to join race')
                                 msg += '\nFAILED to join ❌'
                         else:
                             # TODO: reformat join message race
@@ -1662,7 +1589,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                             ] + [
                                 ('🏳️ Skip', 'joinrace'),
                             ]
-                        logger.info(msg)
+                        self.logger.info(msg)
                         self.notifier.notify(msg, actions=join_actions)
                     self._notified_races.add(race['id'])
 
@@ -1704,7 +1631,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if race.is_competitive and self.args.race_stats:
                         self._snail_history.update(snail, race)
                         msg += ' ' + self.race_stats_text(snail, race)
-                    logger.info(msg)
+                    self.logger.info(msg)
                     if not race.is_mission:
                         self.notifier.notify(msg)
                     if not race.is_mega:
@@ -1714,7 +1641,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if not found:
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
                 msg = f"⁉️ {snail.name_id} in {race.track}, for {race.distance}"
-                logger.info(msg)
+                self.logger.info(msg)
                 self.notifier.notify(msg)
         if first_run and not self._notified_races_over:
             # HACK ALERT: add random value just to make sure next run is not "first_run"
@@ -1723,7 +1650,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def _open_races(self):
         for league in client.League:
             snails, races = self.find_races_in_league(league)
-            logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
+            self.logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
             if not snails:
                 continue
             for race in races:
@@ -1750,7 +1677,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     def _open_races(self):
         for league in client.League:
             snails, races = self.find_races_in_league(league)
-            logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
+            self.logger.info(f"Snails for {league}: {', '.join([s.name_id for s in snails])}")
             if not snails:
                 continue
             for race in races:
@@ -1849,7 +1776,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 ),
             )
         else:
-            logger.warning(f'Nothing for {snail.name_id}')
+            self.logger.warning(f'Nothing for {snail.name_id}')
 
     def _history_missions(self, snail):
         total = 0
@@ -1923,9 +1850,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         try:
             r, rcpt = self.client.join_competitive_races(join_arg.snail_id, join_arg.race_id, self.owner)
             # FIXME: effectiveGasPrice * gasUsed = WEI used (AVAX 10^-18) - also print hexstring, not bytes...
-            logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt.transactionHash.hex()})')
+            self.logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt.transactionHash.hex()})')
         except client.ClientError:
-            logger.exception('unexpected joinRace error')
+            self.logger.exception('unexpected joinRace error')
 
     @commands.argument('-v', '--verbose', action='store_true', help='Verbosity')
     @commands.argument('-f', '--finished', action='store_true', help='Get YOUR finished races')
