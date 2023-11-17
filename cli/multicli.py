@@ -402,17 +402,8 @@ Total: {breed_fees + gender_fees}
                     c.my_snails.values(), c.client.iterate_my_snails(c.owner, filters={'status': 5})
                 ):
                     print(snail)
-                    landscape = weather = athletics = ''
-                    for x in snail.adaptations:
-                        if x.is_landscape():
-                            landscape = str(x)
-                        elif x.is_weather():
-                            weather = str(x)
-                        else:
-                            athletics = str(x)
-                    csvf.writerow(
-                        [snail.name_id, snail.family, snail.level, snail.purity, landscape, weather, athletics]
-                    )
+                    ads = snail.ordered_adaptations
+                    csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, ads[0], ads[1], ads[2]])
 
     @commands.util_command()
     def cmd_utils_all_adapts(self):
