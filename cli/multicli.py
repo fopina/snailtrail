@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import json
 import logging
 import time
 from collections import defaultdict
@@ -10,7 +11,7 @@ from typing import List
 from colorama import Fore
 from tqdm import tqdm
 
-from snail.gqltypes import Adaptation
+from snail.gqltypes import Adaptation, Snail
 
 from . import cli, commands, utils
 
@@ -431,6 +432,81 @@ Total: {breed_fees + gender_fees}
                 for c in adapt_types[2]:
                     x = ', '.join(map(str, [a, b, c]))
                     print(x)
+
+    @commands.argument('--file', type=Path, help='Cache filename')
+    @commands.argument('--save', action='store_true', help='If --file is specified, fetch snails and update it')
+    @commands.util_command()
+    def cmd_utils_burn_candidates(self):
+        """Print out good candidates for burning based on adaptations not needed"""
+
+        if self.args.save and not self.args.file:
+            raise Exception('--save requires --file')
+
+        snails: list[Snail] = []
+        if self.args.save or not self.args.file:
+            if self.args.save:
+                fd = self.args.file.open('w')
+            for c in tqdm(self.clis, desc='Gather all snails'):
+                for snail in tqdm(
+                    itertools.chain(
+                        c.my_snails.values(),
+                        c.client.iterate_my_snails(c.owner, filters={'status': 5}),
+                    ),
+                    leave=False,
+                ):
+                    if self.args.save:
+                        fd.write(json.dumps(snail))
+                        fd.write('\n')
+                    snails.append(snail)
+            if self.args.save:
+                fd.close()
+        else:
+            with self.args.file.open('r') as f:
+                for l in f:
+                    snails.append(Snail(json.loads(l)))
+
+        tadapts = set()
+
+        for snail in snails:
+            if snail.level < 15:
+                continue
+            ads = tuple([snail.family] + snail.ordered_adaptations)
+            tadapts.add(ads)
+
+        pairs = [
+            (defaultdict(set), 1, 2, 3, 4),
+            (defaultdict(set), 1, 3, 2, 6),
+            (defaultdict(set), 2, 3, 1, 6),
+        ]
+
+        for pset, px1, px2, px3, _ in pairs:
+            for x in tadapts:
+                pset[str(x[0]), x[px1], x[px2]].add(x[px3])
+
+        print('== Unique adapt pairs')
+
+        for pset, _, _, _, pl in pairs:
+            for k, v in pset.items():
+                if len(v) == pl:
+                    print(k)
+
+        print('== Burn candidates based')
+
+        for snail in snails:
+            if snail.level >= 15:
+                continue
+
+            vlw = pairs[0][0].get((str(snail.family), snail.ordered_adaptations[0], snail.ordered_adaptations[1]), [])
+            if len(vlw) == pairs[0][4]:
+                print(snail)
+
+            vlw = pairs[1][0].get((str(snail.family), snail.ordered_adaptations[0], snail.ordered_adaptations[2]), [])
+            if len(vlw) == pairs[1][4]:
+                print(snail)
+
+            vlw = pairs[2][0].get((str(snail.family), snail.ordered_adaptations[1], snail.ordered_adaptations[2]), [])
+            if len(vlw) == pairs[2][4]:
+                print(snail)
 
     @commands.argument('snail', type=int, help='Snail ID')
     @commands.util_command()

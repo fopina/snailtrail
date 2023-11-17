@@ -2,7 +2,7 @@ import itertools
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 
 class Gender(Enum):
@@ -207,9 +207,34 @@ class Snail(AttrDict):
                 return _parse_datetime(x)
 
     @property
-    def adaptations(self):
+    def adaptations(self) -> Optional[list[Adaptation]]:
+        """
+        >>> s = Snail({'gender':{'id':2}, 'adaptations': ['Wet', 'Mountain', 'Jump']})
+        >>> s.adaptations
+        [Wet, Mountain, Jump]
+        """
         if 'adaptations' in self:
             return list(map(Adaptation.from_str, self['adaptations']))
+
+    @property
+    def ordered_adaptations(self):
+        """
+        >>> s = Snail({'gender':{'id':2}, 'adaptations': ['Wet', 'Mountain', 'Jump']})
+        >>> s.ordered_adaptations
+        [Mountain, Wet, Jump]
+        """
+        adaptations = self.adaptations
+        if adaptations is None:
+            return
+        r = [None, None, None]
+        for adaptation in adaptations:
+            if adaptation.is_landscape():
+                r[0] = adaptation
+            elif adaptation.is_weather():
+                r[1] = adaptation
+            else:
+                r[2] = adaptation
+        return r
 
     @property
     def monthly_breed_available(self):
