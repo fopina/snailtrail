@@ -56,6 +56,74 @@ class Test(TestCase):
 /usethisformissions - Use this chat for mission join notifications'''
         )
 
+    def test_exposed_settings(self):
+        from cli import build_parser, commands
+
+        # load all the real settings
+        self.bot.settings = commands.StoreBotConfig.settings_from_parser(build_parser())
+        self.update.callback_query = mock.MagicMock(data='toggle __help')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once()
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.mock_calls[0][2]['parse_mode'],
+            'Markdown',
+        )
+        settings = [
+            line.split('`')[1]
+            for line in self.update.callback_query.edit_message_text.mock_calls[0][2]['text'].splitlines()
+        ]
+        self.assertEqual(
+            settings,
+            [
+                'missions',
+                'mission_chat_id',
+                'exclude',
+                'boost',
+                'boost_pure',
+                'boost_to',
+                'boost_not_cheap',
+                'minimum_tickets',
+                'fair',
+                'cheap',
+                'cheap_soon',
+                'races',
+                'races_join',
+                'race_stats',
+                'race_matches',
+                'race_price',
+                'races_over',
+                'missions_over',
+                'first_run_over',
+                'mission_matches',
+                'market',
+                'coefficent',
+                'burn',
+                'tournament',
+                'no_adapt',
+                'wait',
+                'paused',
+                'auto_claim',
+                'level_ups',
+                'level_ups_to_15',
+                'css_minimum',
+            ],
+        )
+
+        self.update.callback_query = mock.MagicMock(data='toggle __all')
+        self.cli.args.wtv_other = 2
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once()
+        settings = [
+            line.split('`')[1] if line and line[0] == '`' else None
+            for line in self.update.callback_query.edit_message_text.mock_calls[0][2]['text'].splitlines()
+        ]
+        self.assertEqual(
+            settings,
+            ['boost_wallet', None, None, 'settings', None, None, 'balance_balance', None, None, 'css_fee', None],
+        )
+
     def test_settings(self):
         self.bot.cmd_settings(self.update, self.context)
         expected_markup = InlineKeyboardMarkup(
