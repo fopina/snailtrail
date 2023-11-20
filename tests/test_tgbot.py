@@ -15,8 +15,10 @@ class Test(TestCase):
         )
         self.cli.name = '0x2f'
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
-        self.bot._settings_list = [mock.MagicMock(dest='wtv', help='Whatever')]
-        self.bot._read_only_settings = [mock.MagicMock(dest='wtv_other', help='Whatever Other')]
+        self.bot.settings = (
+            [mock.MagicMock(dest='wtv', help='Whatever')],
+            [mock.MagicMock(dest='wtv_other', help='Whatever Other')],
+        )
         self.bot.register_cli(self.cli)
         self.update = mock.MagicMock(effective_user=self.user)
         self.update.message.chat.id = self.user.id

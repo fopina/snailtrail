@@ -51,13 +51,13 @@ class Notifier:
     SNAIL_ID1_RE = re.compile(r'(Snail \#(\d+))')
     SNAIL_ID2_RE = re.compile(r'(\(#(\d+)\))')
 
-    def __init__(self, token, chat_id, owner_chat_id=None, settings_list=None):
+    def __init__(self, token, chat_id, owner_chat_id=None):
         self.__token = token
         self.chat_id = chat_id
         self.clis = {}
-        self._settings_list = settings_list
-        self._read_only_settings = None
         self._sent_messages = set()
+        self._settings_list = []
+        self._read_only_settings = None
         if owner_chat_id is None:
             self.owner_chat_id = {self.chat_id} if self.chat_id else None
         else:
@@ -90,6 +90,16 @@ class Notifier:
             dispatcher.add_handler(MessageHandler(None, self.cmd_message))
         else:
             self.updater = None
+
+    @property
+    def settings(self):
+        return self._settings_list
+
+    @settings.setter
+    def settings(self, value):
+        rw, ro = value
+        self._settings_list = rw
+        self._read_only_settings = ro
 
     @property
     def owner_chat_id(self):

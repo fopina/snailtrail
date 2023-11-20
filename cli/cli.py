@@ -135,11 +135,9 @@ class CLI:
         settings_file = getattr(self.args, 'settings', None)
         if not settings_file:
             return
-        if not self.notifier._settings_list:
+        if not self.notifier.settings:
             return
-        data = {x.dest: getattr(self.args, x.dest) for x in self.notifier._settings_list}
-        # FIXME: make this cleaner/more generic
-        data['mission_chat_id'] = self.args.mission_chat_id
+        data = {x.dest: getattr(self.args, x.dest) for x in self.notifier.settings}
         settings_file.write_text(json.dumps(data))
 
     @cached_property_with_ttl(600)

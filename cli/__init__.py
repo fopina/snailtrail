@@ -18,25 +18,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s][%(levelna
 logger = logging.getLogger(__name__)
 
 
-class StoreBotConfig(configargparse.argparse._StoreAction):
-    def __call__(self, parser, namespace, values, option_string=None):
-        bot = tgbot.Notifier(commands.FileOrString(values[0]), commands.FileOrInt(values[1]), None)
-        bot._settings_list = [
-            x
-            for x in parser._subparsers._actions[-1].choices['bot']._actions
-            if (
-                isinstance(x, configargparse.argparse._StoreTrueAction)
-                or (x.type in (float, int) and x.nargs in (None, 1))
-            )
-        ]
-        bot._read_only_settings = [
-            x
-            for x in parser._subparsers._actions[-1].choices['bot']._actions
-            if (not isinstance(x, configargparse.argparse._HelpAction) and x not in bot._settings_list)
-        ]
-        super().__call__(parser, namespace, bot, option_string)
-
-
 def build_parser():
     parser = configargparse.ArgParser(
         prog=__name__,
@@ -100,7 +81,7 @@ def build_parser():
     parser.add_argument(
         '--notify',
         nargs=2,
-        action=StoreBotConfig,
+        action=commands.StoreBotConfig,
         metavar=('TOKEN', 'CHAT_ID'),
         default=tgbot.Notifier('', None),
         help='Telegram bot token and target chat id to use for notifications (value or path to file with value)',
