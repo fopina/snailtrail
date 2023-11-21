@@ -749,18 +749,19 @@ class Notifier:
             msg.append(_m)
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
-        utils.balance_balance(self.clis.values(), limit, stop, _cb)
+        r = utils.balance_balance(self.clis.values(), limit, stop, _cb)
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    'Confirm',
-                    callback_data=f'balance_balance',
-                )
-            ],
-            [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
-        ]
-        m.edit_text(text='\n'.join(msg), parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        if r:
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        'Confirm',
+                        callback_data=f'balance_balance',
+                    )
+                ],
+                [InlineKeyboardButton(f'❌ Niente', callback_data='toggle')],
+            ]
+            m.edit_text(text='\n'.join(msg), parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
     @bot_auth
     def cmd_css(self, update: Update, context: CallbackContext) -> None:

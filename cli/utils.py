@@ -24,14 +24,17 @@ def balance_balance(clis, limit, stop, callback, force=False):
         # ignore wallets with 0 snails, no need for balance...
         if balances_d[c.owner][0] > 0:
             balances.append((balances_d[c.owner][3], c))
+    if not balances:
+        callback('No wallets in need')
+        return False
     balances.sort(key=lambda x: x[0], reverse=True)
     donor: tuple[float, 'cli.CLI'] = balances[0]
     poor: list[tuple[float, 'cli.CLI']] = [(x, limit - x, z) for (x, z) in balances if x < stop]
     total_transfer = sum(y for _, y, _ in poor)
     total_fees = 0
-    if donor[0] - limit < total_transfer:
+    if (donor[0] - limit) < total_transfer:
         callback(f'Donor has not enough balance: {total_transfer} required but only {donor[0]} available')
-        return
+        return False
     for p in poor:
         callback(f'{donor[1].name} to {p[2].name}: {p[1]}')
         if force:
@@ -42,6 +45,7 @@ def balance_balance(clis, limit, stop, callback, force=False):
     callback(f'> Total transfer: {total_transfer}')
     if total_fees:
         callback(f'> Total fees: {total_fees}')
+    return True
 
 
 class CachedSnailHistory:
