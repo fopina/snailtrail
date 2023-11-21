@@ -458,3 +458,6 @@ class Client:
             data['payload']['salt'],
             data['signature'],
         )
+
+    def gas_price(self):
+        return self.web3.web3.eth.gasPrice

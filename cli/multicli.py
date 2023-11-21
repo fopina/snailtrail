@@ -430,6 +430,15 @@ Total: {breed_fees + gender_fees}
                     )
 
     @commands.util_command()
+    def cmd_utils_gas_price(self):
+        """Print out median gas price"""
+        median = self.main_cli.client.gas_price() / 1000000000
+        print(f'Configured base fee: {self.args.web3_base_fee}')
+        print(f'Current median fee: {median}')
+        pct = median * 100 / self.args.web3_base_fee
+        print(f'Median is {pct:.2f}% of your base fee')
+
+    @commands.util_command()
     def cmd_utils_all_adapts(self):
         """Print out all possible adaptation combinations"""
         adapt_types = [[], [], []]
