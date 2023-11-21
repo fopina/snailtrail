@@ -514,19 +514,19 @@ class Notifier:
 
     def _cmd_replies(self, update: Update, context: CallbackContext) -> None:
         # only non-boolean settings handled here, for now
-        keyword = update.message.reply_to_message.text.split()[-1]
+        keyword = update.message.reply_to_message.text.splitlines()[0].split()[-1].rstrip('.')
         for setting in self._settings_list:
             if setting.dest == keyword:
                 break
         else:
             return self._cmd_invalid(update, context)
 
-        if update.message.test.lower() == 'cancel':
+        if update.message.text.lower() == 'cancel':
             return
 
         args = self.any_cli.args
         try:
-            if update.message.test.lower() == 'empty':
+            if update.message.text.lower() == 'empty':
                 nv = None
             elif isinstance(setting, (configargparse.argparse._AppendAction)):
                 nv = update.message.text.split('\n')
