@@ -9,6 +9,8 @@ from eth_account.messages import encode_defunct
 from web3 import Account, Web3, constants, exceptions  # noqa - for others to import from here
 from web3.middleware import geth_poa_middleware
 
+from cli.decorators import cached_property_with_ttl
+
 from . import contracts
 
 DECIMALS = 1000000000000000000
@@ -148,7 +150,8 @@ class Client:
                 }
             )
         if estimate_only:
-            return self.web3.eth.estimate_gas(tx)
+            gas = self.web3.eth.estimate_gas(tx)
+            return {'gasUsed': gas, 'effectiveGasPrice': self.gas_price}
         signed_txn = self.account.sign_transaction(tx)
         try:
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
@@ -584,3 +587,11 @@ class Client:
             self.traderjoe_contract.functions.swapExactTokensForNATIVE(*call_args),
             wait_for_transaction_receipt=wait_for_transaction_receipt,
         )
+
+    @cached_property_with_ttl(60)
+    def gas_price(self):
+        return self.gas_price_not_cached
+
+    @property
+    def gas_price_not_cached(self):
+        return self.web3.eth.gasPrice
