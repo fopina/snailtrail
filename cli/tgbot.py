@@ -1008,6 +1008,7 @@ class Notifier:
         actions: List[Tuple[str]] = None,
         chat_id: int = None,
         only_once: bool = False,
+        from_wallet: Optional[str] = None,
     ):
         """Use this method to send text messages
 
@@ -1023,6 +1024,7 @@ class Notifier:
             actions (:obj:`List[Tuple[str]]`, optional): If not None, used as inline keyboard buttons
             chat_id (:obj:`int`, optional): If not None, target chat_id of the message (instead of default one)
             only_once (:obj:`bool`, optional): If true, message with same text is not sent if it has already been processed
+            from_wallet (:obj:`str`, optional): If multi cli, prepend this wallet name to the message text
 
         Returns:
             :class:`telegram.Message`: On success, the sent message is returned.
@@ -1044,6 +1046,10 @@ class Notifier:
         if chat_id is None:
             chat_id = self.chat_id
         if self.updater and chat_id:
+            if len(self.clis) > 1:
+                if format == 'Markdown':
+                    from_wallet = f'`{from_wallet}`'
+                message = f'{from_wallet}\n{message}'
             if edit is None:
                 if actions:
                     keyboard = [[InlineKeyboardButton(x[0], callback_data=x[1])] for x in actions]

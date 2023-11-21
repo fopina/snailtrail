@@ -218,13 +218,13 @@ class CLI:
             or len(self._notify_mission_data['text'].encode()) > 4000
             or passed.total_seconds() > 12600
         ):
-            msg = self.notifier.notify(message, silent=True, chat_id=self.args.mission_chat_id)
+            msg = self._notify(message, silent=True, chat_id=self.args.mission_chat_id)
             self._notify_mission_data = {'msg': msg, 'text': message, 'start': self._now()}
             return
 
         # `passed` is always defined here, due to first+second conditions being exclusive
         self._notify_mission_data['text'] += f'\n{message} `[+{str(passed).rsplit(".")[0]}]`'
-        self.notifier.notify(self._notify_mission_data['text'], edit=self._notify_mission_data['msg'])
+        self._notify(self._notify_mission_data['text'], edit=self._notify_mission_data['msg'])
 
     def mission_queueable_snails(self, race_conditions=None):
         queueable = []
@@ -266,9 +266,7 @@ class CLI:
                         # old level was under boost_to (meaning we just leveled)
                         self._snail_levels[snail.id] < self.args.boost_to
                     ):
-                        self.notifier.notify(
-                            f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True
-                        )
+                        self._notify(f'{snail.name_id} has level {snail.level}, removed from boosted.', only_once=True)
                     boosted.difference_update({snail.id})
 
         # level notifications - cache even if disabled as it is used above (with boost_to)
@@ -280,9 +278,12 @@ class CLI:
                 and pl != snail.level
                 and (self.args.level_ups or (self.args.level_ups_to_15 and snail.level <= 15))
             ):
-                self.notifier.notify(f'{snail.name_id} now has level {snail.level}.')
+                self._notify(f'{snail.name_id} now has level {snail.level}.')
 
         return boosted
+
+    def _notify(self, *args, **kwargs):
+        return self.notifier.notify(*args, from_wallet=self.owner, **kwargs)
 
     def _join_missions_race_snail(self, race, queueable, boosted):
         if race.participation:
@@ -409,7 +410,7 @@ class CLI:
                         continue
             except client.ClientError as e:
                 self.logger.exception('failed to join mission')
-                self.notifier.notify(
+                self._notify(
                     f'⛔ `{snail.name_id}` FAILED to join mission: {tgbot.escape_markdown(str(e))}',
                     chat_id=self.args.mission_chat_id,
                 )
@@ -517,13 +518,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     txt.append(f"*{k}*: {' / '.join(map(str, v))}")
         self._notify_marketplace = d['prices']
         if n:
-            self.notifier.notify('\n'.join(txt))
+            self._notify('\n'.join(txt))
 
     def _bot_coefficent(self):
         coef = self.client.web3.get_current_coefficent()
         if self._notify_coefficent is not None and coef < self._notify_coefficent:
             msg = f'🍆 Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
-            self.notifier.notify(msg)
+            self._notify(msg)
             self.logger.info(msg)
         self._notify_coefficent = coef
 
@@ -540,7 +541,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if self._notify_burn_coefficent is not None and coef < self._notify_burn_coefficent[0]:
             msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self._notify_burn_coefficent[0]}*)'
             self.logger.info(msg)
-            self.notifier.notify(msg)
+            self._notify(msg)
 
         self._notify_burn_coefficent = (
             coef,
@@ -701,7 +702,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         msg = f'👋  Running *v{VERSION}*'
         if not self.args.tg_bot:
             msg += ' `(non-interactive)`'
-        self.notifier.notify(msg)
+        self._notify(msg)
 
     @commands.argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
@@ -910,7 +911,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if old_next is None and _next is not None:
                 msg = f'{tour_data["name"]} week {week} starting!'
                 self.logger.info(msg)
-                self.notifier.notify(msg)
+                self._notify(msg)
 
             if old_data != data:
                 if data is None:
@@ -937,7 +938,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     else:
                         msg += f"*points* {new_value}\n"
                 self.logger.info(msg)
-                self.notifier.notify(msg)
+                self._notify(msg)
 
         old_next = _next
         if _next is None:
@@ -988,7 +989,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if msg:
             msg.insert(0, f'`💰 {self.name}` (`{self.profile_guild}`)')
             self.logger.info(msg)
-            self.notifier.notify('\n'.join(msg))
+            self._notify('\n'.join(msg))
 
         self._notify_auto_claim = datetime.now() + timedelta(hours=24)
 
@@ -1060,7 +1061,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return 120
         except Exception as e:
             self.logger.exception('crash, waiting 2min: %s', e)
-            self.notifier.notify(
+            self._notify(
                 f'''bot unknown error, check logs
 ```
 {tgbot.escape_markdown(str(e))}
@@ -1588,7 +1589,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                                 ('🏳️ Skip', 'joinrace'),
                             ]
                         self.logger.info(msg)
-                        self.notifier.notify(msg, actions=join_actions)
+                        self._notify(msg, actions=join_actions)
                     self._notified_races.add(race['id'])
 
     def find_races_over(self):
@@ -1631,7 +1632,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         msg += ' ' + self.race_stats_text(snail, race)
                     self.logger.info(msg)
                     if not race.is_mission:
-                        self.notifier.notify(msg)
+                        self._notify(msg)
                     if not race.is_mega:
                         # no point looking for more snails
                         break
@@ -1640,7 +1641,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
                 msg = f"⁉️ {snail.name_id} in {race.track}, for {race.distance}"
                 self.logger.info(msg)
-                self.notifier.notify(msg)
+                self._notify(msg)
         if first_run and not self._notified_races_over:
             # HACK ALERT: add random value just to make sure next run is not "first_run"
             self._notified_races_over.add(1)

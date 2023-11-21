@@ -328,7 +328,9 @@ class TestBot(TestCase):
 
         self.cli.notifier.notify.reset_mock()
         self.cli._bot_coefficent()
-        self.cli.notifier.notify.assert_called_once_with('🍆 Coefficent drop to *1.0000* (from *3*)')
+        self.cli.notifier.notify.assert_called_once_with(
+            '🍆 Coefficent drop to *1.0000* (from *3*)', from_wallet=TEST_WALLET
+        ),
 
     def test_balance(self):
         self.cli.args.claim = False
@@ -358,7 +360,9 @@ AVAX: 1.000 / SNAILS: 1
         self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
         self.cli.find_races_over()
         # called just for first snail found, on non-mega, as there can only be one
-        self.cli.notifier.notify.assert_called_once_with('🥉 Snail #9104 number 3 in Hockenheimring, for 50, reward 4')
+        self.cli.notifier.notify.assert_called_once_with(
+            '🥉 Snail #9104 number 3 in Hockenheimring, for 50, reward 4', from_wallet=TEST_WALLET
+        )
 
     def test_find_races_over_mega(self):
         self.cli.args.first_run_over = True
@@ -373,8 +377,10 @@ AVAX: 1.000 / SNAILS: 1
         self.assertEqual(
             self.cli.notifier.notify.call_args_list,
             [
-                mock.call('🥉 Snail #9104 number 3 in Hockenheimring, for Mega Run, reward 4'),
-                mock.call('💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0'),
+                mock.call('🥉 Snail #9104 number 3 in Hockenheimring, for Mega Run, reward 4', from_wallet=TEST_WALLET),
+                mock.call(
+                    '💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0', from_wallet=TEST_WALLET
+                ),
             ],
         )
 
@@ -390,7 +396,7 @@ AVAX: 1.000 / SNAILS: 1
         self.assertEqual(
             self.cli.notifier.notify.call_args_list,
             [
-                mock.call('🥅 Snail #9104 (myGuild) in Temple of Slime, for 27, time 107.49s'),
+                mock.call('🥅 Snail #9104 (myGuild) in Temple of Slime, for 27, time 107.49s', from_wallet=TEST_WALLET),
             ],
         )
 
@@ -494,7 +500,8 @@ AVAX: 1.000 / SNAILS: 1
 `SlimeBots` leaderboard:
 *position* 10🏆3
 *points* 1📈20
-'''
+''',
+            from_wallet=TEST_WALLET,
         )
 
     def test_find_candidates(self):
