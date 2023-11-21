@@ -80,6 +80,7 @@ class CLI:
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
+        self._fee_spike_start = None
 
     @staticmethod
     def _now():
@@ -338,7 +339,14 @@ class CLI:
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
 
+        if self.args.fee_spike and self._fee_spike_start:
+            under_fee_spike = self._now() - self._fee_spike_start < timedelta(minutes=self.args.fee_spike)
+        else:
+            under_fee_spike = False
+
         for race in missions:
+            if under_fee_spike:
+                boosted = set()
             snail = self._join_missions_race_snail(race, queueable, boosted)
             if snail is None:
                 continue
@@ -376,6 +384,9 @@ class CLI:
                             continue
                         # join last spot anyway (if --cheap-soon), even if not needing tickets
                         if not self.args.cheap_soon:
+                            continue
+                        # never join last spots under fee spike
+                        if under_fee_spike:
                             continue
 
                         r = e.args[1]
@@ -430,6 +441,16 @@ class CLI:
                 # FIXME: other last spots will also fail if there are no funds... should it just join normal spots (works in case of boosted), at least for the current tick?
                 self.logger.exception('No funds for %s on %d', snail.name, race.id)
                 _slow_snail(snail)
+                continue
+            except client.web3client.TransactionUnderpricedWeb3Error:
+                # fee spike?
+                self.logger.exception('Not enough fees for %s on %d', snail.name, race.id)
+                _slow_snail(snail)
+                if self.args.fee_spike:
+                    self._notify('Fee spike detected')
+                    # track start, rather than end, to be able to change --fee-spike in runtime :flex:
+                    self._fee_spike_start = self._now()
+                    under_fee_spike = True
                 continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
@@ -682,6 +703,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         nargs=2,
         metavar=('WALLET', 'FEE'),
         help='Whenever claiming slime, send FEE percentage to WALLET before swapping',
+    )
+    @commands.argument(
+        '--fee-spike',
+        type=int,
+        default=3600,
+        help='Number of minutes to disable last spots (FOR EVERYTHING - boosts and minimum tickets) when fee spike is detected. Set to 0 to disable',
     )
     @commands.command()
     def cmd_bot(self):

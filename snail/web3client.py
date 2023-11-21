@@ -23,11 +23,17 @@ class Web3Error(Exception):
     def make(cls, error):
         if 'insufficient funds' in str(error) and error.args[0]['code'] == -32000:
             return InsufficientFundsWeb3Error(error.args[0]['message'])
+        if 'replacement transaction underpriced' in str(error) and error.args[0]['code'] == -32000:
+            return TransactionUnderpricedWeb3Error(error.args[0]['message'])
         return cls(error)
 
 
 class InsufficientFundsWeb3Error(Web3Error):
     """Not enough balance to complete transaction"""
+
+
+class TransactionUnderpricedWeb3Error(Web3Error):
+    """Replacement transaction underpriced"""
 
 
 class Client:

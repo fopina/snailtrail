@@ -105,6 +105,7 @@ class Test(TestCase):
                 'level_ups',
                 'level_ups_to_15',
                 'css_minimum',
+                'fee_spike',
             ],
         )
 
