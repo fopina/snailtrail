@@ -463,7 +463,7 @@ class Client:
         r.raise_for_status()
         return r.json()['data']['candles']
 
-    def stake_snails(self, guild_id: int, snail_ids: List[int]):
+    def stake_snails(self, guild_id: int, snail_ids: List[int], **kwargs):
         data = self.gql.stake_snails(guild_id, snail_ids, gql_token=self.gql_token)
         if data['status'] != 1:
             raise Exception(data)
@@ -474,7 +474,8 @@ class Client:
             data['payload']['timeout'],
             data['payload']['salt'],
             data['signature'],
+            **kwargs,
         )
 
     def gas_price(self):
-        return self.web3.web3.eth.gasPrice / web3client.GWEI_DECIMALS
+        return self.web3.gas_price / web3client.GWEI_DECIMALS
