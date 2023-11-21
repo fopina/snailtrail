@@ -12,6 +12,7 @@ from web3.middleware import geth_poa_middleware
 from . import contracts
 
 DECIMALS = 1000000000000000000
+GWEI_DECIMALS = 1000000000
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +122,8 @@ class Client:
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
         # expected value in nAVAX
-        gas_price = int(self._base_fee * 1000000000)
-        mpf = int(priority_fee * 1000000000)
+        gas_price = int(self._base_fee * GWEI_DECIMALS)
+        mpf = int(priority_fee * GWEI_DECIMALS)
         mf = gas_price + mpf
         if isinstance(function_call, dict):
             # raw transaction

@@ -77,6 +77,23 @@ class Client:
             self._gql_token = self.web3.auth_token()
         return self._gql_token[0]
 
+    @property
+    def base_fee(self):
+        return self.web3._base_fee
+
+    @property
+    def max_fee(self):
+        # no priority fee for anything other than missions
+        return self.base_fee
+
+    @property
+    def mission_priority_fee(self):
+        return self._priority_fee
+
+    @property
+    def max_mission_fee(self):
+        return self.base_fee + self.mission_priority_fee
+
     def _iterate_pages(self, method, key, klass=None, args=None, kwargs=None, max_calls=None):
         args = args or []
         kwargs = kwargs or {}
@@ -460,4 +477,4 @@ class Client:
         )
 
     def gas_price(self):
-        return self.web3.web3.eth.gasPrice
+        return self.web3.web3.eth.gasPrice / web3client.GWEI_DECIMALS

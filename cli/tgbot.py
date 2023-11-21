@@ -83,6 +83,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("inventory", self.cmd_inventory))
             dispatcher.add_handler(CommandHandler("boosted", self.cmd_boosted))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
+            dispatcher.add_handler(CommandHandler("fee", self.cmd_fee))
             dispatcher.add_handler(CommandHandler("balancebalance", self.cmd_balance_balance))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
@@ -657,6 +658,23 @@ class Notifier:
             for k, v in totals.items():
                 msg.append(f'_{k}_: {v}')
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+
+    @bot_auth
+    def cmd_fee(self, update: Update, context: CallbackContext) -> None:
+        """
+        Display current avalanche fees
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        median = self.main_cli.client.gas_price()
+        mission_fee = self.main_cli.client.max_mission_fee
+        pct = median * 100 / mission_fee
+        update.message.reply_markdown(
+            f'''\
+Configured max (mission) fee: {mission_fee}
+Current median fee: {median}
+Median is {pct:.2f}% of your base fee
+'''
+        )
 
     @bot_auth
     def cmd_boosted(self, update: Update, context: CallbackContext) -> None:

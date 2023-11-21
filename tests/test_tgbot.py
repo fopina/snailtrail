@@ -50,6 +50,7 @@ class Test(TestCase):
 /inventory - Inventory items
 /boosted - List currently boosted snails
 /stats - My snails stats
+/fee - Display current avalanche fees
 /balancebalance - Distribute AVAX balance from richest wallet to the others
 /reloadsnails - Reset snails cache
 /settings - Toggle bot settings
