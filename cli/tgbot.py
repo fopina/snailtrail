@@ -335,7 +335,7 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            query.edit_message_text('\n'.join(extra_text))
+            trivial_edit_message_text(query, '\n'.join(extra_text))
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -392,11 +392,11 @@ class Notifier:
 
         extra_text = [f'*Sending to {cli.name}*']
         final_status['_'] = extra_text[-1]
-        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -444,10 +444,7 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            try:
-                query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-            except Exception:
-                """ignore telegram message updates"""
+            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -460,7 +457,7 @@ class Notifier:
 
         slime_claimed = total_claimed[0]
         extra_text = list(final_status.values()) + [f'*Total claimed*: {slime_claimed}', '']
-        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
         final_status = {}
         total_claimed[0] = 0
@@ -468,10 +465,7 @@ class Notifier:
         self._async_swapsend(cli, list(self.clis.values()), _cb)
 
         extra_text = extra_text[:sti] + list(final_status.values()) + [f'*Total sent*: {total_claimed[0]}', '']
-        try:
-            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
-        except Exception:
-            """ignore telegram message updates"""
+        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
         if self.main_cli.args.css_fee:
             creditor, rate = self.main_cli.args.css_fee
@@ -479,14 +473,14 @@ class Notifier:
             r = cli.client.web3.transfer_slime(creditor, fee)
             sent = int(r['logs'][0]['data'], 16) / DECIMALS
             extra_text.append(f'*Paid fee of {sent}*')
-            query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
         balance = cli.client.web3.balance_of_slime(raw=True)
         out_min = cli.client.web3.swap_slime_avax(amount_in=balance, preview=True)
 
         _msg = f'{balance / DECIMALS:0.2f} SLIME for {out_min / DECIMALS:0.2f} AVAX'
         extra_text.append(f'Swapping {_msg}')
-        query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
+        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
         cli.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
         extra_text[-1] = f'Swapped {_msg} ✅'
@@ -608,7 +602,7 @@ class Notifier:
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
             data = c._balance(data=cache[c.owner])
             totals[0] += sum(data['SLIME'])
             totals[1] += sum(data['WAVAX']) + data['AVAX']
@@ -641,12 +635,12 @@ class Notifier:
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
             msg.pop()
             for _, v in c.cmd_inventory(verbose=False).items():
                 msg.append(f'_{v[0].name}_: {len(v)}')
                 totals[v[0].name] += len(v)
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
 
         if self.multi_cli:
             msg.append('`Total`')
@@ -672,7 +666,7 @@ class Notifier:
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
             msg.pop()
             ltotal = 0
             for snail in c.my_snails.values():
@@ -688,7 +682,7 @@ class Notifier:
             if ltotal:
                 msg.append(f'🐌 {ltotal}')
             total += ltotal
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
         msg.append(f'🐌🐌 {total}')
         m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
@@ -1068,3 +1062,17 @@ class Notifier:
         _r = r'[\1](https://www.snailtrail.art/snails/\2/about)'
         m = self.SNAIL_ID1_RE.sub(_r, message)
         return self.SNAIL_ID2_RE.sub(_r, m)
+
+
+def trivial_edit_message_text(query, *args, **kwargs):
+    try:
+        return query.edit_message_text(*args, **kwargs)
+    except Exception:
+        logger.exception('telegram timeout')
+
+
+def trivial_edit_text(query, *args, **kwargs):
+    try:
+        return query.edit_text(*args, **kwargs)
+    except Exception:
+        logger.exception('telegram timeout')
