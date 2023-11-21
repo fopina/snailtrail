@@ -467,7 +467,7 @@ class Notifier:
         extra_text = extra_text[:sti] + list(final_status.values()) + [f'*Total sent*: {total_claimed[0]}', '']
         trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
-        if self.main_cli.args.css_fee:
+        if self.main_cli.args.css_fee and slime_claimed:
             creditor, rate = self.main_cli.args.css_fee
             fee = int(slime_claimed * float(rate) * DECIMALS)
             r = cli.client.web3.transfer_slime(creditor, fee)
