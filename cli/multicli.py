@@ -396,14 +396,38 @@ Total: {breed_fees + gender_fees}
 
         with self.args.file.open('w') as _f:
             csvf = csv.writer(_f)
-            csvf.writerow(['Snail', 'Family', 'Level', 'Purity', 'Adapt Landscape', 'Adapt Weather', 'Adapt Athletics'])
+            csvf.writerow(
+                [
+                    'Snail',
+                    'Family',
+                    'Level',
+                    'Purity',
+                    'Adapt Landscape',
+                    'Adapt Weather',
+                    'Adapt Athletics',
+                    'SB',
+                    'WB',
+                ]
+            )
             for c in self.clis:
                 for snail in itertools.chain(
                     c.my_snails.values(), c.client.iterate_my_snails(c.owner, filters={'status': 5})
                 ):
                     print(snail)
                     ads = snail.ordered_adaptations
-                    csvf.writerow([snail.name_id, snail.family, snail.level, snail.purity, ads[0], ads[1], ads[2]])
+                    csvf.writerow(
+                        [
+                            snail.name_id,
+                            snail.family,
+                            snail.level,
+                            snail.purity,
+                            ads[0],
+                            ads[1],
+                            ads[2],
+                            snail.slime_boost,
+                            snail.work_boost,
+                        ]
+                    )
 
     @commands.util_command()
     def cmd_utils_all_adapts(self):
