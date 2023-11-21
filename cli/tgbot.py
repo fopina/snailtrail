@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import configargparse
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
@@ -216,17 +217,17 @@ class Notifier:
 
             ov = getattr(_cli.args, opts)
             if setting.type in (int, float):
+                if isinstance(setting, (configargparse.argparse._AppendAction)):
+                    ov = '\n'.join(map(str, ov)) if ov else ''
                 query.edit_message_text(
-                    text=f'`{opts}` = {ov}\n{escape_markdown(setting.help)}',
+                    text=f'`{opts}`\n{escape_markdown(setting.help)}\n```\n{ov}\n```',
                     reply_markup=None,
                     parse_mode='Markdown',
                 )
-                self.updater.bot.send_message(
-                    query.message.chat.id,
+                query.message.reply_markdown(
                     text=f'New value for `{opts}`',
                     reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
                     reply_to_message_id=query.message.message_id,
-                    parse_mode='Markdown',
                 )
             else:
                 keyboard = [
@@ -522,7 +523,11 @@ class Notifier:
 
         args = self.any_cli.args
         try:
-            nv = setting.type(update.message.text)
+            if isinstance(setting, (configargparse.argparse._AppendAction)):
+                nv = update.message.text.split('\n')
+                nv = list(map(setting.type, nv))
+            else:
+                nv = setting.type(update.message.text)
             setattr(args, keyword, nv)
             msg = f"Toggled *{keyword}* to *{nv}*"
         except ValueError:
@@ -873,11 +878,16 @@ class Notifier:
             c.reset_cache_my_snails()
         update.message.reply_text('✅')
 
-    def __setting_value(self, setting):
+    def __setting_value(self, setting, short=False):
         v = getattr(self.any_cli.args, setting.dest)
         if setting.type in (int, float):
             if v is None:
                 return '❌'
+            if isinstance(setting, (configargparse.argparse._AppendAction)):
+                if not v:
+                    return '❌'
+                if short:
+                    return '[...]'
             return f'[{v}]'
         # otherwise it's a bool setting
         return "🟢" if v else "🔴"
@@ -895,7 +905,7 @@ class Notifier:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'🔧 {self.__setting_value(setting)} {setting.dest}',
+                        f'🔧 {self.__setting_value(setting, short=True)} {setting.dest}',
                         callback_data=f'toggle {setting.dest}',
                     )
                     for setting in self._settings_list[i : i + 2]

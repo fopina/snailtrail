@@ -119,7 +119,7 @@ class StoreBotConfig(configargparse.argparse._StoreAction):
 
         for x in parser._subparsers._actions[-1].choices['bot']._actions:
             if isinstance(x, configargparse.argparse._StoreTrueAction) or (
-                not isinstance(x, configargparse.argparse._AppendAction)
+                isinstance(x, (configargparse.argparse._StoreAction, configargparse.argparse._AppendAction))
                 and x.type in (float, int)
                 and x.nargs in (None, 1)
             ):

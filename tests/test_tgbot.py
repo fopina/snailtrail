@@ -78,6 +78,8 @@ class Test(TestCase):
             [
                 'missions',
                 'mission_chat_id',
+                'exclude',
+                'boost',
                 'boost_pure',
                 'boost_to',
                 'boost_not_cheap',
@@ -121,12 +123,6 @@ class Test(TestCase):
         self.assertEqual(
             settings,
             [
-                'exclude',
-                None,
-                None,
-                'boost',
-                None,
-                None,
                 'boost_wallet',
                 None,
                 None,
