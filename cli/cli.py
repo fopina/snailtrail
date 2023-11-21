@@ -1407,6 +1407,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='Stake all the snails',
     )
     @commands.argument(
+        '--estimate',
+        action='store_true',
+        help='Only estimate transaction costs',
+    )
+    @commands.argument(
         '-c',
         '--claim',
         action='store_true',
@@ -1501,34 +1506,67 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if s:
                     yield s
 
-        tx = self.client.web3.approve_all_snails_for_stake()
-        if tx:
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-            print(f'Approved staking for {fee} AVAX')
+        if not self.args.estimate:
+            tx = self.client.web3.approve_all_snails_for_stake()
+            if tx:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                print(f'Approved staking for {fee} AVAX')
 
+        total_fee = 0
         # need to stake in chunks, too many  have the execution reverted
         for snails in chunked_snails(100):
             if not snails:
                 print('No one available to work')
-                return
+                break
 
             snail_ids = [s.id for s in snails]
-            tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids)
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids, estimate_only=self.args.estimate)
+            if self.args.estimate:
+                fee = tx
+            else:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            total_fee += fee
             print(f'{len(snails)} snails staked for {fee} AVAX')
+            if self.args.estimate:
+                break
+
+        if total_fee:
+            print(f'\nTotal fee: {total_fee} AVAX')
 
     def cmd_guild_unstake(self):
         if not self.profile_guild:
             print('No guild')
             return
-        snails = list(self.client.iterate_my_snails(self.owner, filters={'status': 5}))
-        if not snails:
-            print('No workers')
-            return
-        snail_ids = [s.id for s in snails]
-        tx = self.client.web3.unstake_snails(snail_ids)
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-        print(f'{len(snails)} snails unstaked for {fee} AVAX')
+
+        def chunked_snails(n):
+            # always restart iterating call (not iterate) as staked snails affect the ongoing query results...
+            while True:
+                s = []
+                for snail in self.client.iterate_my_snails(self.owner, filters={'status': 5}):
+                    s.append(snail)
+                    if len(s) >= n:
+                        break
+                if s:
+                    yield s
+
+        total_fee = 0
+        for snails in chunked_snails(100):
+            if not snails:
+                print('No workers')
+                break
+            snail_ids = [s.id for s in snails]
+            tx = self.client.web3.unstake_snails(snail_ids, estimate_only=self.args.estimate)
+            if self.args.estimate:
+                fee = tx
+            else:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            total_fee += fee
+            print(f'{len(snails)} snails unstaked for {fee} AVAX')
+            if self.args.estimate:
+                break
+
+        if total_fee:
+            print(f'\nTotal fee: {total_fee} AVAX')
 
     def find_candidates_sorting(self, candidates, extra_sorting=None):
         candidates.sort(
