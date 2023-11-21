@@ -283,7 +283,7 @@ class CLI:
         return boosted
 
     def _notify(self, *args, **kwargs):
-        return self.notifier.notify(*args, from_wallet=self.owner, **kwargs)
+        return self.notifier.notify(*args, from_wallet=self.masked_wallet, **kwargs)
 
     def _join_missions_race_snail(self, race, queueable, boosted):
         if race.participation:

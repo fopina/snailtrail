@@ -12,6 +12,7 @@ from snail.gqltypes import Race, Snail
 from . import data
 
 TEST_WALLET = '0xbad43dfb19C6Ab77D9eC30704b89879F1e6d3081'
+TEST_WALLET_MASKED = '0xbad...081'
 TEST_WALLET_PKEY = 'bacc489be509e5463399feb27097af41580344053c7e62c70d1d2a2291d032e0'
 TEST_WALLET_WALLET = types.Wallet.from_private_key(TEST_WALLET_PKEY)
 
@@ -329,7 +330,7 @@ class TestBot(TestCase):
         self.cli.notifier.notify.reset_mock()
         self.cli._bot_coefficent()
         self.cli.notifier.notify.assert_called_once_with(
-            '🍆 Coefficent drop to *1.0000* (from *3*)', from_wallet=TEST_WALLET
+            '🍆 Coefficent drop to *1.0000* (from *3*)', from_wallet=TEST_WALLET_MASKED
         ),
 
     def test_balance(self):
@@ -361,7 +362,7 @@ AVAX: 1.000 / SNAILS: 1
         self.cli.find_races_over()
         # called just for first snail found, on non-mega, as there can only be one
         self.cli.notifier.notify.assert_called_once_with(
-            '🥉 Snail #9104 number 3 in Hockenheimring, for 50, reward 4', from_wallet=TEST_WALLET
+            '🥉 Snail #9104 number 3 in Hockenheimring, for 50, reward 4', from_wallet=TEST_WALLET_MASKED
         )
 
     def test_find_races_over_mega(self):
@@ -377,9 +378,12 @@ AVAX: 1.000 / SNAILS: 1
         self.assertEqual(
             self.cli.notifier.notify.call_args_list,
             [
-                mock.call('🥉 Snail #9104 number 3 in Hockenheimring, for Mega Run, reward 4', from_wallet=TEST_WALLET),
                 mock.call(
-                    '💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0', from_wallet=TEST_WALLET
+                    '🥉 Snail #9104 number 3 in Hockenheimring, for Mega Run, reward 4', from_wallet=TEST_WALLET_MASKED
+                ),
+                mock.call(
+                    '💩 Powerpuff (#8267) number 8 in Hockenheimring, for Mega Run, reward 0',
+                    from_wallet=TEST_WALLET_MASKED,
                 ),
             ],
         )
@@ -396,7 +400,9 @@ AVAX: 1.000 / SNAILS: 1
         self.assertEqual(
             self.cli.notifier.notify.call_args_list,
             [
-                mock.call('🥅 Snail #9104 (myGuild) in Temple of Slime, for 27, time 107.49s', from_wallet=TEST_WALLET),
+                mock.call(
+                    '🥅 Snail #9104 (myGuild) in Temple of Slime, for 27, time 107.49s', from_wallet=TEST_WALLET_MASKED
+                ),
             ],
         )
 
@@ -501,7 +507,7 @@ AVAX: 1.000 / SNAILS: 1
 *position* 10🏆3
 *points* 1📈20
 ''',
-            from_wallet=TEST_WALLET,
+            from_wallet=TEST_WALLET_MASKED,
         )
 
     def test_find_candidates(self):
