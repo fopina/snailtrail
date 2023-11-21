@@ -225,7 +225,7 @@ class Notifier:
                     parse_mode='Markdown',
                 )
                 query.message.reply_markdown(
-                    text=f'New value for `{opts}`',
+                    text=f'New value for `{opts}`.\nUse `cancel` to ignore, `empty` to set it to None and multiple lines if it is a multiple argument option.',
                     reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
                     reply_to_message_id=query.message.message_id,
                 )
@@ -521,9 +521,14 @@ class Notifier:
         else:
             return self._cmd_invalid(update, context)
 
+        if update.message.test.lower() == 'cancel':
+            return
+
         args = self.any_cli.args
         try:
-            if isinstance(setting, (configargparse.argparse._AppendAction)):
+            if update.message.test.lower() == 'empty':
+                nv = None
+            elif isinstance(setting, (configargparse.argparse._AppendAction)):
                 nv = update.message.text.split('\n')
                 nv = list(map(setting.type, nv))
             else:
