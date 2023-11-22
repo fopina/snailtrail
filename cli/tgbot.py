@@ -1079,7 +1079,7 @@ Median is {pct:.2f}% of your base fee
         if chat_id is None:
             chat_id = self.chat_id
         if self.updater and chat_id:
-            if len(self.clis) > 1:
+            if len(self.clis) > 1 and from_wallet:
                 if format == 'Markdown':
                     from_wallet = f'`{from_wallet}`'
                 message = f'{from_wallet}\n{message}'
