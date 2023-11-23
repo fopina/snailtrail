@@ -11,9 +11,10 @@ sys.path.append(str(Path(__file__).absolute().parent.parent))
 from cli import DEFAULT_GOTLS_PATH
 from snail import gqlclient, proxy
 
-# yes, it's mine, feel free to send avax/slime/eth
+# yes, these are mine, feel free to send avax/slime/eth
 TEST_ADDRESS = '0xd991975e1C72E43C5702ced3230dA484442F195a'
 TEST_SNAIL = 8813
+TEST_ADDRESS2 = '0x9ED8Fbd1af94d34e99119Bee2d64b7b00d637E76'
 
 
 @pytest.mark.allow_hosts(['127.0.0.1'])
@@ -33,6 +34,11 @@ class Test(TestCase):
         self.assertEqual(r['floors'][0]['name'], 'Garden')
         r = self.client.marketplace_stats(market=0)
         self.assertEqual(r['floors'][0]['name'], 'Garden')
+
+    def test_profile(self):
+        r = self.client.profile([TEST_ADDRESS, TEST_ADDRESS2])
+        self.assertEqual(r['profile0']['address'], TEST_ADDRESS)
+        self.assertEqual(r['profile1']['address'], TEST_ADDRESS2)
 
     def test_get_onboarding_races(self):
         r = self.client.get_onboarding_races(limit=1)

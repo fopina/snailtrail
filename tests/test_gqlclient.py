@@ -83,7 +83,7 @@ class Test(TestCase):
         self.assertValidGQL(data['query'])
 
     def test_profile(self):
-        self.client.profile(['x'])
+        self.client.profile(['x', 'y'])
         self.req_mock.assert_called_once()
         data = self.req_mock.call_args_list[0][1]['json']
         self.assertEqual(
@@ -373,3 +373,53 @@ class Test(TestCase):
             20,
         )
         self.assertValidGQL(data['query'])
+
+    def test_helper_gql(self):
+        gql = gqlclient.GQL('name', 'snail {name}', {'id': ('Int', 1)})
+        gql.execute(self.client)
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data,
+            {
+                'operationName': 'query',
+                'query': '''
+            query query($id: Int) {
+                name(id: $id) {
+                snail {name}
+                }
+            }
+            ''',
+                'variables': {'id': 1},
+            },
+        )
+
+    def test_helper_gqlunion(self):
+        self.maxDiff = None
+        gql = gqlclient.GQL('name', 'snail {name}', {'id': ('Int', 1)})
+        gql2 = gqlclient.GQL('name', 'snail {name}', {'id': ('Int', 2)})
+        qgls = gql + gql2
+
+        qgls.execute(self.client)
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data,
+            {
+                'operationName': 'query',
+                'query': '''
+            query query($id0: Int, $id1: Int) {
+            
+            q0: name(id: $id0) {
+            snail {name}
+            }
+            
+            q1: name(id: $id1) {
+            snail {name}
+            }
+            
+            }
+            ''',
+                'variables': {'id0': 1, 'id1': 2},
+            },
+        )

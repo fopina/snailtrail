@@ -5,9 +5,8 @@ from typing import Generator, List
 
 import requests
 
-from .gqlclient import types
-
 from . import gqlclient, web3client
+from .gqlclient import types
 
 logger = logging.getLogger(__name__)
 
@@ -184,9 +183,7 @@ class Client:
         )
 
     def iterate_my_snails(self, owner, **kwargs):
-        yield from self._iterate_pages(
-            self.gql.get_my_snails, 'snails', klass=types.Snail, args=[owner], kwargs=kwargs
-        )
+        yield from self._iterate_pages(self.gql.get_my_snails, 'snails', klass=types.Snail, args=[owner], kwargs=kwargs)
 
     def iterate_inventory(self, address, adaptations=None) -> Generator[types.InventoryItem, None, None]:
         yield from self._iterate_pages(
@@ -207,9 +204,7 @@ class Client:
 
     def iterate_onboarding_races(self, own=False, filters={}) -> Generator[types.Race, None, None]:
         k = 'own' if own else 'all'
-        yield from self._iterate_pages(
-            self.gql.get_onboarding_races, k, klass=types.Race, kwargs={'filters': filters}
-        )
+        yield from self._iterate_pages(self.gql.get_onboarding_races, k, klass=types.Race, kwargs={'filters': filters})
 
     def iterate_finished_races(self, filters={}, own=False, max_calls=None) -> Generator[types.Race, None, None]:
         k = 'own' if own else 'all'

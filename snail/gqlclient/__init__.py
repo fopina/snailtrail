@@ -6,7 +6,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .errors import APIError
-from .helper import GQL
+from .helper import GQL, GQLUnion
 
 
 class Client(requests.Session):
@@ -839,39 +839,29 @@ class Client(requests.Session):
         )['tournament_promise']
 
     def profile(self, addresses: list[str]):
-        query = ''
-        vars = []
-        for i, address in enumerate(addresses):
-            query += '''
-            profile%d: profile_promise(address: $address%d) {
-                ... on Profile {
+        gqls = GQLUnion(
+            *[
+                GQL(
+                    'profile_promise',
+                    '''
+            ... on Profile {
                 address
                 username
                 guild {
                     id
                     name
                 }
-                }
             }
-            ''' % (
-                i,
-                i,
-            )
-            vars.append(('address%d' % i, address))
-
-        return self.query(
-            "profile_promise",
-            {k: v for (k, v) in vars},
-            """
-            query profile_promise(%s) {
-            %s
-            }
-            """
-            % (
-                ','.join([f'${v[0]}: String!' for v in vars]),
-                query,
-            ),
+            ''',
+                    {'address': ('String!', address)},
+                    'profile_promise',
+                )
+                for address in addresses
+            ],
+            prefix='profile',
         )
+
+        return gqls.execute(self)
 
     def guild_details(self, guild_id, member=None):
         if member:

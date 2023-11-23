@@ -26,3 +26,66 @@ class GQL:
             }}
             ''',
         )
+
+    def __add__(self, value):
+        if isinstance(value, GQL):
+            return GQLUnion(self, value)
+        elif isinstance(value, GQLUnion):
+            value.gqls.insert(0, self)
+            return value
+        raise ValueError('Can only concatenate with GQL instances')
+
+
+class GQLUnion:
+    def __init__(self, *gqls, prefix='q'):
+        self.gqls: list[GQL] = gqls[:] if gqls else []
+        self._prefix = prefix
+
+    @property
+    def operation_name(self):
+        if self.gqls:
+            return self.gqls[0].operation_name
+        return 'query'
+
+    def _variable_types(self):
+        return ', '.join(f'${k}{i}: {v[0]}' for i, gql in enumerate(self.gqls) for k, v in gql.variables.items())
+
+    def _variable_values(self):
+        return {f'{k}{i}': v[1] for i, gql in enumerate(self.gqls) for k, v in gql.variables.items()}
+
+    def _variable_names_renamed(self, index):
+        gql = self.gqls[index]
+        return ', '.join(f'{k}: ${k}{index}' for k in gql.variables)
+
+    def execute(self, client):
+        if not self.gqls:
+            return
+        if len(self.gqls) == 1:
+            return self.gqls[0].execute(client)
+
+        body = [
+            f'''
+            {self._prefix}{i}: {gql.name}({self._variable_names_renamed(i)}) {{
+            {gql.query}
+            }}
+            '''
+            for i, gql in enumerate(self.gqls)
+        ]
+        return client.query(
+            self.operation_name,
+            self._variable_values(),
+            f'''
+            query {self.operation_name}({self._variable_types()}) {{
+            {''.join(body)}
+            }}
+            ''',
+        )
+
+    def __add__(self, value):
+        if isinstance(value, GQL):
+            self.gqls.append(value)
+        elif isinstance(value, GQLUnion):
+            self.gqls.extend(value.gqls)
+        else:
+            raise ValueError('Can only concatenate with GQL instances')
+        return self
