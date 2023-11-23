@@ -59,6 +59,30 @@ class NeedsToRestAPIError(APIError):
         self.seconds = float(args[0][0][0][58:].split(' ', 1)[0])
 
 
+class GQL:
+    def __init__(self, query, variables, operation_name=None):
+        self.query = query
+        self.variables = variables
+        self.operation_name = operation_name or 'query'
+
+    def _variables_to_send(self):
+        return {k: v[1] for k, v in self.variables.items()}
+
+    def _variable_types(self):
+        return ', '.join(f'${k}: {v[0]}' for k, v in self.variables.items())
+
+    def execute(self, client):
+        return client.query(
+            self.operation_name,
+            self._variables_to_send(),
+            f'''
+                    query {self.operation_name}({self._variable_types()}) {{
+                        {self.query}
+                    }}
+                    ''',
+        )
+
+
 class Client(requests.Session):
     def __init__(
         self,
@@ -790,17 +814,11 @@ class Client(requests.Session):
         self,
         market=1,
     ):
-        return self.query(
-            "marketplaceStats",
-            {
-                "market": market,
-            },
+        return GQL(
             """
-            query marketplaceStats($market: Int) {
             marketplace_stats_promise(market: $market) {
                 ... on Problem {
                 problem
-                __typename
                 }
                 ... on MarketplaceStats {
                 volume
@@ -813,15 +831,15 @@ class Client(requests.Session):
                     id
                     name
                     value
-                    __typename
                 }
-                __typename
                 }
-                __typename
-            }
             }
             """,
-        )['marketplace_stats_promise']
+            {
+                "market": ('Int', market),
+            },
+            operation_name="marketplaceStats",
+        ).execute(self)['marketplace_stats_promise']
 
     def tournament(self, address):
         return self.query(
