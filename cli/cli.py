@@ -1504,15 +1504,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 yield [Snail(id=x) for x in self.args.stake]
                 return
 
-            # always restart iterating call (not iterate) as staked snails affect the ongoing query results...
+            # FIXME: API takes some time to update after staking and might return same snails...? check unstake logic
             while True:
                 s = []
                 for snail in self.client.iterate_my_snails(self.owner):
                     s.append(snail)
                     if len(s) >= n:
                         break
-                if s:
-                    yield s
+                if not s:
+                    break
+                yield s
+                if len(s) < n:
+                    # save on the pointless extra query
+                    break
 
         if not self.args.estimate:
             tx = self.client.web3.approve_all_snails_for_stake()
@@ -1549,15 +1553,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 yield [Snail(id=x) for x in self.args.unstake]
                 return
 
-            # always restart iterating call (not iterate) as staked snails affect the ongoing query results...
-            while True:
-                s = []
-                for snail in self.client.iterate_my_snails(self.owner, filters={'status': 5}):
-                    s.append(snail)
-                    if len(s) >= n:
-                        break
-                if s:
+            # FIXME: opposite approach from stake - API delays update, should we rely on paginating and maybe-miss some snails (if API did update)?
+            s = []
+            for snail in self.client.iterate_my_snails(self.owner, filters={'status': 5}):
+                s.append(snail)
+                if len(s) >= n:
                     yield s
+            if s:
+                yield s
 
         total_fee = 0
         for snails in chunked_snails(100):
