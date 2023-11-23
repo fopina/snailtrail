@@ -40,6 +40,20 @@ class Test(TestCase):
         c = gqlclient.Client(retry=5)
         self.assertEqual(c.adapters['https://'].max_retries.total, 5)
 
+    def test_get_all_genes_marketplace(self):
+        self.client.get_all_genes_marketplace()
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'getAllSnail',
+        )
+        self.assertEqual(
+            data['variables']['limit'],
+            24,
+        )
+        self.assertValidGQL(data['query'])
+
     def test_marketplace_stats(self):
         self.client.marketplace_stats(1)
         self.req_mock.assert_called_once()
@@ -50,6 +64,160 @@ class Test(TestCase):
         )
         self.assertEqual(
             data['variables']['market'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_tournament(self):
+        self.client.tournament('x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'tournament_promise',
+        )
+        self.assertEqual(
+            data['variables']['address'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_profile(self):
+        self.client.profile(['x'])
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'profile_promise',
+        )
+        self.assertEqual(
+            data['variables']['address0'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_guild_details(self):
+        self.client.guild_details(1, member='x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'research_center_reward',
+        )
+        self.assertEqual(
+            data['variables']['guild_id'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_guild_roster(self):
+        self.client.guild_roster(1)
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'guildRoster',
+        )
+        self.assertEqual(
+            data['variables']['guild_id'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_tournament_guild_stats(self):
+        self.client.tournament_guild_stats('x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'tournamentMyGuildLeaderboard',
+        )
+        self.assertEqual(
+            data['variables']['address'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_get_inventory(self):
+        self.client.get_inventory('x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'inventory_promise',
+        )
+        self.assertEqual(
+            data['variables']['address'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_incubate(self):
+        self.client.incubate('x', 1, 2, 'x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'incubate_promise',
+        )
+        self.assertEqual(
+            data['variables']['params']['fid'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_apply_pressure(self):
+        self.client.apply_pressure('x', 1, 2, 'x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'apply_pressure_promise',
+        )
+        self.assertEqual(
+            data['variables']['params']['address'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_stake_snails(self):
+        self.client.stake_snails(1, [1, 2])
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'send_workers_promise',
+        )
+        self.assertEqual(
+            data['variables']['guild_id'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_guild_research(self):
+        self.client.guild_research([1, 2])
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'research_center_reward',
+        )
+        self.assertEqual(
+            data['variables']['guild0'],
+            1,
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_guild_messages(self):
+        self.client.guild_messages(1)
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'guildTreasuryLedger',
+        )
+        self.assertEqual(
+            data['variables']['guild_id'],
             1,
         )
         self.assertValidGQL(data['query'])
@@ -143,6 +311,20 @@ class Test(TestCase):
         self.assertEqual(
             data['operationName'],
             'getMySnailsForRanked',
+        )
+        self.assertEqual(
+            data['variables']['owner'],
+            'x',
+        )
+        self.assertValidGQL(data['query'])
+
+    def test_get_my_snails(self):
+        self.client.get_my_snails('x')
+        self.req_mock.assert_called_once()
+        data = self.req_mock.call_args_list[0][1]['json']
+        self.assertEqual(
+            data['operationName'],
+            'my_snails_promise',
         )
         self.assertEqual(
             data['variables']['owner'],
