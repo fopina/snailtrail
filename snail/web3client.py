@@ -135,7 +135,7 @@ class Client:
         else:
             max_fee = int(self._max_fee * GWEI_DECIMALS)
 
-        mf = gas_price * (100 + priority_fee) / 100
+        mf = int(gas_price * (100 + priority_fee) / 100)
         if mf > max_fee:
             logger.error('Required max fee of %d exceeds allowed max fee of %d', mf, max_fee)
             mf = max_fee
