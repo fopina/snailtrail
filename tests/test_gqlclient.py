@@ -395,7 +395,6 @@ class Test(TestCase):
         )
 
     def test_helper_gqlunion(self):
-        self.maxDiff = None
         gql = gqlclient.GQL('name', 'snail {name}', {'id': ('Int', 1)})
         gql2 = gqlclient.GQL('name', 'snail {name}', {'id': ('Int', 2)})
         qgls = gql + gql2
