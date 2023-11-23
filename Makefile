@@ -27,7 +27,7 @@ deploy-rent: pub
 	curl $(shell cat portainer-rent.conf) -d tag=snailtrail-$(shell git log --oneline . | wc -l | tr -d ' ')
 
 sit:
-	pytest integration_tests --allow-hosts=127.0.0.1 --cov snail
+	pytest integration_tests --cov snail
 
 lint:
 	isort .

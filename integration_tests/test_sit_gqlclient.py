@@ -4,8 +4,11 @@ import unittest
 from pathlib import Path
 from unittest import TestCase
 
+import pytest
+
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
+from cli import DEFAULT_GOTLS_PATH
 from snail import gqlclient, proxy
 
 # yes, it's mine, feel free to send avax/slime/eth
@@ -13,26 +16,17 @@ TEST_ADDRESS = '0xd991975e1C72E43C5702ced3230dA484442F195a'
 TEST_SNAIL = 8813
 
 
+@pytest.mark.allow_hosts(['127.0.0.1'])
 class Test(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        preset_proxy = os.getenv('SNAIL_TEST_PROXY')
-        if preset_proxy:
-            print('using existing proxy', preset_proxy)
-            proxy_url = preset_proxy
-            cls.proxy = None
-        else:
-            print('starting proxy')
-            cls.proxy = proxy.Proxy()
-            cls.proxy.start()
-            proxy_url = cls.proxy.url()
-        cls.client = gqlclient.Client(proxy=proxy_url, rate_limiter=1, retry=3)
+        cls.proxy = proxy.Proxy(DEFAULT_GOTLS_PATH)
+        cls.proxy.start()
+        cls.client = gqlclient.Client(url=cls.proxy.url(), rate_limiter=1, retry=3)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        if cls.proxy is not None:
-            print('stopping proxy')
-            cls.proxy.stop()
+        cls.proxy.stop()
 
     def test_marketplace_stats(self):
         r = self.client.marketplace_stats()

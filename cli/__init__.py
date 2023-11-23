@@ -12,6 +12,8 @@ from snail import proxy
 
 from . import commands, multicli, tempconfigparser, tgbot, types
 
+DEFAULT_GOTLS_PATH = Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy'
+
 configargparse.ArgParser = tempconfigparser.ArgumentParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s][%(levelname)s] %(message)s')
@@ -74,7 +76,7 @@ def build_parser():
     )
     parser.add_argument(
         '--gotls-bin',
-        default=Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy',
+        default=DEFAULT_GOTLS_PATH,
         help='Path to gotlsproxy binary to use',
     )
     parser.add_argument('--debug', action='store_true', help='Debug verbosity')
