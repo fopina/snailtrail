@@ -5,7 +5,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .errors import APIError
+from .errors import *  # FIXME: enumerate all errors or import module (and fix all callers)
 from .helper import GQL, GQLUnion
 
 
