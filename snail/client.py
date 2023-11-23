@@ -5,7 +5,9 @@ from typing import Generator, List
 
 import requests
 
-from . import gqlclient, gqltypes, web3client
+from .gqlclient import types
+
+from . import gqlclient, web3client
 
 logger = logging.getLogger(__name__)
 
@@ -149,79 +151,79 @@ class Client:
             args=(guild_id,),
         )
 
-    def iterate_all_genes_marketplace(self, filters={}) -> Generator[gqltypes.Snail, None, None]:
+    def iterate_all_genes_marketplace(self, filters={}) -> Generator[types.Snail, None, None]:
         yield from self._iterate_pages(
-            self.gql.get_all_genes_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
+            self.gql.get_all_genes_marketplace, 'snails', klass=types.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_all_snails_marketplace(self, filters={}) -> Generator[gqltypes.Snail, None, None]:
+    def iterate_all_snails_marketplace(self, filters={}) -> Generator[types.Snail, None, None]:
         yield from self._iterate_pages(
-            self.gql.get_all_snails_marketplace, 'snails', klass=gqltypes.Snail, kwargs={'filters': filters}
+            self.gql.get_all_snails_marketplace, 'snails', klass=types.Snail, kwargs={'filters': filters}
         )
 
-    def iterate_all_snails(self, filters={}, more_stats=False) -> Generator[gqltypes.Snail, None, None]:
+    def iterate_all_snails(self, filters={}, more_stats=False) -> Generator[types.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_all_snails,
             'snails',
-            klass=gqltypes.Snail,
+            klass=types.Snail,
             kwargs={'filters': filters, 'more_stats': more_stats},
         )
 
-    def iterate_my_snails_for_missions(self, owner, adaptations=None) -> Generator[gqltypes.Snail, None, None]:
+    def iterate_my_snails_for_missions(self, owner, adaptations=None) -> Generator[types.Snail, None, None]:
         yield from self._iterate_pages(
             self.gql.get_my_snails_for_missions,
             'snails',
-            klass=gqltypes.Snail,
+            klass=types.Snail,
             args=[owner],
             kwargs={'adaptations': adaptations},
         )
 
     def iterate_my_snails_for_ranked(self, owner, league):
         yield from self._iterate_pages(
-            self.gql.get_my_snails_for_ranked, 'snails', klass=gqltypes.Snail, args=[owner, league]
+            self.gql.get_my_snails_for_ranked, 'snails', klass=types.Snail, args=[owner, league]
         )
 
     def iterate_my_snails(self, owner, **kwargs):
         yield from self._iterate_pages(
-            self.gql.get_my_snails, 'snails', klass=gqltypes.Snail, args=[owner], kwargs=kwargs
+            self.gql.get_my_snails, 'snails', klass=types.Snail, args=[owner], kwargs=kwargs
         )
 
-    def iterate_inventory(self, address, adaptations=None) -> Generator[gqltypes.InventoryItem, None, None]:
+    def iterate_inventory(self, address, adaptations=None) -> Generator[types.InventoryItem, None, None]:
         yield from self._iterate_pages(
             self.gql.get_inventory,
             'items',
-            klass=gqltypes.InventoryItem,
+            klass=types.InventoryItem,
             args=[address],
         )
 
-    def iterate_mission_races(self, filters={}, max_calls=None) -> Generator[gqltypes.Race, None, None]:
+    def iterate_mission_races(self, filters={}, max_calls=None) -> Generator[types.Race, None, None]:
         yield from self._iterate_pages(
             self.gql.get_mission_races,
             'all',
-            klass=gqltypes.Race,
+            klass=types.Race,
             kwargs={'filters': filters},
             max_calls=max_calls,
         )
 
-    def iterate_onboarding_races(self, own=False, filters={}) -> Generator[gqltypes.Race, None, None]:
+    def iterate_onboarding_races(self, own=False, filters={}) -> Generator[types.Race, None, None]:
         k = 'own' if own else 'all'
         yield from self._iterate_pages(
-            self.gql.get_onboarding_races, k, klass=gqltypes.Race, kwargs={'filters': filters}
+            self.gql.get_onboarding_races, k, klass=types.Race, kwargs={'filters': filters}
         )
 
-    def iterate_finished_races(self, filters={}, own=False, max_calls=None) -> Generator[gqltypes.Race, None, None]:
+    def iterate_finished_races(self, filters={}, own=False, max_calls=None) -> Generator[types.Race, None, None]:
         k = 'own' if own else 'all'
         yield from self._iterate_pages(
             self.gql.get_finished_races,
             k,
-            klass=gqltypes.Race,
+            klass=types.Race,
             kwargs={'filters': filters, 'own': own},
             max_calls=max_calls,
         )
 
-    def iterate_race_history(self, filters={}) -> Generator[gqltypes.Race, None, None]:
+    def iterate_race_history(self, filters={}) -> Generator[types.Race, None, None]:
         yield from self._iterate_pages(
-            self.gql.get_race_history, 'races', klass=gqltypes.Race, kwargs={'filters': filters}
+            self.gql.get_race_history, 'races', klass=types.Race, kwargs={'filters': filters}
         )
 
     def rejoin_mission_races(self, gql_payload, **kwargs):

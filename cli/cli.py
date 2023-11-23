@@ -13,7 +13,7 @@ from colorama import Fore
 from tqdm import tqdm
 
 from snail import VERSION, client
-from snail.gqltypes import Gender, Race, Snail, _parse_datetime
+from snail.gqlclient.types import Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
 from . import commands, tgbot

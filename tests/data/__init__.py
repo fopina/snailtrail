@@ -1,7 +1,7 @@
 from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
-from snail.gqltypes import Snail
+from snail.gqlclient.types import Snail
 
 from .tournament_promise import TOURNAMENT_PROMISE_DATA
 

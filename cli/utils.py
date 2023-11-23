@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, Union
 
-from snail.gqltypes import Race, Snail
+from snail.gqlclient.types import Race, Snail
 from snail.web3client import DECIMALS
 
 if TYPE_CHECKING:

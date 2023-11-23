@@ -11,7 +11,7 @@ from typing import List
 from colorama import Fore
 from tqdm import tqdm
 
-from snail.gqltypes import Adaptation, Snail
+from snail.gqlclient.types import Adaptation, Snail
 
 from . import cli, commands, utils
 

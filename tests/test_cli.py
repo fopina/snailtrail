@@ -7,7 +7,7 @@ from unittest import TestCase, mock
 
 import cli
 from cli import types
-from snail.gqltypes import Race, Snail
+from snail.gqlclient.types import Race, Snail
 
 from . import data
 
