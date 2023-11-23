@@ -94,21 +94,13 @@ class Client(requests.Session):
         return r["data"]
 
     def get_all_genes_marketplace(self, offset=0, limit=24, filters={}):
-        return self.query(
-            "getAllSnail",
-            {
-                "filters": filters,
-                "offset": offset,
-                "limit": limit,
-            },
-            """
-            query getAllSnail($filters: SnailFilters, $offset: Int, $limit: Int) {
-                gene_market_promise(limit: $limit, offset: $offset, order: 1, filters: $filters) {
-                    ... on Problem {
+        return GQL(
+            'gene_market_promise',
+            '''
+                ... on Problem {
                     problem
-                    __typename
-                    }
-                    ... on Snails {
+                }
+                ... on Snails {
                     snails {
                         id
                         adaptations
@@ -120,38 +112,29 @@ class Client(requests.Session):
                         item_id
                         on_sale
                         price_wei
-                        __typename
                         }
                         stats {
                         experience {
                             level
-                            __typename
                         }
-                        __typename
                         }
-                        __typename
                     }
                     count
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['gene_market_promise']
+            ''',
+            {
+                "filters": ('SnailFilters', filters),
+                "offset": ('Int', offset),
+                "limit": ('Int', limit),
+            },
+            'getAllSnail',
+        ).execute(self)['gene_market_promise']
 
     def get_all_snails_marketplace(self, offset=0, limit=20, filters={}):
-        return self.query(
-            "getAllSnail",
-            {
-                "filters": filters,
-                "offset": offset,
-                "limit": limit,
-            },
-            """
-            query getAllSnail($filters: SnailFilters, $offset: Int, $limit: Int) {
-                marketplace_promise(limit: $limit, offset: $offset, order: 1, filters: $filters) {
-                    ... on Snails {
+        return GQL(
+            'marketplace_promise',
+            '''
+            ... on Snails {
                     snails {
                         id
                         adaptations
@@ -162,11 +145,9 @@ class Client(requests.Session):
                         on_sale
                         price_wei
                         last_sale
-                        __typename
                         }
                         gender {
                         id
-                        __typename
                         }
                         breeding {
                         breed_detail {
@@ -174,18 +155,18 @@ class Client(requests.Session):
                             monthly_breed_available
                             breed_count_total
                         }
-                        __typename
                         }
-                        __typename
                     }
                     count
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['marketplace_promise']
+            ''',
+            {
+                "filters": ('SnailFilters', filters),
+                "offset": ('Int', offset),
+                "limit": ('Int', limit),
+            },
+            'getAllSnail',
+        ).execute(self)['marketplace_promise']
 
     def get_all_snails(self, offset: int = 0, filters={}, more_stats=False):
         more_stats_query = (
@@ -220,16 +201,10 @@ class Client(requests.Session):
             if more_stats
             else ''
         )
-        return self.query(
-            "getAllSnail",
-            {
-                "filters": filters,
-                "offset": offset,
-            },
-            """
-            query getAllSnail($filters: SnailFilters, $offset: Int) {
-                snails_promise(limit: 20, offset: $offset, order: 1, filters: $filters) {
-                    ... on Snails {
+        return GQL(
+            'snails_promise',
+            '''
+            ... on Snails {
                     snails {
                         id
                         adaptations
@@ -264,27 +239,22 @@ class Client(requests.Session):
                     }
                     count
                     }
-                }
-            }
-            """
+            '''
             % (more_stats_query,),
-        )['snails_promise']
+            {
+                "filters": ('SnailFilters', filters),
+                "offset": ('Int', offset),
+            },
+            'getAllSnail',
+        ).execute(self)['snails_promise']
 
     def get_mission_races(self, offset=0, limit=20, filters={}):
-        return self.query(
-            "getMissionRaces",
-            {
-                "filters": filters,
-                "limit": limit,
-                "offset": offset,
-            },
-            """
-            query getMissionRaces($limit: Int, $offset: Int, $filters: RaceFilters) {
-                mission_races_promise(limit: $limit, offset: $offset, filters: $filters) {
-                    ... on Problem {
+        return GQL(
+            'mission_races_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
-                    }
+            }
                     ... on Races {
                     all {
                         id
@@ -293,30 +263,23 @@ class Client(requests.Session):
                         athletes
                         track
                         participation
-                        __typename
                     }
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['mission_races_promise']
+            ''',
+            {
+                "filters": ('RaceFilters', filters),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+            },
+            'getMissionRaces',
+        ).execute(self)['mission_races_promise']
 
     def get_onboarding_races(self, offset=0, limit=20, filters={}):
-        return self.query(
-            "getOnboardingRaces",
-            {
-                "filters": filters,
-                "limit": limit,
-                "offset": offset,
-            },
-            """
-            query getOnboardingRaces($limit: Int, $offset: Int, $filters: RaceFilters) {
-                onboarding_races_promise(limit: $limit, offset: $offset, filters: $filters) {
-                    ... on Problem {
+        return GQL(
+            'onboarding_races_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on Races {
                     all {
@@ -333,7 +296,6 @@ class Client(requests.Session):
                         athletes
                         participation
                         schedules_at
-                        __typename
                     }
                     own {
                         id
@@ -349,30 +311,23 @@ class Client(requests.Session):
                         athletes
                         participation
                         schedules_at
-                        __typename
                     }
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['onboarding_races_promise']
+            ''',
+            {
+                "filters": ('RaceFilters', filters),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+            },
+            'getOnboardingRaces',
+        ).execute(self)['onboarding_races_promise']
 
     def get_finished_races(self, offset=0, limit=20, filters={}, own=False):
-        return self.query(
-            "getFinishedRaces",
-            {
-                "filters": filters,
-                "limit": limit,
-                "offset": offset,
-            },
-            """
-            query getFinishedRaces($filters: RaceFilters, $limit: Int, $offset: Int) {
-                finished_races_promise(limit: $limit, offset: $offset, filters: $filters) {
-                    ... on Problem {
+        return GQL(
+            'finished_races_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on Races {
                     %s {
@@ -394,29 +349,23 @@ class Client(requests.Session):
                         starts_at
                         prize_pool
                     }
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """
+            '''
             % ('own' if own else 'all'),
-        )['finished_races_promise']
+            {
+                "filters": ('RaceFilters', filters),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+            },
+            'getFinishedRaces',
+        ).execute(self)['finished_races_promise']
 
     def get_race_history(self, offset=0, limit=20, filters={}):
-        return self.query(
-            "getRaceHistory",
-            {
-                "filters": filters,
-                "limit": limit,
-                "offset": offset,
-            },
-            """
-            query getRaceHistory($limit: Int, $offset: Int, $filters: RaceHistoryFilters) {
-            race_history_promise(limit: $limit, offset: $offset, filters: $filters) {
-                ... on Problem {
+        return GQL(
+            'race_history_promise',
+            '''
+            ... on Problem {
                 problem
-                __typename
                 }
                 ... on RaceHistory {
                 races {
@@ -440,10 +389,14 @@ class Client(requests.Session):
                 }
                 count
                 }
-            }
-            }
-            """,
-        )['race_history_promise']
+            ''',
+            {
+                "filters": ('RaceHistoryFilters', filters),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+            },
+            'getRaceHistory',
+        ).execute(self)['race_history_promise']
 
     def get_my_snails_for_missions(
         self,
@@ -454,20 +407,10 @@ class Client(requests.Session):
     ):
         if adaptations is None:
             adaptations = [1, 1, 1]
-        return self.query(
-            "getMySnailsForMissions",
-            {
-                "owner": owner,
-                "limit": limit,
-                "offset": offset,
-                "adaptations": adaptations,
-            },
-            """
-            query getMySnailsForMissions($limit: Int, $offset: Int, $owner: String!, $adaptations: [Int]) {
-                my_snails_mission_promise(limit: $limit, offset: $offset, owner: $owner, adaptations: $adaptations) {
-                    ... on Problem {
+        return GQL(
+            'my_snails_mission_promise',
+            '''... on Problem {
                     problem
-                    __typename
                     }
                     ... on Snails {
                     snails {
@@ -479,18 +422,19 @@ class Client(requests.Session):
                         stats {
                         mission_tickets
                         experience {level, xp, remaining}
-                        __typename
                         }
-                        __typename
                     }
                     count
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['my_snails_mission_promise']
+            ''',
+            {
+                "owner": ('String!', owner),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+                "adaptations": ('[Int]', adaptations),
+            },
+            'getMySnailsForMissions',
+        ).execute(self)['my_snails_mission_promise']
 
     def get_my_snails_for_ranked(
         self,
@@ -499,30 +443,10 @@ class Client(requests.Session):
         limit=20,
         offset=0,
     ):
-        return self.query(
-            "getMySnailsForRanked",
-            {
-                "owner": owner,
-                "limit": limit,
-                "offset": offset,
-                "league": league,
-            },
-            """
-            query getMySnailsForRanked(
-                $limit: Int
-                $offset: Int
-                $owner: String!
-                $league: Int!
-            ) {
-                my_snails_ranked_promise(
-                    limit: $limit
-                    offset: $offset
-                    owner: $owner
-                    league: $league
-                ) {
-                    ... on Problem {
+        return GQL(
+            'my_snails_ranked_promise',
+            '''... on Problem {
                     problem
-                    __typename
                     }
                     ... on Snails {
                     snails {
@@ -530,16 +454,18 @@ class Client(requests.Session):
                         adaptations
                         name
                         queueable_at
-                        __typename
                     }
                     count
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['my_snails_ranked_promise']
+            ''',
+            {
+                "owner": ('String!', owner),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+                "league": ('Int!', league),
+            },
+            'getMySnailsForRanked',
+        ).execute(self)['my_snails_ranked_promise']
 
     def get_my_snails(
         self,
@@ -548,25 +474,9 @@ class Client(requests.Session):
         offset=0,
         filters=None,
     ):
-        return self.query(
-            "my_snails_promise",
-            {"filters": filters, "limit": limit, "offset": offset, "owner": owner},
-            """
-            query my_snails_promise(
-            $limit: Int
-            $offset: Int
-            $owner: String!
-            $gender: Int
-            $filters: SnailFilters
-            ) {
-            my_snails_promise(
-                limit: $limit
-                offset: $offset
-                owner: $owner
-                gender: $gender
-                filters: $filters
-            ) {
-                ... on Problem {
+        return GQL(
+            'my_snails_promise',
+            '''... on Problem {
                 problem
                 }
                 ... on Snails {
@@ -603,11 +513,15 @@ class Client(requests.Session):
                     }
                 }
                 count
-                }
-            }
-            }
-            """,
-        )['my_snails_promise']
+                }''',
+            {
+                "filters": ('SnailFilters', filters),
+                "limit": ('Int', limit),
+                "offset": ('Int', offset),
+                "owner": ('String!', owner),
+            },
+            'my_snails_promise',
+        ).execute(self)['my_snails_promise']
 
     def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str):
         return self.query(
