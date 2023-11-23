@@ -61,7 +61,10 @@ class GQLUnion:
         if not self.gqls:
             return
         if len(self.gqls) == 1:
-            return self.gqls[0].execute(client)
+            r = self.gqls[0].execute(client)
+            # also support "indexed"
+            r[f'{self._prefix}0'] = r[self.gqls[0].name]
+            return r
 
         body = [
             f'''
