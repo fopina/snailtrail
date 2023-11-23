@@ -15,6 +15,7 @@ from . import contracts
 
 DECIMALS = 1000000000000000000
 GWEI_DECIMALS = 1000000000
+BOTTOM_BASE_FEE = 25 * GWEI_DECIMALS
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,8 @@ class Client:
         web3_provider: str,
         web3_account: Optional[Account] = None,
         web3_provider_class: Any = None,
-        web3_base_fee: float = 25,
+        max_fee: Optional[float] = None,
+        max_priority_fee: Optional[float] = None,
     ):
         if web3_provider_class is None:
             web3_provider_class = Web3.HTTPProvider
@@ -54,7 +56,8 @@ class Client:
         self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.account: Account = web3_account
         self.wallet = wallet
-        self._base_fee = web3_base_fee
+        self._max_fee = max_fee
+        self._max_priority_fee = max_priority_fee
 
     def _contract(self, module):
         return self.web3.eth.contract(
@@ -119,14 +122,25 @@ class Client:
         function_call: Any,
         wait_for_transaction_receipt: Union[bool, float] = None,
         estimate_only=False,
-        priority_fee=0,
+        priority_fee=None,
     ):
         """build tx, sign it and send it"""
         nonce = self.web3.eth.getTransactionCount(self.wallet)
         # expected value in nAVAX
-        gas_price = int(self._base_fee * GWEI_DECIMALS)
-        mpf = int(priority_fee * GWEI_DECIMALS)
-        mf = gas_price + mpf
+        gas_price = self.gas_price
+        if priority_fee is None:
+            priority_fee = self._max_priority_fee or 0
+        if self._max_fee is None:
+            max_fee = int(BOTTOM_BASE_FEE * (100 + priority_fee) / 100)
+        else:
+            max_fee = int(self._max_fee * GWEI_DECIMALS)
+
+        mf = gas_price * (100 + priority_fee) / 100
+        if mf > max_fee:
+            logger.error('Required max fee of %d exceeds allowed max fee of %d', mf, max_fee)
+            mf = max_fee
+        # put everything as priority fee - network will use for base fee if required!
+        mpf = mf - BOTTOM_BASE_FEE
         if isinstance(function_call, dict):
             # raw transaction
             tx = {k: v for k, v in function_call.items()}
@@ -594,4 +608,7 @@ class Client:
 
     @property
     def gas_price_not_cached(self):
-        return self.web3.eth.gasPrice
+        r = self.web3.eth.gasPrice
+        if r != BOTTOM_BASE_FEE:
+            logger.info('Median fee: %d', r)
+        return r

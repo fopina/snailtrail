@@ -439,9 +439,9 @@ Total: {breed_fees + gender_fees}
     def cmd_utils_gas_price(self):
         """Print out median gas price"""
         median = self.main_cli.client.gas_price()
-        print(f'Configured max (mission) fee: {self.main_cli.client.max_mission_fee}')
+        print(f'Configured max fee: {self.main_cli.client.max_fee}')
         print(f'Current median fee: {median}')
-        pct = median * 100 / self.args.web3_base_fee
+        pct = median * 100 / self.main_cli.client.max_fee
         print(f'Median is {pct:.2f}% of your base fee')
 
     @commands.util_command()

@@ -8,7 +8,7 @@ from pathlib import Path
 import configargparse
 from colorama import Fore
 
-from snail import proxy
+from snail import proxy, web3client
 
 from . import commands, multicli, tempconfigparser, tgbot, types
 
@@ -60,13 +60,22 @@ def build_parser():
         help='web3 http endpoint (value or path to file with value)',
     )
     parser.add_argument(
-        '--web3-base-fee', type=float, default=25, help='Base fee to be used for max fee calculation, in nAVAX'
+        '--web3-max-fee',
+        type=float,
+        default=None,
+        help='Maximum gas fee (includes priority), in nAVAX. If not set, 25 + priority fee is used',
     )
     parser.add_argument(
         '--web3-priority-fee',
         type=float,
-        default=1.25,
-        help='Priority fee to be used for time-sensitive transactions (such as joining last spots), in nAVAX',
+        default=0,
+        help='Priority fee to be used for any transaction (non-mission) - percentage of current gas price',
+    )
+    parser.add_argument(
+        '--web3-mission-priority-fee',
+        type=float,
+        default=5,
+        help='Priority fee to be used for time-sensitive transactions (such as joining last spots) - percentage of current gas price',
     )
     parser.add_argument('--proxy', help='Use this proxy for graphql (recommended: mitmproxy, burp)')
     parser.add_argument(

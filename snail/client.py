@@ -55,8 +55,9 @@ class Client:
         web3_account=None,
         web3_provider=None,
         web3_provider_class=None,
-        web3_base_fee=25,
+        web3_max_fee=None,
         web3_priority_fee=0,
+        web3_mission_priority_fee=0,
         rate_limiter=None,
         gql_retry=None,
     ):
@@ -67,10 +68,12 @@ class Client:
                 web3_provider,
                 web3_account=web3_account,
                 web3_provider_class=web3_provider_class,
-                web3_base_fee=web3_base_fee,
+                max_fee=web3_max_fee,
+                max_priority_fee=web3_priority_fee,
             )
         self._gql_token = None
         self._priority_fee = web3_priority_fee
+        self._mission_priority_fee = web3_mission_priority_fee
 
     @property
     def gql_token(self):
@@ -79,21 +82,20 @@ class Client:
         return self._gql_token[0]
 
     @property
-    def base_fee(self):
-        return self.web3._base_fee
-
-    @property
     def max_fee(self):
-        # no priority fee for anything other than missions
-        return self.base_fee
+        if self.web3._max_fee is None:
+            # check highest
+            fee = max(self.priority_fee, self.mission_priority_fee)
+            return web3client.BOTTOM_BASE_FEE * (100 + fee) / 100 / web3client.GWEI_DECIMALS
+        return self.web3._max_fee
 
     @property
-    def mission_priority_fee(self):
+    def priority_fee(self):
         return self._priority_fee
 
     @property
-    def max_mission_fee(self):
-        return self.base_fee + self.mission_priority_fee
+    def mission_priority_fee(self):
+        return self._mission_priority_fee
 
     def _iterate_pages(self, method, key, klass=None, args=None, kwargs=None, max_calls=None):
         args = args or []
