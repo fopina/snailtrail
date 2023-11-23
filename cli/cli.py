@@ -55,7 +55,7 @@ class CLI:
         self.owner = wallet.address
         self.main_one = main_one
         self._profile = profile
-        self.multicli = muticli
+        self.multicli = multicli
         self.logger = logging.getLogger(f'{__name__}.{self.masked_wallet}')
         self.client = client.Client(
             proxy=proxy_url,
