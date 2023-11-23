@@ -131,6 +131,9 @@ def build_parser():
     )
     parser.add_argument('--debug-http', action='store_true', help='Debug all http requests made')
     parser.add_argument('--no-colors', action='store_true', help='Disable colors in output')
+    parser.add_argument(
+        '--rental', action='store_true', help='This is a rental instance (some features might be enabled or disabled)'
+    )
 
     subparsers = parser.add_subparsers(title='commands', dest='cmd')
 
