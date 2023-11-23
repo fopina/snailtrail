@@ -12,12 +12,12 @@ import requests
 from colorama import Fore
 from tqdm import tqdm
 
+from scommon.decorators import cached_property_with_ttl
 from snail import VERSION, client
 from snail.gqlclient.types import Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
 from . import commands, tgbot
-from .decorators import cached_property_with_ttl
 from .helpers import SetQueue
 from .types import RaceJoin, Wallet
 from .utils import CachedSnailHistory

@@ -24,6 +24,7 @@ RUN --mount=type=cache,target=/wheels \
 
 WORKDIR /app
 ADD snail /app/snail
+ADD scommon /app/scommon
 ADD cli /app/cli
 ADD main.py /app/
 

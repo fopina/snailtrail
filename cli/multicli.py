@@ -25,7 +25,7 @@ class MultiCLI:
 
     def __init__(
         self,
-        wallets: List[cli.Wallet],
+        wallets: List['cli.Wallet'],
         proxy_url: str,
         args: argparse.Namespace,
     ):
@@ -49,7 +49,7 @@ class MultiCLI:
         return len(self.clis) > 1
 
     @property
-    def main_cli(self) -> cli.CLI:
+    def main_cli(self) -> 'cli.CLI':
         if self.clis:
             return self.clis[0]
         return None
