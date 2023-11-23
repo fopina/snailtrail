@@ -42,6 +42,7 @@ class CLI:
         main_one: Optional[bool] = None,
         graphql_endpoint: Optional[str] = None,
         profile: dict = None,
+        multicli: any = None,
     ):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
@@ -54,6 +55,7 @@ class CLI:
         self.owner = wallet.address
         self.main_one = main_one
         self._profile = profile
+        self.multicli = muticli
         self.logger = logging.getLogger(f'{__name__}.{self.masked_wallet}')
         self.client = client.Client(
             proxy=proxy_url,

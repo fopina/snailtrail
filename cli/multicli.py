@@ -36,11 +36,10 @@ class MultiCLI:
         for w in wallets:
             if w is None:
                 continue
-            c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint)
+            c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint, multicli=self)
             first_one = False
             args.notify.register_cli(c)
             self.clis.append(c)
-        args.notify.register_multicli(self)
 
         self.load_profiles()
 

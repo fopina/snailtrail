@@ -59,7 +59,6 @@ class Notifier:
         self.__token = token
         self.chat_id = chat_id
         self.clis = {}
-        self.multicli: 'multicli.MultiCLI' = None
         self._sent_messages = set()
         self._settings_list = []
         self._read_only_settings = None
@@ -138,6 +137,10 @@ class Notifier:
                     return c
         return self.any_cli
 
+    @property
+    def multicli(self) -> 'multicli.CLI':
+        return self.any_cli.multicli
+
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.is_multi_cli:
             return ''
@@ -153,9 +156,6 @@ class Notifier:
 
     def register_cli(self, cli):
         self.clis[cli.owner] = cli
-
-    def register_multicli(self, cli):
-        self.multicli = cli
 
     def handle_buttons(self, update: Update, context: CallbackContext) -> None:
         """Parses the CallbackQuery and updates the message text."""
