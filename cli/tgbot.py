@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import configargparse
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
@@ -10,6 +10,9 @@ from telegram.utils.helpers import escape_markdown
 
 from . import cli, utils
 from .cli import DECIMALS
+
+if TYPE_CHECKING:
+    from . import multicli
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +59,7 @@ class Notifier:
         self.__token = token
         self.chat_id = chat_id
         self.clis = {}
+        self.multicli: 'multicli.MultiCLI' = None
         self._sent_messages = set()
         self._settings_list = []
         self._read_only_settings = None
@@ -123,19 +127,19 @@ class Notifier:
         return list(self.clis.values())[0]
 
     @property
-    def multi_cli(self) -> bool:
+    def is_multi_cli(self) -> bool:
         return len(self.clis) > 1
 
     @property
     def main_cli(self) -> 'cli.CLI':
-        if self.multi_cli:
+        if self.is_multi_cli:
             for c in self.clis.values():
                 if c.report_as_main:
                     return c
         return self.any_cli
 
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
-        if not self.multi_cli:
+        if not self.is_multi_cli:
             return ''
         m = f'`>> {cli.name}`'
         if output is not None:
@@ -149,6 +153,9 @@ class Notifier:
 
     def register_cli(self, cli):
         self.clis[cli.owner] = cli
+
+    def register_multicli(self, cli):
+        self.multicli = cli
 
     def handle_buttons(self, update: Update, context: CallbackContext) -> None:
         """Parses the CallbackQuery and updates the message text."""
@@ -625,7 +632,7 @@ class Notifier:
 {wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}'''
             m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
-        if self.multi_cli:
+        if self.is_multi_cli:
             msg.append(
                 f'''`Total`
 🧪 {totals[0]:.3f}
@@ -653,7 +660,7 @@ class Notifier:
                 totals[v[0].name] += len(v)
             trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
 
-        if self.multi_cli:
+        if self.is_multi_cli:
             msg.append('`Total`')
             for k, v in totals.items():
                 msg.append(f'_{k}_: {v}')
@@ -895,10 +902,11 @@ Median is {pct:.2f}% of your base fee
     @bot_auth
     def cmd_reload_snails(self, update: Update, context: CallbackContext) -> None:
         """
-        Reset snails cache
+        Reset snails cache (and reload wallet guilds)
         """
         for c in self.clis.values():
             c.reset_cache_my_snails()
+        self.multicli.load_profiles()
         update.message.reply_text('✅')
 
     def __setting_value(self, setting, short=False):

@@ -40,18 +40,9 @@ class MultiCLI:
             first_one = False
             args.notify.register_cli(c)
             self.clis.append(c)
+        args.notify.register_multicli(self)
 
-        # get original indices (so they remain constant in the name)
-        # as "active" wallets might be restricted using -a flag
-        wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet) if w is not None}
-
-        # get proper profile info
-        if self.main_cli:
-            profiles = [c.owner for c in self.clis]
-            data = self.main_cli.client.gql.profile(profiles)
-            for i, c in enumerate(self.clis):
-                c._profile = data[f'profile{i}']
-                c._profile['_i'] = wallet_indices[c.owner]
+        self.load_profiles()
 
     @property
     def is_multi(self) -> bool:
@@ -62,6 +53,21 @@ class MultiCLI:
         if self.clis:
             return self.clis[0]
         return None
+
+    def load_profiles(self):
+        """get proper profile info"""
+        if not self.main_cli:
+            return
+
+        # get original indices (so they remain constant in the name)
+        # as "active" wallets might be restricted using -a flag
+        wallet_indices = {w.address: i + 1 for i, w in enumerate(self.args.wallet) if w is not None}
+
+        profiles = [c.owner for c in self.clis]
+        data = self.main_cli.client.gql.profile(profiles)
+        for i, c in enumerate(self.clis):
+            c._profile = data[f'profile{i}']
+            c._profile['_i'] = wallet_indices[c.owner]
 
     def cmd_bot(self):
         # disable tournament check in all accounts with repeated guilds

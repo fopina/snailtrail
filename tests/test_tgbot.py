@@ -52,7 +52,7 @@ class Test(TestCase):
 /stats - My snails stats
 /fee - Display current avalanche fees
 /balancebalance - Distribute AVAX balance from richest wallet to the others
-/reloadsnails - Reset snails cache
+/reloadsnails - Reset snails cache (and reload wallet guilds)
 /settings - Toggle bot settings
 /usethisformissions - Use this chat for mission join notifications'''
         )
