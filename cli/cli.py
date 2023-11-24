@@ -84,6 +84,7 @@ class CLI:
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
         self._fee_spike_start = None
+        self._tournament_market_cache = [None, {}]
 
     @staticmethod
     def _now():
@@ -552,6 +553,48 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
         self._notify_coefficent = coef
 
+    def _bot_tournament_market(self):
+        last, cache = self._tournament_market_cache
+        if last is not None and self._now() - last < timedelta(minutes=10):
+            # check only once every 10min
+            return
+        self._tournament_market_cache[0] = self._now()
+
+        data = self.client.tournament(self.owner)
+        conditions = {}
+        for week in data.weeks:
+            c = tuple(week.ordered_conditions)
+            conditions[c] = week.week
+            conditions[c[:2]] = week.week
+
+        matches = []
+        for snail in self.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': 15}}}):
+            if not snail.market_price:
+                # no more for sale
+                break
+            c = tuple(snail.ordered_adaptations)
+            w = conditions.get(c)
+            full = True
+            if not w:
+                w = conditions.get(c[:2])
+                full = False
+            if not w:
+                continue
+
+            cached_price = cache.get(snail.id)
+            if cached_price == snail.market_price:
+                continue
+
+            msg = f'{"🥇" if full else "🥈"}Week {w} - {snail.name_id} - {snail.market_price} 🔺'
+            if cached_price:
+                msg = f'{msg} (from {cached_price})'
+            matches.append(msg)
+
+            cache[snail.id] = snail.market_price
+
+        if matches:
+            self._notify('\n'.join(matches))
+
     def _bot_burn_coefficent(self):
         if self._notify_burn_coefficent is not None and self._notify_burn_coefficent[1] > datetime.now():
             # refresh only once every 2min
@@ -685,6 +728,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--level-ups-to-15', action='store_true', help='Notify when a snail levels up (during missions) - until lv15!'
     )
+    @commands.argument('--tournament-market', action='store_true', help='Monitor market for snails for tournament')
     @commands.argument(
         '--balance-balance',
         type=float,
@@ -1079,14 +1123,15 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if self.args.races_over or self.args.missions_over:
                     self.find_races_over()
 
-                if self.args.market and self.report_as_main:
-                    self._bot_marketplace()
-
-                if self.args.coefficent and self.report_as_main:
-                    self._bot_coefficent()
-
-                if self.args.burn and self.report_as_main:
-                    self._bot_burn_coefficent()
+                if self.report_as_main:
+                    if self.args.market:
+                        self._bot_marketplace()
+                    if self.args.coefficent:
+                        self._bot_coefficent()
+                    if self.args.burn:
+                        self._bot_burn_coefficent()
+                    if self.args.tournament_market:
+                        self._bot_tournament_market()
 
                 if self.args.tournament:
                     self._bot_tournament()
