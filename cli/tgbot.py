@@ -673,7 +673,7 @@ class Notifier:
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         median = self.main_cli.client.gas_price()
-        mission_fee = self.main_cli.client.max_mission_fee
+        mission_fee = self.main_cli.client.max_fee
         pct = median * 100 / mission_fee
         update.message.reply_markdown(
             f'''\
