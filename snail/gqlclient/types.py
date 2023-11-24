@@ -251,7 +251,8 @@ class Snail(AttrDict):
 
     @property
     def family(self):
-        return Family.from_str(self['family'])
+        if self.get('family'):
+            return Family.from_str(self['family'])
 
     @property
     def level(self):
@@ -307,7 +308,8 @@ class Snail(AttrDict):
 
     @property
     def market_price(self):
-        return self.market['price']
+        if 'market' in self:
+            return self.market.get('price')
 
     @property
     def gene_market_price(self):

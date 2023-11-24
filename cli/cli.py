@@ -792,7 +792,28 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return True, per_family, data
 
     def _cmd_tournament_market(self, data):
-        print(data)
+        conditions = {}
+        for week in data.weeks:
+            c = tuple(week.ordered_conditions)
+            conditions[c] = week.week
+            conditions[c[:2]] = week.week
+
+        for snail in self.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': 15}}}):
+            if not snail.market_price:
+                # no more for sale
+                break
+            c = tuple(snail.ordered_adaptations)
+            w = conditions.get(c)
+            full = True
+            if not w:
+                w = conditions.get(c[:2])
+                full = False
+            if not w:
+                continue
+
+            print(
+                f'{"FULL! - " if full else ""}Week {w} - {snail.name_id} - {snail.adaptations} - {snail.level} - {snail.market_price}'
+            )
         return False
 
     def _cmd_tournament_preview_guild_drinks_latest(self, guilds):

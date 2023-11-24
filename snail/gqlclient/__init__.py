@@ -130,7 +130,7 @@ class Client(requests.Session):
             'getAllSnail',
         ).execute(self)['gene_market_promise']
 
-    def get_all_snails_marketplace(self, offset=0, limit=20, filters={}):
+    def get_all_snails_marketplace(self, offset=0, limit=20, order=1, filters={}):
         return GQL(
             'marketplace_promise',
             '''
@@ -149,6 +149,11 @@ class Client(requests.Session):
                         gender {
                         id
                         }
+                        stats {
+                            experience {
+                                level
+                            }
+                        }
                         breeding {
                         breed_detail {
                             cycle_end
@@ -164,6 +169,7 @@ class Client(requests.Session):
                 "filters": ('SnailFilters', filters),
                 "offset": ('Int', offset),
                 "limit": ('Int', limit),
+                "order": ('Int', order),
             },
             'getAllSnail',
         ).execute(self)['marketplace_promise']
