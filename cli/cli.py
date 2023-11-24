@@ -738,21 +738,25 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
     @commands.argument('--preview', action='store_true', help='Attempt to predict race results for given week')
     @commands.argument('--csv', action='store_true', help='Output in csv format - only for --preview')
+    @commands.argument('--market', action='store_true', help='Search market snails that match tournament races')
     @commands.command()
     def cmd_tournament(self, data=None):
         """Tournament info"""
         if data is None:
-            data = self.client.gql.tournament(self.owner)
-            print(f"Name: {data['name']}")
-            print(f"Day: {data['current_day']}")
-            print(f"Registered guilds: {data['guild_count']}")
-            assert len(data['prize_pool']) == 1
-            print(f"Prize: {data['prize_pool'][0]['amount']} {data['prize_pool'][0]['symbol']}")
-            for week in data['weeks']:
-                print(f"Week {week['week']}: {week['conditions']} {week['distance']}m ({week['guild_count']} guilds)")
+            data = self.client.tournament(self.owner)
+            print(f"Name: {data.name}")
+            print(f"Day: {data.current_day}")
+            print(f"Registered guilds: {data.guild_count}")
+            assert len(data.prize_pool) == 1
+            print(f"Prize: {data.prize_pool[0]['amount']} {data.prize_pool[0]['symbol']}")
+            for week in data.weeks:
+                print(f"Week {week.week}: {week.conditions} {week.distance}m ({week.guild_count} guilds)")
         if self.args.stats:
             # only print stats
             return False
+
+        if self.args.market:
+            return self._cmd_tournament_market(data)
 
         if self.args.week is None:
             week_pos = data['current_week']
@@ -786,6 +790,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     snail = candidate[3]
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
+
+    def _cmd_tournament_market(self, data):
+        print(data)
+        return False
 
     def _cmd_tournament_preview_guild_drinks_latest(self, guilds):
         data = {}

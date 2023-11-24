@@ -464,6 +464,54 @@ class InventoryItem(AttrDict):
     """
 
 
+class TournamentWeek(AttrDict):
+    """
+    Tournament returned by tournament_promise
+    """
+
+    @property
+    def conditions(self) -> Optional[list[Adaptation]]:
+        """
+        >>> s = TournamentWeek({'conditions': ['Wet', 'Mountain', 'Jump']})
+        >>> s.conditions
+        [Wet, Mountain, Jump]
+        """
+        if 'conditions' in self:
+            return list(map(Adaptation.from_str, self['conditions']))
+
+    @property
+    def ordered_conditions(self):
+        """
+        >>> s = TournamentWeek({'conditions': ['Wet', 'Mountain', 'Jump']})
+        >>> s.ordered_conditions
+        [Mountain, Wet, Jump]
+        """
+        adaptations = self.conditions
+        if adaptations is None:
+            return
+        r = [None, None, None]
+        for adaptation in adaptations:
+            if adaptation.is_landscape():
+                r[0] = adaptation
+            elif adaptation.is_weather():
+                r[1] = adaptation
+            else:
+                r[2] = adaptation
+        return r
+
+
+class Tournament(AttrDict):
+    """
+    Tournament returned by tournament_promise
+    """
+
+    def __init__(self, values):
+        super().__init__(values)
+        if 'weeks' in self:
+            for i, w in enumerate(self['weeks']):
+                self['weeks'][i] = TournamentWeek(w)
+
+
 def _parse_datetime(date_str):
     if '.' in date_str:
         return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
