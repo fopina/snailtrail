@@ -189,7 +189,7 @@ def main(argv=None):
 
     # if no proxy is set and using official graphql, start gotlsproxy
     if not args.proxy and isinstance(args.graphql_endpoint, commands.DefaultOption):
-        logger.info('starting proxy')
+        logger.debug('starting proxy')
         use_upstream_proxy = os.getenv('http_proxy') or os.getenv('https_proxy')
         if use_upstream_proxy:
             use_upstream_proxy = use_upstream_proxy.split('://')[-1]
@@ -197,7 +197,7 @@ def main(argv=None):
         p = proxy.Proxy(args.gotls_bin, upstream_proxy=use_upstream_proxy)
         p.start()
         atexit.register(p.stop)
-        logger.info('proxy ready on %s', p.url())
+        logger.debug('proxy ready on %s', p.url())
         args.graphql_endpoint = p.url()
 
     if args.tg_bot_owner is not None:
