@@ -107,6 +107,7 @@ class Test(TestCase):
                 'auto_claim',
                 'level_ups',
                 'level_ups_to_15',
+                'tournament_market',
                 'css_minimum',
                 'fee_spike',
             ],
