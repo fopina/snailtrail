@@ -1130,8 +1130,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         self._bot_coefficent()
                     if self.args.burn:
                         self._bot_burn_coefficent()
-                    if self.args.tournament_market:
-                        self._bot_tournament_market()
+                    if not self.args.rental:
+                        # exclusive features of mine, not rentals!
+                        if self.args.tournament_market:
+                            self._bot_tournament_market()
 
                 if self.args.tournament:
                     self._bot_tournament()
