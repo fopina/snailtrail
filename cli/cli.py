@@ -146,7 +146,7 @@ class CLI:
         settings_file.write_text(json.dumps(data))
 
     @cached_property_with_ttl(600)
-    def my_snails(self):
+    def my_snails(self) -> dict[int, Snail]:
         return {
             snail.id: snail for snail in self.client.iterate_all_snails(filters={'owner': self.owner}, more_stats=True)
         }
@@ -2321,9 +2321,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _burn_coef(self):
         # pick random snail to simulate and get the coefficient
-        for s in self.my_snails:
+        for s in self.my_snails.values():
+            if s.stats['mission_tickets'] < 0:
+                # snail with negative tickets, do not even try
+                self.logger.debug('%s has negative tickets, it cannot use burn', s.name_id)
+                continue
             try:
-                return self.client.microwave_snails_preview([s])
+                return self.client.microwave_snails_preview([s.id])
             except client.gqlclient.APIError as e:
                 if 'You have recently used this action' not in str(e):
                     raise
