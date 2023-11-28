@@ -677,7 +677,7 @@ Total: {breed_fees + gender_fees}
                     except cli.client.gqlclient.APIError as e:
                         if 'You are not the holder of Snail' not in str(e):
                             raise
-                        print('Retrying...')
+                        print('.', end='', flush=True)
                         time.sleep(0.5)
                 else:
                     raise Exception('too many retries, not the holder?!')
