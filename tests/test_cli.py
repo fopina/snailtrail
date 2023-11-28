@@ -41,7 +41,7 @@ class Test(TestCase):
 
 class TestBot(TestCase):
     def setUp(self) -> None:
-        args = cli.build_parser().parse_args(['bot'], config_file_contents='')
+        args = cli.build_parser().parse_args(['bot', '--minimum-tickets', '-500'], config_file_contents='')
         wallet = cli.cli.Wallet(TEST_WALLET, 'pkey1')
         self._wallet = wallet
         c = cli.cli.CLI(wallet, 'http://localhost:99999', args, True)

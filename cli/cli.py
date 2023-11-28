@@ -331,11 +331,10 @@ class CLI:
         else:
             not_cheap = set()
 
-        if self.args.fair:
-            # add snails with few tickets to "boosted" to re-use logic
-            for s in queueable:
-                if s.stats['mission_tickets'] < self.args.minimum_tickets:
-                    boosted.add(s.id)
+        # add snails with few tickets to "boosted" to re-use logic
+        for s in queueable:
+            if s.stats['mission_tickets'] < self.args.minimum_tickets:
+                boosted.add(s.id)
 
         def _slow_snail(snail, seconds=90):
             # add snail to cooldown, use 90 for now - check future logs if they still get locked
@@ -384,8 +383,6 @@ class CLI:
                         r, tx = self.client.join_mission_races(snail.id, race.id, allow_last_spot=(snail.id in boosted))
                     except client.RequiresTransactionClientError as e:
                         self.logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
-                        if not self.args.fair:
-                            continue
                         # join last spot anyway (if --cheap-soon), even if not needing tickets
                         if not self.args.cheap_soon:
                             continue
@@ -658,15 +655,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
     )
     @commands.argument(
-        '-f',
-        '--fair',
-        action='store_true',
-        help='Take last spots when negative mission tickets',
-    )
-    @commands.argument(
         '--cheap',
         action='store_true',
-        help='Cheap mode - only take --fair/--boost last spots if they are low-fee races. Other cheap stuff to be added',
+        help='Cheap mode - only take last spots (normal or boosted) if they are low-fee races. Other cheap stuff to be added',
     )
     @commands.argument(
         '--cheap-soon',

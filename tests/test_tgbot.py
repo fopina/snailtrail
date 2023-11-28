@@ -85,7 +85,6 @@ class Test(TestCase):
                 'boost_to',
                 'boost_not_cheap',
                 'minimum_tickets',
-                'fair',
                 'cheap',
                 'cheap_soon',
                 'races',
