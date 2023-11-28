@@ -701,7 +701,7 @@ Median is {pct:.2f}% of your base fee
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
-            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text=self._link_snails('\n'.join(msg)), parse_mode='Markdown')
             msg.pop()
             ltotal = 0
             for snail in c.my_snails.values():
@@ -717,9 +717,9 @@ Median is {pct:.2f}% of your base fee
             if ltotal:
                 msg.append(f'🐌 {ltotal}')
             total += ltotal
-            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
+            trivial_edit_text(m, text=self._link_snails('\n'.join(msg)), parse_mode='Markdown')
         msg.append(f'🐌🐌 {total}')
-        m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+        m.edit_text(text=self._link_snails('\n'.join(msg)), parse_mode='Markdown')
 
     @bot_auth
     def cmd_guild(self, update: Update, context: CallbackContext) -> None:

@@ -272,7 +272,7 @@ Total: {breed_fees + gender_fees}
             self.main_cli.find_candidates_sorting(snails)
             for score, _, _, snail, c in snails:
                 print(
-                    f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name} {Fore.YELLOW}{snail.purity_str}/{snail.level_str}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
+                    f'{Fore.YELLOW}{score}{Fore.RESET} {snail.name_id} {Fore.YELLOW}{snail.purity_str}/{snail.level_str}{Fore.RESET} {snail.adaptations} {Fore.YELLOW}{c.name}{Fore.RESET} {c.profile_guild}'
                 )
 
     def cmd_guild(self):
