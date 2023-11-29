@@ -5,8 +5,14 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .errors import *  # FIXME: enumerate all errors or import module (and fix all callers)
-from .helper import GQL, GQLUnion
+from .errors import (  # noqa: import like this for now, retrocompatibility - but fix callers in future
+    APIError,
+    NeedsToRestAPIError,
+    RaceAlreadyFullAPIError,
+    RaceEntryFailedAPIError,
+    RaceInnacurateRegistrantsAPIError,
+)
+from .helper import GQL, GQLMutation, GQLUnion
 
 
 class Client(requests.Session):
@@ -530,22 +536,11 @@ class Client(requests.Session):
         ).execute(self)['my_snails_promise']
 
     def join_mission_races(self, snail_id: int, race_id: int, address: str, signature: str):
-        return self.query(
-            "joinMissionRaces",
-            {
-                "params": {
-                    "token_id": snail_id,
-                    "race_id": race_id,
-                    "signature": signature,
-                    "address": address,
-                }
-            },
-            """
-            mutation joinMissionRaces($params: JoinRaceParams) {
-                join_mission_promise(params: $params) {
-                    ... on Problem {
+        return GQLMutation(
+            'join_mission_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on JoinRaceResponse {
                     status
@@ -567,37 +562,31 @@ class Client(requests.Session):
                             owners
                             rewards_wei
                             results
-                            __typename
                         }
-                        __typename
                         }
-                        __typename
                     }
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-        )['join_mission_promise']
+            ''',
+            {
+                'params': (
+                    'JoinRaceParams',
+                    {
+                        "token_id": snail_id,
+                        "race_id": race_id,
+                        "signature": signature,
+                        "address": address,
+                    },
+                )
+            },
+            'joinMissionRaces',
+        ).execute(self)['join_mission_promise']
 
     def join_competitive_races(self, snail_id: int, race_id: int, address: str, signature: str):
-        return self.query(
-            "joinCompetitiveRaces",
-            {
-                "params": {
-                    "token_id": snail_id,
-                    "race_id": race_id,
-                    "signature": signature,
-                    "address": address,
-                }
-            },
-            """
-            mutation joinCompetitiveRaces($params: JoinRaceParams) {
-                join_competitive_promise(params: $params) {
-                    ... on Problem {
+        return GQLMutation(
+            'join_competitive_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on JoinRaceResponse {
                     status
@@ -618,19 +607,24 @@ class Client(requests.Session):
                             owners
                             rewards_wei
                             results
-                            __typename
                         }
-                        __typename
                         }
-                        __typename
                     }
-                    __typename
-                    }
-                    __typename
-                }
             }
-            """,
-        )['join_competitive_promise']
+            ''',
+            {
+                'params': (
+                    'JoinRaceParams',
+                    {
+                        "token_id": snail_id,
+                        "race_id": race_id,
+                        "signature": signature,
+                        "address": address,
+                    },
+                )
+            },
+            'joinCompetitiveRaces',
+        ).execute(self)['join_competitive_promise']
 
     def name_change(self, name):
         return GQL(
@@ -987,20 +981,10 @@ class Client(requests.Session):
         signature,
         gql_token=None,
     ):
-        return self.query(
-            "apply_pressure_promise",
-            {
-                "params": {
-                    "address": address,
-                    "items": [{"id": scroll_id, "count": 1}],
-                    "token_id": token_id,
-                    "signature": signature,
-                }
-            },
-            """
-            mutation apply_pressure_promise($params: PressureParams) {
-                apply_pressure_promise(params: $params) {
-                    ... on Problem {
+        return GQLMutation(
+            'apply_pressure_promise',
+            '''
+            ... on Problem {
                     problem
                     }
                     ... on Pressure {
@@ -1025,25 +1009,27 @@ class Client(requests.Session):
                         src_type
                     }
                     }
-                }
-            }
-            """,
-            auth=gql_token,
-        )['apply_pressure_promise']
+            ''',
+            {
+                'params': (
+                    'PressureParams',
+                    {
+                        "address": address,
+                        "items": [{"id": scroll_id, "count": 1}],
+                        "token_id": token_id,
+                        "signature": signature,
+                    },
+                )
+            },
+            'apply_pressure_promise',
+        ).execute(self, auth=gql_token)['apply_pressure_promise']
 
     def stake_snails(self, guild_id: int, snail_ids: List[int], gql_token=None):
-        return self.query(
-            "send_workers_promise",
-            {
-                "guild_id": guild_id,
-                "token_ids": snail_ids,
-            },
-            """
-            mutation send_workers_promise($guild_id: Int!, $token_ids: [Int]) {
-                send_workers_promise(guild_id: $guild_id, token_ids: $token_ids) {
-                    ... on Problem {
+        return GQLMutation(
+            'send_workers_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on GenericResponse {
                     status
@@ -1056,18 +1042,17 @@ class Client(requests.Session):
                         owner
                         timeout
                         salt
-                        __typename
                         }
-                        __typename
                     }
-                    __typename
                     }
-                    __typename
-                }
-            }
-            """,
-            auth=gql_token,
-        )['send_workers_promise']
+
+            ''',
+            {
+                'guild_id': ('Int!', guild_id),
+                'token_ids': ('[Int]', snail_ids),
+            },
+            'send_workers_promise',
+        ).execute(self, auth=gql_token)['send_workers_promise']
 
     def guild_research(self, guild_ids: list[int]):
         gqls = GQLUnion(

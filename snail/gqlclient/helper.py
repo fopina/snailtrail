@@ -1,4 +1,6 @@
 class GQL:
+    _TYPE = 'query'
+
     def __init__(self, name, query, variables, operation_name=None):
         self.name = name
         self.variables = variables
@@ -19,7 +21,7 @@ class GQL:
             self.operation_name,
             self._variable_values(),
             f'''
-            query {self.operation_name}({self._variable_types()}) {{
+            {self._TYPE} {self.operation_name}({self._variable_types()}) {{
                 {self.name}({self._variable_names()}) {{
                 {self.query}
                 }}
@@ -35,6 +37,10 @@ class GQL:
             value.gqls.insert(0, self)
             return value
         raise ValueError('Can only concatenate with GQL instances')
+
+
+class GQLMutation(GQL):
+    _TYPE = 'mutation'
 
 
 class GQLUnion:
