@@ -203,7 +203,7 @@ class Test(TestCase):
             'research_center_reward',
         )
         self.assertEqual(
-            data['variables']['guild0'],
+            data['variables']['guild_id0'],
             1,
         )
         self.assertValidGQL(data['query'])

@@ -14,7 +14,7 @@ class GQL:
     def _variable_values(self):
         return {k: v[1] for k, v in self.variables.items()}
 
-    def execute(self, client):
+    def execute(self, client, **kwargs):
         return client.query(
             self.operation_name,
             self._variable_values(),
@@ -25,6 +25,7 @@ class GQL:
                 }}
             }}
             ''',
+            **kwargs,
         )
 
     def __add__(self, value):

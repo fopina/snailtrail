@@ -633,28 +633,20 @@ class Client(requests.Session):
         )['join_competitive_promise']
 
     def name_change(self, name):
-        return self.query(
-            "nameChange",
-            {
-                "name": name,
-            },
-            """
-            query nameChange($name: String!) {
-                name_status_promise(name: $name) {
-                    ... on Problem {
-                    problem
-                    __typename
-                    }
-                    ... on NameStatus {
-                    status
-                    message
-                    __typename
-                    }
-                    __typename
-                }
+        return GQL(
+            'name_status_promise',
+            '''
+            ... on Problem {
+                problem
             }
-            """,
-        )['name_status_promise']
+            ... on NameStatus {
+                status
+                message
+            }
+            ''',
+            {'name': ('String!', name)},
+            'nameChange',
+        ).execute(self)['name_status_promise']
 
     def marketplace_stats(
         self,
@@ -686,16 +678,11 @@ class Client(requests.Session):
             operation_name="marketplaceStats",
         ).execute(self)['marketplace_stats_promise']
 
-    def tournament(self, address):
-        return self.query(
-            "tournament_promise",
-            {
-                "address": address,
-            },
+    def tournament(self, address, tournament_id=None):
+        return GQL(
+            'tournament_promise',
             '''
-            query tournament_promise($tournament_id: Int, $address: String) {
-                tournament_promise(tournament_id: $tournament_id, address: $address) {
-                    ... on Problem {
+            ... on Problem {
                     problem
                     }
                     ... on Tournament {
@@ -753,10 +740,13 @@ class Client(requests.Session):
                     }
                     scheduled_at
                     }
-                }
-            }
             ''',
-        )['tournament_promise']
+            {
+                'address': ('String', address),
+                'tournament_id': ('Int', tournament_id),
+            },
+            'tournament_promise',
+        ).execute(self)['tournament_promise']
 
     def profile(self, addresses: list[str]):
         gqls = GQLUnion(
@@ -806,10 +796,10 @@ class Client(requests.Session):
         else:
             reward_query = membership_query = ''
 
-        query = '''
-        query research_center_reward($guild_id: Int!) {
-            guild_promise(guild_id: $guild_id) {
-                ... on Problem {
+        return GQL(
+            'guild_promise',
+            '''
+            ... on Problem {
                     problem
                 }
                 ... on Guild {
@@ -842,25 +832,20 @@ class Client(requests.Session):
                         level
                     }
                 }
-            }
-        }
-        ''' % (
-            membership_query,
-            reward_query,
-        )
-        return self.query(
-            "research_center_reward",
-            {
-                "guild_id": guild_id,
-            },
-            query,
-        )['guild_promise']
+            '''
+            % (
+                membership_query,
+                reward_query,
+            ),
+            {'guild_id': ('Int!', guild_id)},
+            'research_center_reward',
+        ).execute(self)['guild_promise']
 
     def guild_roster(self, guild_id):
-        query = '''
-        query guildRoster($guild_id: Int!) {
-            guild_promise(guild_id: $guild_id) {
-                ... on Problem {
+        return GQL(
+            'guild_promise',
+            '''
+            ... on Problem {
                 problem
                 }
                 ... on Guild {
@@ -886,29 +871,17 @@ class Client(requests.Session):
                     }
                     }
                 }
-                }
             }
-        }
-        '''
-        return self.query(
-            "guildRoster",
-            {
-                "guild_id": guild_id,
-            },
-            query,
-        )['guild_promise']
+            ''',
+            {'guild_id': ('Int!', guild_id)},
+            'guildRoster',
+        ).execute(self)['guild_promise']
 
     def tournament_guild_stats(self, member, tournament_id=None):
-        return self.query(
-            "tournamentMyGuildLeaderboard",
-            {
-                "tournament_id": tournament_id,
-                "address": member,
-            },
+        return GQL(
+            'tournament_promise',
             '''
-            query tournamentMyGuildLeaderboard($tournament_id: Int, $address: String) {
-                tournament_promise(tournament_id: $tournament_id, address: $address) {
-                    ... on Tournament {
+... on Tournament {
                     id
                     leaderboard(cursor: 0) {
                         my_guild {
@@ -917,10 +890,13 @@ class Client(requests.Session):
                         }
                     }
                     }
-                }
-            }
-            ''',
-        )['tournament_promise']
+''',
+            {
+                'tournament_id': ('Int', tournament_id),
+                'address': ('String', member),
+            },
+            'tournamentMyGuildLeaderboard',
+        ).execute(self)['tournament_promise']
 
     def get_inventory(
         self,
@@ -928,28 +904,10 @@ class Client(requests.Session):
         limit=24,
         offset=0,
     ):
-        return self.query(
-            "inventory_promise",
-            {
-                "address": address,
-                "filters": {"flag": "ALL"},
-                "limit": limit,
-                "offset": offset,
-            },
-            """
-            query inventory_promise(
-            $address: String!
-            $limit: Int
-            $offset: Int
-            $filters: InventoryFilters
-            ) {
-            inventory_promise(
-                address: $address
-                limit: $limit
-                offset: $offset
-                filters: $filters
-            ) {
-                ... on Problem {
+        return GQL(
+            'inventory_promise',
+            '''
+            ... on Problem {
                 problem
                 }
                 ... on Inventory {
@@ -963,11 +921,16 @@ class Client(requests.Session):
                     expires_at
                     coef
                 }
-                }
             }
-            }
-            """,
-        )['inventory_promise']
+            ''',
+            {
+                'address': ('String!', address),
+                'limit': ('Int', limit),
+                'offset': ('Int', offset),
+                'filters': ('InventoryFilters', {'flag': 'ALL'}),
+            },
+            'inventory_promise',
+        ).execute(self)['inventory_promise']
 
     def incubate(
         self,
@@ -978,25 +941,11 @@ class Client(requests.Session):
         use_scroll=False,
         gql_token=None,
     ):
-        return self.query(
-            "incubate_promise",
-            {
-                "params": {
-                    "fid": female_id,
-                    "mid": male_id,
-                    "item_id": 0,
-                    "use_scroll": use_scroll,
-                    "market_price_wei": "0",
-                    "nonce": nonce,
-                    "owner": address,
-                }
-            },
-            """
-            query incubate_promise($params: IncubateParams) {
-                incubate_promise(params: $params) {
-                    ... on Problem {
+        return GQL(
+            'incubate_promise',
+            '''
+            ... on Problem {
                     problem
-                    __typename
                     }
                     ... on Incubate {
                     payload {
@@ -1009,17 +958,26 @@ class Client(requests.Session):
                         mid
                         timeout
                         salt
-                        __typename
                     }
                     signature
-                    __typename
-                    }
-                    __typename
-                }
             }
-            """,
-            auth=gql_token,
-        )['incubate_promise']
+            ''',
+            {
+                'params': (
+                    'IncubateParams',
+                    {
+                        "fid": female_id,
+                        "mid": male_id,
+                        "item_id": 0,
+                        "use_scroll": use_scroll,
+                        "market_price_wei": "0",
+                        "nonce": nonce,
+                        "owner": address,
+                    },
+                )
+            },
+            'incubate_promise',
+        ).execute(self, auth=gql_token)['incubate_promise']
 
     def apply_pressure(
         self,
@@ -1112,40 +1070,29 @@ class Client(requests.Session):
         )['send_workers_promise']
 
     def guild_research(self, guild_ids: list[int]):
-        query = ''
-        vars = {}
-
-        for i, guild in enumerate(guild_ids):
-            query += '''
-            guild_promise%d: guild_promise(guild_id: $guild%d) {
-                ... on Guild {
+        gqls = GQLUnion(
+            *[
+                GQL(
+                    'guild_promise',
+                    '''
+                    ... on Guild {
                     research {
                         buildings {
                             type
                             level
                         }
                     }
-                }
-            }
-            ''' % (
-                i,
-                i,
-            )
-            vars['guild%d' % i] = guild
-
-        return self.query(
-            "research_center_reward",
-            vars,
-            """
-            query research_center_reward(%s) {
-            %s
-            }
-            """
-            % (
-                ','.join([f'${v}: Int!' for v in vars]),
-                query,
-            ),
+                    }
+                    ''',
+                    {'guild_id': ('Int!', guild_id)},
+                    'research_center_reward',
+                )
+                for guild_id in guild_ids
+            ],
+            prefix='guild_promise',
         )
+
+        return gqls.execute(self)
 
     def guild_messages(
         self,
