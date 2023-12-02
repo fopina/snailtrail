@@ -385,14 +385,17 @@ class CLI:
                         self.logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         # join last spot anyway (if --cheap-soon), even if not needing tickets
                         if not self.args.cheap_soon:
+                            _slow_snail(snail)
                             continue
                         # never join last spots under fee spike
                         if under_fee_spike:
+                            _slow_snail(snail)
                             continue
 
                         r = e.args[1]
                         if not r['payload']['size'] == 0:
                             # not cheap
+                            _slow_snail(snail)
                             continue
 
                         tx = self.client.rejoin_mission_races(r)
