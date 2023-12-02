@@ -341,6 +341,9 @@ class CLI:
             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=seconds)
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
+            # update "closest" if needed
+            if closest > self._snail_mission_cooldown[snail.id]:
+                closest = self._snail_mission_cooldown[snail.id]
 
         if self.args.fee_spike and self._fee_spike_start:
             under_fee_spike = self._now() - self._fee_spike_start < timedelta(minutes=self.args.fee_spike)
