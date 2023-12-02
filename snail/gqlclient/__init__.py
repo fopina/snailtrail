@@ -180,7 +180,7 @@ class Client(requests.Session):
             'getAllSnail',
         ).execute(self)['marketplace_promise']
 
-    def get_all_snails(self, offset: int = 0, filters={}, more_stats=False):
+    def get_all_snails(self, offset: int = 0, limit: int = 20, filters={}, more_stats=False):
         more_stats_query = (
             """
         more_stats(seasons: [1]) {
@@ -256,6 +256,7 @@ class Client(requests.Session):
             {
                 "filters": ('SnailFilters', filters),
                 "offset": ('Int', offset),
+                "limit": ('Int', limit),
             },
             'getAllSnail',
         ).execute(self)['snails_promise']
