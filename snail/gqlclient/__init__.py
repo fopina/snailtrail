@@ -71,9 +71,9 @@ class Client(requests.Session):
 
     def query(self, operation, variables, query, auth=None):
         if self.rate_limiter is not None:
-            delta = time.time() - self._last_query - self.rate_limiter
-            if delta < 0:
-                time.sleep(self.rate_limiter)
+            delta = time.time() - self._last_query
+            if delta < self.rate_limiter:
+                time.sleep(self.rate_limiter - delta)
         if auth:
             headers = {'auth': auth}
         else:
