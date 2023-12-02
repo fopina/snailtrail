@@ -336,17 +336,15 @@ class CLI:
             if s.stats['mission_tickets'] < self.args.minimum_tickets:
                 boosted.add(s.id)
 
-        # FIXME: why is slow snail unable to access "closest"?! even with global, gets not defined...
-        temp_closest = [closest]
-
         def _slow_snail(snail, seconds=90):
             # add snail to cooldown, use 90 for now - check future logs if they still get locked
             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=seconds)
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
             # update "closest" if needed
-            if temp_closest[0] is not None and temp_closest[0] > self._snail_mission_cooldown[snail.id]:
-                temp_closest[0] = self._snail_mission_cooldown[snail.id]
+            nonlocal closest
+            if closest is not None and closest > self._snail_mission_cooldown[snail.id]:
+                closest = self._snail_mission_cooldown[snail.id]
 
         if self.args.fee_spike and self._fee_spike_start:
             under_fee_spike = self._now() - self._fee_spike_start < timedelta(minutes=self.args.fee_spike)
@@ -476,10 +474,6 @@ class CLI:
         if queueable:
             self.logger.info(f'{len(queueable)} without matching race')
             return False, len(queueable)
-
-        # FIXME: this should not be needed once this temp_closest is also not needed...
-        if closest is not None and temp_closest[0] < closest:
-            closest = temp_closest[0]
         return True, closest
 
     def _balance(self, data=None):
