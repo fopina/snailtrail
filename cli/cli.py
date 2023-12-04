@@ -125,9 +125,9 @@ class CLI:
         return self.main_one is not False
 
     def load_bot_settings(self):
-        settings_file = getattr(self.args, 'settings', None)
-        if not settings_file:
+        if not self.args.data_dir:
             return
+        settings_file = self.args.data_dir / 'settings.json'
         try:
             settings = json.loads(settings_file.read_text())
         except FileNotFoundError:
@@ -137,11 +137,11 @@ class CLI:
             setattr(self.args, k, v)
 
     def save_bot_settings(self):
-        settings_file = getattr(self.args, 'settings', None)
-        if not settings_file:
+        if not self.args.data_dir:
             return
         if not self.notifier.settings:
             return
+        settings_file = self.args.data_dir / 'settings.json'
         data = {x.dest: getattr(self.args, x.dest) for x in self.notifier.settings}
         settings_file.write_text(json.dumps(data))
 
@@ -659,7 +659,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='Any snail with less tickets than this will only join on last spots',
     )
     @commands.argument(
-        '--settings', type=Path, help='File to save bot settings, most useful when changing settings via telegram'
+        '--data-dir', type=Path, help='Directory to persist data (settings changes over telegram, cache, etc)'
     )
     @commands.argument(
         '--cheap',

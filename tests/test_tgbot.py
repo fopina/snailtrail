@@ -127,7 +127,7 @@ class Test(TestCase):
                 'boost_wallet',
                 None,
                 None,
-                'settings',
+                'data_dir',
                 None,
                 None,
                 'balance_balance',

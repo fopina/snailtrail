@@ -3,6 +3,7 @@ import copy
 import io
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest import TestCase, mock
 
 import cli
@@ -19,9 +20,10 @@ TEST_WALLET_WALLET = types.Wallet.from_private_key(TEST_WALLET_PKEY)
 
 class Test(TestCase):
     def test_bot_settings(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            f = Path(tmp_dir) / 'settings.json'
             args = cli.build_parser().parse_args(
-                ['--notify', '123:a', '2', 'bot', '--settings', f.name, '-c'], config_file_contents=''
+                ['--notify', '123:a', '2', 'bot', '--data-dir', str(tmp_dir), '-c'], config_file_contents=''
             )
             c = cli.cli.CLI(cli.cli.Wallet('wallet1', 'pkey1'), 'http://localhost:99999', args, True)
             self.assertTrue(args.coefficent)
@@ -30,7 +32,7 @@ class Test(TestCase):
             c.save_bot_settings()
 
             args = cli.build_parser().parse_args(
-                ['--notify', '123:a', '2', 'bot', '--settings', f.name, '-c'], config_file_contents=''
+                ['--notify', '123:a', '2', 'bot', '--data-dir', str(tmp_dir), '-c'], config_file_contents=''
             )
             c = cli.cli.CLI(cli.cli.Wallet('wallet1', 'pkey1'), 'http://localhost:99999', args, True)
             self.assertTrue(args.coefficent)
