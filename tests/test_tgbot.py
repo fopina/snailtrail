@@ -3,22 +3,26 @@ from unittest import TestCase, mock
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.user import User
 
-from cli import tgbot
+from cli import build_parser, commands, tempconfigparser, tgbot
 
 
 class Test(TestCase):
     def setUp(self) -> None:
         self.user = User(999999999, 'John', False, 'Valium', 'jval')
+        mparser = tempconfigparser.ArgumentParser()
+        parsers = mparser.add_subparsers(title='cmd', dest='cmd')
+        parser = parsers.add_parser('bot')
+        parser.add_argument('--css-minimum', type=int, help='css')
+        parser.add_argument('--wtv', action='store_true', help='Whatever')
+        parser.add_argument('--css-fee', nargs=2, type=int, help='Whatever Other')
+        args = mparser.parse_args(['bot', '--css-minimum', '0'], config_file_contents='')
         self.cli = mock.MagicMock(
-            args=mock.MagicMock(wtv=False, css_minimum=0, css_fee=None),
+            args=args,
             owner='0x2fff',
         )
         self.cli.name = '0x2f'
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
-        self.bot.settings = (
-            [mock.MagicMock(dest='wtv', help='Whatever')],
-            [mock.MagicMock(dest='wtv_other', help='Whatever Other')],
-        )
+        self.bot.settings = commands.StoreBotConfig.settings_from_parser(mparser)
         self.bot.register_cli(self.cli)
         self.update = mock.MagicMock(effective_user=self.user)
         self.update.message.chat.id = self.user.id
@@ -61,7 +65,9 @@ class Test(TestCase):
         from cli import build_parser, commands
 
         # load all the real settings
-        self.bot.settings = commands.StoreBotConfig.settings_from_parser(build_parser())
+        p = build_parser()
+        self.cli.args = p.parse_args(['bot', '--css-minimum', '0'])
+        self.bot.settings = commands.StoreBotConfig.settings_from_parser(p)
         self.update.callback_query = mock.MagicMock(data='toggle __help')
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
@@ -142,7 +148,10 @@ class Test(TestCase):
         self.bot.cmd_settings(self.update, self.context)
         expected_markup = InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv')],
+                [
+                    InlineKeyboardButton('🔧 [0] css_minimum', callback_data=f'toggle css_minimum'),
+                    InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv'),
+                ],
                 [
                     InlineKeyboardButton(f'📇 Show all', callback_data='toggle __all'),
                     InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
@@ -157,7 +166,7 @@ class Test(TestCase):
         self.bot.cmd_settings(self.update, self.context)
         self.update.message.reply_markdown.assert_called_once_with('No settings available...')
 
-    def test_handle_buttons_toggle(self):
+    def test_handle_buttons_toggle_nothing(self):
         self.update.callback_query = mock.MagicMock(data='toggle')
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
@@ -165,6 +174,7 @@ class Test(TestCase):
             text='Did *nothing*, my favorite action', parse_mode='Markdown'
         )
 
+    def test_handle_buttons_toggle_boolean(self):
         self.assertEqual(self.cli.args.wtv, False)
         expected_markup = InlineKeyboardMarkup(
             [
@@ -185,7 +195,6 @@ class Test(TestCase):
         )
         self.assertEqual(self.cli.args.wtv, False)
 
-        self.assertEqual(self.cli.args.wtv, False)
         self.update.callback_query = mock.MagicMock(data='toggle it wtv')
         self.update.callback_query.message.chat.id = self.user.id
         self.bot.handle_buttons(self.update, self.context)
@@ -195,19 +204,23 @@ class Test(TestCase):
         )
         self.assertEqual(self.cli.args.wtv, True)
 
+    def test_handle_buttons_toggle_help(self):
         self.update.callback_query = mock.MagicMock(data='toggle __help')
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`wtv` 🟢 Whatever', parse_mode='Markdown'
+            text='''\
+`css_minimum` \\[0] css
+`wtv` 🔴 Whatever''',
+            parse_mode='Markdown',
         )
 
         self.update.callback_query = mock.MagicMock(data='toggle __all')
-        self.cli.args.wtv_other = 2
+        self.cli.args.css_fee = (2, 2)
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`wtv_other` = `2`\nWhatever Other\n', parse_mode='Markdown'
+            text='`css_fee` = `(2, 2)`\nWhatever Other\n', parse_mode='Markdown'
         )
 
     def test_claim(self):
