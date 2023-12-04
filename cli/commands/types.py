@@ -44,6 +44,21 @@ class AppendWalletAction(configargparse.argparse._AppendAction):
         return super().__call__(parser, namespace, w, option_string)
 
 
+class NoRentalStoreTrueAction(configargparse.argparse._StoreTrueAction):
+    IS_RENTAL = False
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        if self.IS_RENTAL:
+            raise configargparse.ArgumentError(self, 'cannot be used with --rental')
+        return super().__call__(parser, namespace, value, option_string)
+
+
+class SetRentalAction(configargparse.argparse._StoreTrueAction):
+    def __call__(self, parser, namespace, value, option_string=None):
+        NoRentalStoreTrueAction.IS_RENTAL = True
+        return super().__call__(parser, namespace, value, option_string)
+
+
 class DefaultOption(str):
     pass
 

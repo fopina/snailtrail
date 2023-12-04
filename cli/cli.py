@@ -726,7 +726,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--level-ups-to-15', action='store_true', help='Notify when a snail levels up (during missions) - until lv15!'
     )
-    @commands.argument('--tournament-market', action='store_true', help='Monitor market for snails for tournament')
+    @commands.argument(
+        '--tournament-market', action=commands.NoRentalStoreTrueAction, help='Monitor market for snails for tournament'
+    )
     @commands.argument(
         '--balance-balance',
         type=float,
