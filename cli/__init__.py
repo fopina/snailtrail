@@ -14,14 +14,12 @@ from . import commands, multicli, tempconfigparser, tgbot, types
 
 DEFAULT_GOTLS_PATH = Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy'
 
-configargparse.ArgParser = tempconfigparser.ArgumentParser
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s][%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def build_parser():
-    parser = configargparse.ArgParser(
+    parser = tempconfigparser.ArgumentParser(
         prog=__name__,
         auto_env_var_prefix='snailbot_',
         default_config_files=['~/.snailbot.conf'],
