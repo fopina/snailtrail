@@ -1167,13 +1167,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return 120
         except Exception as e:
             self.logger.exception('crash, waiting 2min: %s', e)
-            self._notify(
-                f'''bot unknown error, check logs
+            if self.args.rental:
+                self._notify('bot unknown error, check logs')
+            else:
+                self._notify(
+                    f'''bot unknown error, check logs
 ```
 {tgbot.escape_markdown(str(e))}
 ```
 '''
-            )
+                )
             return 120
 
     @commands.argument('-j', '--join', action=commands.StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
