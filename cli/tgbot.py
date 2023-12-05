@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import configargparse
-from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update, constants
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update, constants
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
@@ -251,7 +251,7 @@ class Notifier:
                     parse_mode='Markdown',
                 )
                 query.message.reply_markdown(
-                    text=f'New value for `{opts}`.\nUse /cancel to ignore, /empty to set it to None and multiple lines if it is a multiple argument option.',
+                    text=f'New value for `{opts}`.\nUse `cancel` to ignore, `empty` to set it to None and multiple lines if it is a multiple argument option.',
                     reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
                     reply_to_message_id=query.message.message_id,
                 )
@@ -554,12 +554,19 @@ class Notifier:
         else:
             return self._cmd_invalid(update, context)
 
-        if update.message.text.lower() in ('cancel', '/cancel'):
+        if update.message.text.lower() == 'cancel':
+            self.updater.bot.send_message(
+                update.message.chat.id,
+                text='👍🏻',
+                reply_to_message_id=update.message.message_id,
+                reply_markup=ReplyKeyboardRemove(),
+                parse_mode='Markdown',
+            )
             return
 
         args = self.any_cli.args
         try:
-            if update.message.text.lower() in ('empty', '/empty'):
+            if update.message.text.lower() == 'empty':
                 nv = None
                 setattr(args, keyword, nv)
             else:
@@ -588,6 +595,7 @@ class Notifier:
             update.message.chat.id,
             text=msg,
             reply_to_message_id=update.message.message_id,
+            reply_markup=ReplyKeyboardRemove(),
             parse_mode='Markdown',
         )
         if update.message.chat.id != self.chat_id:
