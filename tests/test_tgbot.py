@@ -242,7 +242,7 @@ class Test(TestCase):
         self.update.message.message_id = 123
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
-            999999999, text="Toggled *wtv_list* to *[2.0]*", reply_to_message_id=123, parse_mode='Markdown'
+            999999999, text="Toggled *wtv_list* to *[2.0]*", reply_to_message_id=123, reply_markup=mock.ANY, parse_mode='Markdown'
         )
         self.assertEqual(self.cli.args.wtv_list, [2])
 
@@ -255,20 +255,20 @@ class Test(TestCase):
         self.update.message.message_id = 123
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
-            999999999, text="Toggled *wtv_list* to *[3.0, 4.0]*", reply_to_message_id=123, parse_mode='Markdown'
+            999999999, text="Toggled *wtv_list* to *[3.0, 4.0]*", reply_to_message_id=123, reply_markup=mock.ANY, parse_mode='Markdown'
         )
         self.assertEqual(self.cli.args.wtv_list, [3, 4])
 
         self.update.message = mock.MagicMock(
             reply_to_message=mock.MagicMock(text='wtv_list'),
-            text='/empty',
+            text='empty',
         )
         self.bot.updater.bot.send_message.reset_mock()
         self.update.message.chat.id = self.user.id
         self.update.message.message_id = 123
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
-            999999999, text='Toggled *wtv_list* to *None*', reply_to_message_id=123, parse_mode='Markdown'
+            999999999, text='Toggled *wtv_list* to *None*', reply_to_message_id=123, reply_markup=mock.ANY, parse_mode='Markdown'
         )
         self.assertEqual(self.cli.args.wtv_list, None)
 
@@ -284,6 +284,7 @@ class Test(TestCase):
             999999999,
             text="`argument --wtv-list: invalid float value: 'a'`",
             reply_to_message_id=123,
+            reply_markup=mock.ANY,
             parse_mode='Markdown',
         )
         self.assertEqual(self.cli.args.wtv_list, None)
@@ -306,20 +307,20 @@ class Test(TestCase):
         self.update.message.message_id = 123
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
-            999999999, text='Toggled *choose* to *2*', reply_to_message_id=123, parse_mode='Markdown'
+            999999999, text='Toggled *choose* to *2*', reply_to_message_id=123, reply_markup=mock.ANY, parse_mode='Markdown'
         )
         self.assertEqual(self.cli.args.choose, 2)
 
         self.update.message = mock.MagicMock(
             reply_to_message=mock.MagicMock(text='choose'),
-            text='/empty',
+            text='empty',
         )
         self.bot.updater.bot.send_message.reset_mock()
         self.update.message.chat.id = self.user.id
         self.update.message.message_id = 123
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
-            999999999, text='Toggled *choose* to *None*', reply_to_message_id=123, parse_mode='Markdown'
+            999999999, text='Toggled *choose* to *None*', reply_to_message_id=123, reply_markup=mock.ANY, parse_mode='Markdown'
         )
         self.assertEqual(self.cli.args.choose, None)
 
@@ -335,6 +336,7 @@ class Test(TestCase):
             999999999,
             text='`argument --choose: invalid choice: 8 (choose from 1, 2)`',
             reply_to_message_id=123,
+            reply_markup=mock.ANY,
             parse_mode='Markdown',
         )
         self.assertEqual(self.cli.args.choose, None)
