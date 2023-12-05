@@ -3,7 +3,7 @@ from unittest import TestCase, mock
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.user import User
 
-from cli import build_parser, commands, tempconfigparser, tgbot
+from cli import tempconfigparser, tgbot
 
 
 class Test(TestCase):
@@ -15,14 +15,18 @@ class Test(TestCase):
         parser.add_argument('--css-minimum', type=int, help='css')
         parser.add_argument('--wtv', action='store_true', help='Whatever')
         parser.add_argument('--css-fee', nargs=2, type=int, help='Whatever Other')
+        parser.add_argument('--choose', type=int, choices=(1, 2), help='Whatever Other')
+        parser.add_argument('--wtv-list', type=float, action='append', help='Whatever List')
         args = mparser.parse_args(['bot', '--css-minimum', '0'], config_file_contents='')
+        self.main_parser = mparser
+        self.bot_parser = parser
         self.cli = mock.MagicMock(
             args=args,
             owner='0x2fff',
         )
         self.cli.name = '0x2f'
         self.bot = tgbot.Notifier('999999999:abcdef/test', self.user.id)
-        self.bot.settings = commands.StoreBotConfig.settings_from_parser(mparser)
+        self.bot.cli_parser = mparser
         self.bot.register_cli(self.cli)
         self.update = mock.MagicMock(effective_user=self.user)
         self.update.message.chat.id = self.user.id
@@ -62,12 +66,12 @@ class Test(TestCase):
         )
 
     def test_exposed_settings(self):
-        from cli import build_parser, commands
+        from cli import build_parser
 
         # load all the real settings
         p = build_parser()
         self.cli.args = p.parse_args(['bot', '--css-minimum', '0'])
-        self.bot.settings = commands.StoreBotConfig.settings_from_parser(p)
+        self.bot.cli_parser = p
         self.update.callback_query = mock.MagicMock(data='toggle __help')
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
@@ -153,13 +157,20 @@ class Test(TestCase):
                     InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv'),
                 ],
                 [
+                    InlineKeyboardButton('🔧 ❌ choose', callback_data=f'toggle choose'),
+                    InlineKeyboardButton('🔧 ❌ wtv_list', callback_data=f'toggle wtv_list'),
+                ],
+                [
                     InlineKeyboardButton(f'📇 Show all', callback_data='toggle __all'),
                     InlineKeyboardButton(f'❌ Niente', callback_data='toggle'),
                     InlineKeyboardButton(f'❔ Help', callback_data='toggle __help'),
                 ],
             ]
         )
-        self.update.message.reply_markdown.assert_called_once_with('Toggle settings', reply_markup=expected_markup)
+        self.update.message.reply_markdown.assert_called_once_with('Toggle settings', reply_markup=mock.ANY)
+        self.assertEqual(
+            self.update.message.reply_markdown.mock_calls[0][2]['reply_markup'].to_dict(), expected_markup.to_dict()
+        )
 
         self.update.reset_mock()
         self.bot._settings_list = None
@@ -204,6 +215,130 @@ class Test(TestCase):
         )
         self.assertEqual(self.cli.args.wtv, True)
 
+        self.update.callback_query.answer.reset_mock()
+        self.update.callback_query.edit_message_text.reset_mock()
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='Toggled *wtv* to *False*', parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv, False)
+
+    def test_handle_buttons_toggle_append_action(self):
+        self.bot.updater.bot.send_message = mock.MagicMock()
+        self.update.callback_query = mock.MagicMock(data='toggle wtv_list')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='`wtv_list`\nWhatever List\n```\n\n```', reply_markup=None, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv_list, None)
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='wtv_list'),
+            text='2.0',
+        )
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999, text="Toggled *wtv_list* to *[2.0]*", reply_to_message_id=123, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv_list, [2])
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='wtv_list'),
+            text='3\n4',
+        )
+        self.bot.updater.bot.send_message.reset_mock()
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999, text="Toggled *wtv_list* to *[3.0, 4.0]*", reply_to_message_id=123, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv_list, [3, 4])
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='wtv_list'),
+            text='/empty',
+        )
+        self.bot.updater.bot.send_message.reset_mock()
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999, text='Toggled *wtv_list* to *None*', reply_to_message_id=123, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.wtv_list, None)
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='wtv_list'),
+            text='a',
+        )
+        self.bot.updater.bot.send_message.reset_mock()
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999,
+            text="`argument --wtv-list: invalid float value: 'a'`",
+            reply_to_message_id=123,
+            parse_mode='Markdown',
+        )
+        self.assertEqual(self.cli.args.wtv_list, None)
+
+    def test_handle_buttons_toggle_choices(self):
+        self.bot.updater.bot.send_message = mock.MagicMock()
+        self.update.callback_query = mock.MagicMock(data='toggle choose')
+        self.bot.handle_buttons(self.update, self.context)
+        self.update.callback_query.answer.assert_called_once_with()
+        self.update.callback_query.edit_message_text.assert_called_once_with(
+            text='`choose`\nWhatever Other\n```\nNone\n```', reply_markup=None, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.choose, None)
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='choose'),
+            text='2',
+        )
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999, text='Toggled *choose* to *2*', reply_to_message_id=123, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.choose, 2)
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='choose'),
+            text='/empty',
+        )
+        self.bot.updater.bot.send_message.reset_mock()
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999, text='Toggled *choose* to *None*', reply_to_message_id=123, parse_mode='Markdown'
+        )
+        self.assertEqual(self.cli.args.choose, None)
+
+        self.update.message = mock.MagicMock(
+            reply_to_message=mock.MagicMock(text='choose'),
+            text='8',
+        )
+        self.bot.updater.bot.send_message.reset_mock()
+        self.update.message.chat.id = self.user.id
+        self.update.message.message_id = 123
+        self.bot.cmd_message(self.update, self.context)
+        self.bot.updater.bot.send_message.assert_called_once_with(
+            999999999,
+            text='`argument --choose: invalid choice: 8 (choose from 1, 2)`',
+            reply_to_message_id=123,
+            parse_mode='Markdown',
+        )
+        self.assertEqual(self.cli.args.choose, None)
+
     def test_handle_buttons_toggle_help(self):
         self.update.callback_query = mock.MagicMock(data='toggle __help')
         self.bot.handle_buttons(self.update, self.context)
@@ -211,7 +346,9 @@ class Test(TestCase):
         self.update.callback_query.edit_message_text.assert_called_once_with(
             text='''\
 `css_minimum` \\[0] css
-`wtv` 🔴 Whatever''',
+`wtv` 🔴 Whatever
+`choose` ❌ Whatever Other
+`wtv_list` ❌ Whatever List''',
             parse_mode='Markdown',
         )
 

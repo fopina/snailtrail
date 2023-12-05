@@ -127,25 +127,9 @@ class TransferParamsAction(configargparse.argparse.Action):
 
 
 class StoreBotConfig(configargparse.argparse._StoreAction):
-    @staticmethod
-    def settings_from_parser(parser):
-        settings_rw = []
-        settings_ro = []
-
-        for x in parser._subparsers._actions[-1].choices['bot']._actions:
-            if isinstance(x, configargparse.argparse._StoreTrueAction) or (
-                isinstance(x, (configargparse.argparse._StoreAction, configargparse.argparse._AppendAction))
-                and x.type in (float, int)
-                and x.nargs in (None, 1)
-            ):
-                settings_rw.append(x)
-            elif not isinstance(x, configargparse.argparse._HelpAction):
-                settings_ro.append(x)
-        return settings_rw, settings_ro
-
     def __call__(self, parser, namespace, values, option_string=None):
         from .. import tgbot
 
         bot = tgbot.Notifier(FileOrString(values[0]), FileOrInt(values[1]), None)
-        bot.settings = self.settings_from_parser(parser)
+        bot.cli_parser = parser
         super().__call__(parser, namespace, bot, option_string)

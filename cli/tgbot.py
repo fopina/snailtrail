@@ -62,6 +62,7 @@ class Notifier:
         self._sent_messages = set()
         self._settings_list = []
         self._read_only_settings = None
+        self._parser = None
         if owner_chat_id is None:
             self.owner_chat_id = {self.chat_id} if self.chat_id else None
         else:
@@ -100,12 +101,6 @@ class Notifier:
     def settings(self):
         return self._settings_list
 
-    @settings.setter
-    def settings(self, value):
-        rw, ro = value
-        self._settings_list = rw
-        self._read_only_settings = ro
-
     @property
     def owner_chat_id(self):
         return self._owner_chat_id
@@ -140,6 +135,29 @@ class Notifier:
     @property
     def multicli(self) -> 'multicli.CLI':
         return self.any_cli.multicli
+
+    @property
+    def cli_parser(self):
+        return self._parser
+
+    @cli_parser.setter
+    def cli_parser(self, parser):
+        self._parser = parser
+        settings_rw = []
+        settings_ro = []
+
+        for x in parser._subparsers._actions[-1].choices['bot']._actions:
+            if isinstance(x, configargparse.argparse._StoreTrueAction) or (
+                isinstance(x, (configargparse.argparse._StoreAction, configargparse.argparse._AppendAction))
+                and x.type in (float, int)
+                and x.nargs in (None, 1)
+            ):
+                settings_rw.append(x)
+            elif not isinstance(x, configargparse.argparse._HelpAction):
+                settings_ro.append(x)
+
+        self._settings_list = settings_rw
+        self._read_only_settings = settings_ro
 
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.is_multi_cli:
@@ -216,13 +234,13 @@ class Notifier:
             query.edit_message_text(text=f"Unknown setting: {opts}")
             return
 
-        if preview:
-            for setting in self._settings_list:
-                if setting.dest == opts:
-                    break
-            else:
-                raise Exception('invalid setting', opts)
+        for setting in self._settings_list:
+            if setting.dest == opts:
+                break
+        else:
+            raise Exception('invalid setting', opts)
 
+        if preview:
             ov = getattr(_cli.args, opts)
             if setting.type in (int, float):
                 if isinstance(setting, (configargparse.argparse._AppendAction)):
@@ -233,7 +251,7 @@ class Notifier:
                     parse_mode='Markdown',
                 )
                 query.message.reply_markdown(
-                    text=f'New value for `{opts}`.\nUse `cancel` to ignore, `empty` to set it to None and multiple lines if it is a multiple argument option.',
+                    text=f'New value for `{opts}`.\nUse /cancel to ignore, /empty to set it to None and multiple lines if it is a multiple argument option.',
                     reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
                     reply_to_message_id=query.message.message_id,
                 )
@@ -253,14 +271,21 @@ class Notifier:
                     parse_mode='Markdown',
                 )
         else:
-            ov = getattr(_cli.args, opts)
-            setattr(_cli.args, opts, not ov)
-            msg = f"Toggled *{opts}* to *{not ov}*"
-            query.edit_message_text(text=msg, parse_mode='Markdown')
-            if query.message.chat.id != self.chat_id:
-                # also notify main chat
-                self.notify(msg)
-            _cli.save_bot_settings()
+            if isinstance(setting, configargparse.argparse._StoreTrueAction):
+                ov = getattr(_cli.args, opts)
+                if ov:
+                    setattr(_cli.args, opts, False)
+                else:
+                    # use action trigger
+                    setting(self.cli_parser, _cli.args, [])
+                msg = f"Toggled *{opts}* to *{not ov}*"
+                query.edit_message_text(text=msg, parse_mode='Markdown')
+                if query.message.chat.id != self.chat_id:
+                    # also notify main chat
+                    self.notify(msg)
+                _cli.save_bot_settings()
+            else:
+                raise Exception('wtf?')
 
     def handle_buttons_joinrace(self, opts: str, update: Update, context: CallbackContext) -> None:
         """Process join race buttons"""
@@ -529,22 +554,35 @@ class Notifier:
         else:
             return self._cmd_invalid(update, context)
 
-        if update.message.text.lower() == 'cancel':
+        if update.message.text.lower() in ('cancel', '/cancel'):
             return
 
         args = self.any_cli.args
         try:
-            if update.message.text.lower() == 'empty':
+            if update.message.text.lower() in ('empty', '/empty'):
                 nv = None
-            elif isinstance(setting, (configargparse.argparse._AppendAction)):
-                nv = update.message.text.split('\n')
-                nv = list(map(setting.type, nv))
+                setattr(args, keyword, nv)
             else:
-                nv = setting.type(update.message.text)
-            setattr(args, keyword, nv)
+                if isinstance(setting, (configargparse.argparse._AppendAction)):
+                    nv = update.message.text.split('\n')
+                    values = [self.cli_parser._get_values(setting, [value]) for value in nv]
+                    ov = getattr(args, keyword)
+                    setattr(args, keyword, None)
+                    try:
+                        for value in values:
+                            setting(self.cli_parser, args, value)
+                    except:
+                        setattr(args, keyword, ov)
+                        raise
+                    nv = values
+                else:
+                    nv = update.message.text
+                    values = self.cli_parser._get_values(setting, [nv])
+                    setting(self.cli_parser, args, values)
+                    nv = values
             msg = f"Toggled *{keyword}* to *{nv}*"
-        except ValueError:
-            msg = f'`{update.message.text}` is not valid value for `{keyword}`'
+        except configargparse.ArgumentError as e:
+            msg = f'`{e}`'
 
         self.updater.bot.send_message(
             update.message.chat.id,

@@ -4,6 +4,7 @@ import atexit
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import configargparse
 from colorama import Fore
@@ -12,13 +13,16 @@ from snail import proxy
 
 from . import commands, multicli, tempconfigparser, tgbot, types
 
+if TYPE_CHECKING:
+    import argparse
+
 DEFAULT_GOTLS_PATH = Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy'
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s][%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def build_parser():
+def build_parser() -> 'argparse.ArgumentParser':
     parser = tempconfigparser.ArgumentParser(
         prog=__name__,
         auto_env_var_prefix='snailbot_',
