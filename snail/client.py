@@ -238,7 +238,7 @@ class Client:
             gql_payload['payload']['timeout'],
             gql_payload['payload']['salt'],
             gql_payload['signature'],
-            priority_fee=self._priority_fee,
+            priority_fee=self.mission_priority_fee,
             **kwargs,
         )
 
