@@ -80,7 +80,6 @@ class CLI:
         self._notify_marketplace = {}
         self._notify_coefficent = None
         self._notify_burn_coefficent = None
-        self._notify_auto_claim = None
         self._notify_tournament = UNDEF
         self._next_mission = False, -1
         self._snail_mission_cooldown = {}
@@ -1054,7 +1053,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._notify_tournament = (_next, data, old_next)
 
     def _bot_autoclaim(self):
-        if self._notify_auto_claim is not None and self._notify_auto_claim > datetime.now():
+        if self.database.notify_auto_claim is not None and self.database.notify_auto_claim > datetime.now():
             # refresh only once every 24h
             return
 
@@ -1097,7 +1096,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
             self._notify('\n'.join(msg))
 
-        self._notify_auto_claim = datetime.now() + timedelta(hours=24)
+        self.database.notify_auto_claim = datetime.now() + timedelta(hours=24)
+        self.database.save()
 
     def cmd_bot_tick(self):
         try:

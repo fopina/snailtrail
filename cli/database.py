@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
+from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, AwareDatetime
 
 
 class WalletDB(BaseModel):
     slime_won: float = 0
+    notify_auto_claim: Optional[AwareDatetime] = None
+
     global_db: 'GlobalDB' = Field(default=None, exclude=True)
 
     def save(self) -> bool:
