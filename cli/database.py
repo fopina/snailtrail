@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from pydantic import BaseModel, Field, PositiveFloat, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class WalletDB(BaseModel):
-    slime_won: PositiveFloat = 0
+    slime_won: float = 0
     global_db: 'GlobalDB' = Field(default=None, exclude=True)
 
     def save(self) -> bool:
