@@ -14,6 +14,7 @@ from tqdm import tqdm
 from snail.gqlclient.types import Adaptation, Snail
 
 from . import cli, commands, utils
+from .database import GlobalDB
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +32,27 @@ class MultiCLI:
     ):
         self.clis: list[cli.CLI] = []
         self.args = args
+        # --bot specific in global init... ugly...
+        bot_data_dir = getattr(args, 'data_dir', None)
+        if bot_data_dir:
+            self.database = GlobalDB.load_from_file(self.args.data_dir / 'db.json')
+        else:
+            self.database = GlobalDB()
 
         first_one = True if len(wallets) > 1 else None
         for w in wallets:
             if w is None:
                 continue
-            c = cli.CLI(w, proxy_url, args, main_one=first_one, graphql_endpoint=args.graphql_endpoint, multicli=self)
+            wallet_db = self.database.add_wallet(w.address)
+            c = cli.CLI(
+                w,
+                proxy_url,
+                args,
+                main_one=first_one,
+                graphql_endpoint=args.graphql_endpoint,
+                multicli=self,
+                database=wallet_db,
+            )
             first_one = False
             args.notify.register_cli(c)
             self.clis.append(c)

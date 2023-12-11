@@ -18,6 +18,7 @@ from snail.gqlclient.types import Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
 from . import commands, tgbot
+from .database import WalletDB
 from .helpers import SetQueue
 from .types import RaceJoin, Wallet
 from .utils import CachedSnailHistory
@@ -43,6 +44,7 @@ class CLI:
         graphql_endpoint: Optional[str] = None,
         profile: dict = None,
         multicli: any = None,
+        database: WalletDB = None,
     ):
         """
         :param wallet: Wallet of the owner, containing address and (optionally) private key
@@ -56,6 +58,7 @@ class CLI:
         self.main_one = main_one
         self._profile = profile
         self.multicli = multicli
+        self.database = database or WalletDB()
         self.logger = logging.getLogger(f'{__name__}.{self.masked_wallet}')
         self.client = client.Client(
             proxy=proxy_url,
