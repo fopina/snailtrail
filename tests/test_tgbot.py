@@ -59,6 +59,7 @@ class Test(TestCase):
 /boosted - List currently boosted snails
 /stats - My snails stats
 /fee - Display current avalanche fees
+/botstats - Display current bot statistics
 /balancebalance - Distribute AVAX balance from richest wallet to the others
 /reloadsnails - Reset snails cache (and reload wallet guilds)
 /settings - Toggle bot settings

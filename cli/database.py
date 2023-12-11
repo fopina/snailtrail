@@ -50,3 +50,9 @@ class GlobalDB(BaseModel):
             data = json.loads(raw_data)
         data['save_file'] = filename
         return cls(**data)
+
+    def total_slime_won(self) -> float:
+        total = 0.0
+        for w in self.wallets.values():
+            total += w.slime_won
+        return total

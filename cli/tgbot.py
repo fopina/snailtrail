@@ -88,6 +88,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("boosted", self.cmd_boosted))
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("fee", self.cmd_fee))
+            dispatcher.add_handler(CommandHandler("botstats", self.cmd_bot_stats))
             dispatcher.add_handler(CommandHandler("balancebalance", self.cmd_balance_balance))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
@@ -726,6 +727,19 @@ class Notifier:
 Configured max (mission) fee: {mission_fee}
 Current median fee: {median}
 Median is {pct:.2f}% of your base fee
+'''
+        )
+
+    @bot_auth
+    def cmd_bot_stats(self, update: Update, context: CallbackContext) -> None:
+        """
+        Display current bot statistics
+        """
+        update.message.reply_chat_action(constants.CHATACTION_TYPING)
+        total = self.any_cli.database.global_db.total_slime_won()
+        update.message.reply_markdown(
+            f'''\
+Total slime won in missions: **{total}**
 '''
         )
 
