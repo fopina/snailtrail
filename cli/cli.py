@@ -1788,6 +1788,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         else:
                             reward = 0
                         msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
+                        if race.is_mission:
+                            self.database.slime_won += reward
+                            self.database.save()
                     if race.is_competitive and self.args.race_stats:
                         self._snail_history.update(snail, race)
                         msg += ' ' + self.race_stats_text(snail, race)
