@@ -7,18 +7,16 @@ RUN apt update \
 
 ADD requirements.txt /
 
-RUN --mount=type=cache,target=/wheels \
-    cp /requirements.txt /wheels \
- && pip wheel -r /requirements.txt --wheel-dir=/wheels \
- && rm -fr /root/.cache/pip/
-
+WORKDIR /wheels
+RUN cp /requirements.txt /wheels
+RUN pip wheel -r /requirements.txt --wheel-dir=/wheels
 
 FROM python:3.9-slim
 
 # crazy noop to force buildkit to build previous stage
 COPY --from=builder /etc/passwd /etc/passwd
 
-RUN --mount=type=cache,target=/wheels \
+RUN --mount=type=bind,from=builder,source=/wheels,target=/wheels \
     pip install --find-links=/wheels -r /wheels/requirements.txt \
  && rm -fr /root/.cache/pip/
 
