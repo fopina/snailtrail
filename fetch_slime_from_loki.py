@@ -9,6 +9,7 @@ def main():
     p.add_argument('username')
     p.add_argument('password')
     p.add_argument('service_name')
+    p.add_argument('--stop', type=int)
     args = p.parse_args()
 
     patt = re.compile(r'for Treasury Run, reward (.*?)"')
@@ -33,6 +34,9 @@ def main():
         for e in r.json()['data']['result']:
             for e2 in e['values']:
                 ts = int(e2[0])
+                if args.stop and ts <= args.stop:
+                    print('STOP')
+                    return
                 if pend and ts >= pend:
                     continue
                 if not first:
