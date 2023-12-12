@@ -74,8 +74,6 @@ class CLI:
         if graphql_endpoint:
             self.client.gql.url = graphql_endpoint
         self.notifier: tgbot.Notifier = args.notify
-        self._notified_races = SetQueue(capacity=100)
-        self._notified_races_over = SetQueue(capacity=100)
         self._notify_mission_data = None
         self._notify_marketplace = {}
         self._notify_coefficent = None
@@ -1698,11 +1696,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return '`' + '.'.join(map(str, self._snail_history.get(snail)[1][race.distance])) + '`'
 
     def find_races(self, check_notified=True):
-        first_run = not self._notified_races and not self.args.first_run_over
+        first_run = not self.database.notified_races and not self.args.first_run_over
         for league in client.League:
             _, races = self.find_races_in_league(league)
             for race in races:
-                if check_notified and race.id in self._notified_races:
+                if check_notified and race.id in self.database.notified_races:
                     # notify only once...
                     continue
                 if self.args.race_price and int(race.race_type) > self.args.race_price:
@@ -1751,15 +1749,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                             ]
                         self.logger.info(msg)
                         self._notify(msg, actions=join_actions)
-                    self._notified_races.add(race['id'])
+                    self.database.notified_races.add(race['id'])
+                    self.database.save()
 
     def find_races_over(self):
-        first_run = not self._notified_races_over and not self.args.first_run_over
+        first_run = not self.database.notified_races_over and not self.args.first_run_over
         for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
-            if race['id'] in self._notified_races_over:
+            if race['id'] in self.database.notified_races_over:
                 # notify only once...
                 continue
-            self._notified_races_over.add(race['id'])
+            self.database.notified_races_over.add(race['id'])
+            self.database.save()
 
             if first_run:
                 # do not log or notify anything on "first run"
@@ -1806,9 +1806,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 msg = f"⁉️ {snail.name_id} in {race.track}, for {race.distance}"
                 self.logger.info(msg)
                 self._notify(msg)
-        if first_run and not self._notified_races_over:
+        if first_run and not self.database.notified_races_over:
             # HACK ALERT: add random value just to make sure next run is not "first_run"
-            self._notified_races_over.add(1)
+            self.database.notified_races_over.add(1)
 
     def _open_races(self):
         for league in client.League:

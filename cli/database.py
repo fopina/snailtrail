@@ -1,46 +1,33 @@
-import json
 from pathlib import Path
 from typing import Optional
 
-from pydantic import AwareDatetime, BaseModel, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, BeforeValidator, Field, model_validator
+from typing_extensions import Annotated
+
+from .helpers import DBPersistMixin, SetQueue
 
 
-class PersistMixin:
-    save_file: Path = Field(default=None, exclude=True)
-
-    @classmethod
-    def load_from_file(cls, filename: Path):
-        if not filename.exists():
-            # all good, create file whenever save is called
-            return cls(save_file=filename)
-        raw_data = filename.read_text()
-        if not raw_data:
-            # empty file is also ok
-            data = {}
-        else:
-            data = json.loads(raw_data)
-        data['save_file'] = filename
-        return cls(**data)
-
-    def save(self, to: Path = None) -> bool:
-        if to is None:
-            to = self.save_file
-        if to is None:
-            return False
-        to.write_text(self.model_dump_json())
-        return True
+def dictToSetQueue(x):
+    return SetQueue(x, capacity=100)
 
 
-class WalletDB(BaseModel, PersistMixin):
+SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue)]
+
+
+class WalletDB(BaseModel, DBPersistMixin):
+    class Config:
+        arbitrary_types_allowed = True
+
     slime_won: float = 0
     notify_auto_claim: Optional[AwareDatetime] = None
+    notified_races: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
+    notified_races_over: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
 
     global_db: 'GlobalDB' = Field(default=None, exclude=True)
 
 
-class GlobalDB(BaseModel, PersistMixin):
+class GlobalDB(BaseModel, DBPersistMixin):
     wallets: dict[str, WalletDB] = Field(exclude=True, default={})
-    save_file: Path = Field(default=None, exclude=True)
 
     @model_validator(mode='after')
     def add_db_to_wallets(self) -> 'GlobalDB':
