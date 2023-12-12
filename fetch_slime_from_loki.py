@@ -18,39 +18,44 @@ def main():
     pend = None
     total = 0
     first = None
-    while True:
-        print('Total', total, 'Next', end)
-        r = requests.post(
-            f'https://{args.hostname}/loki/api/v1/query_range',
-            auth=(args.username, args.password),
-            data={
-                'query': f'{{source="docker",service="{args.service_name}"}} |= "reward"',
-                'limit': 5000,
-                'end': end,
-                'since': '10d',
-            }
-        )
-        r.raise_for_status()
-        for e in r.json()['data']['result']:
-            for e2 in e['values']:
-                ts = int(e2[0])
-                if args.stop and ts <= args.stop:
-                    print('STOP')
-                    return
-                if pend and ts >= pend:
-                    continue
-                if not first:
-                    first = ts
-                    print('FIRST', first)
-                m = patt.findall(e2[1])
-                if not m:
-                    print('WHAT', e2)
-                    continue
-                total += float(m[0])
-                end = ts
-        if pend == end:
-            break
-        pend = end
+    try:
+        while True:
+            print('Total', total, 'Next', end)
+            r = requests.post(
+                f'https://{args.hostname}/loki/api/v1/query_range',
+                auth=(args.username, args.password),
+                data={
+                    'query': f'{{source="docker",service="{args.service_name}"}} |= "reward"',
+                    'limit': 5000,
+                    'end': end,
+                    'since': '10d',
+                }
+            )
+            r.raise_for_status()
+            for e in r.json()['data']['result']:
+                for e2 in e['values']:
+                    ts = int(e2[0])
+                    if args.stop and ts <= args.stop:
+                        print('STOP')
+                        raise StopIteration
+                    if pend and ts >= pend:
+                        continue
+                    if not first:
+                        first = ts
+                        print('FIRST', first)
+                    m = patt.findall(e2[1])
+                    if not m:
+                        print('WHAT', e2)
+                        continue
+                    total += float(m[0])
+                    end = ts
+            if pend == end:
+                break
+            pend = end
+    except StopIteration:
+        pass
+
+    print('DONE: Total', total)
 
 
 if __name__ == '__main__':
