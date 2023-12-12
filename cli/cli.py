@@ -460,6 +460,11 @@ class CLI:
                     self._fee_spike_start = self._now()
                     under_fee_spike = True
                 continue
+            except client.web3client.exceptions.TimeExhausted:
+                # transaction timed out, so it very likely failed but we have no fee info, track separately...
+                self.logger.exception('Join contract timeout for %s on %d', snail.name, race.id)
+                _slow_snail(snail)
+                continue
             except client.web3client.exceptions.ContractLogicError as e:
                 # immediate contract errors, no fee paid
                 if 'Race already submitted' in str(e):
