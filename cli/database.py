@@ -29,13 +29,6 @@ class WalletDB(BaseModel, DBPersistMixin):
 class GlobalDB(BaseModel, DBPersistMixin):
     wallets: dict[str, WalletDB] = Field(exclude=True, default={})
 
-    @model_validator(mode='after')
-    def add_db_to_wallets(self) -> 'GlobalDB':
-        for k, w in self.wallets.items():
-            w.global_db = self
-            w.save_file = None if not self.save_file else self.save_file.with_stem(f'db-{k}')
-        return self
-
     def add_wallet(self, owner):
         if owner not in self.wallets:
             if self.save_file:

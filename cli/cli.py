@@ -600,7 +600,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self._notify('\n'.join(matches))
 
     def _bot_burn_coefficent(self):
-        if self._notify_burn_coefficent is not None and self._notify_burn_coefficent[1] > datetime.now():
+        if self._notify_burn_coefficent is not None and self._notify_burn_coefficent[1] > self._now():
             # refresh only once every 2min
             return
 
@@ -616,7 +616,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         self._notify_burn_coefficent = (
             coef,
-            datetime.now() + timedelta(minutes=120),
+            self._now() + timedelta(minutes=120),
         )
 
     @commands.argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
@@ -1051,7 +1051,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._notify_tournament = (_next, data, old_next)
 
     def _bot_autoclaim(self):
-        if self.database.notify_auto_claim is not None and self.database.notify_auto_claim > datetime.now():
+        if self.database.notify_auto_claim is not None and self.database.notify_auto_claim > self._now():
             # refresh only once every 24h
             return
 
@@ -1094,7 +1094,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
             self._notify('\n'.join(msg))
 
-        self.database.notify_auto_claim = datetime.now() + timedelta(hours=24)
+        self.database.notify_auto_claim = self._now() + timedelta(hours=24)
         self.database.save()
 
     def cmd_bot_tick(self):
