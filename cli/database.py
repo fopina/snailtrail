@@ -40,6 +40,7 @@ class GlobalDB(BaseModel, DBPersistMixin):
         if owner not in self.wallets:
             if self.save_file:
                 self.wallets[owner] = WalletDB.load_from_file(self.save_file.with_stem(f'db-{owner}'))
+                self.wallets[owner].global_db = self
             else:
                 self.wallets[owner] = WalletDB(global_db=self)
         return self.wallets[owner]
