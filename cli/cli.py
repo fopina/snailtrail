@@ -346,7 +346,7 @@ class CLI:
                 closest = self._snail_mission_cooldown[snail.id]
 
         if self.args.fee_spike and self.database.global_db.fee_spike_start:
-            under_fee_spike = self._now() - self._fee_spike_start < timedelta(minutes=self.args.fee_spike)
+            under_fee_spike = self._now() - self.database.global_db.fee_spike_start < timedelta(minutes=self.args.fee_spike)
         else:
             under_fee_spike = False
 
