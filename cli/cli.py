@@ -83,7 +83,6 @@ class CLI:
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
-        self._fee_spike_start = None
         self._tournament_market_cache = [None, {}]
 
     @staticmethod
@@ -346,7 +345,7 @@ class CLI:
             if closest is not None and closest > self._snail_mission_cooldown[snail.id]:
                 closest = self._snail_mission_cooldown[snail.id]
 
-        if self.args.fee_spike and self._fee_spike_start:
+        if self.args.fee_spike and self.database.global_db.fee_spike_start:
             under_fee_spike = self._now() - self._fee_spike_start < timedelta(minutes=self.args.fee_spike)
         else:
             under_fee_spike = False
@@ -425,6 +424,10 @@ class CLI:
                         self.notify_mission(f'{notify_msg} *LAST SPOT*')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
+                        if self.args.fee_spike and self.database.global_db.fee_spike_notified:
+                            # joined a last spot, reset fee spike notification
+                            self.database.global_db.fee_spike_notified = False
+                            self.database.global_db.save()
                     else:
                         self.logger.error(
                             f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
@@ -459,9 +462,12 @@ class CLI:
                 self.logger.exception('Not enough fees for %s on %d', snail.name, race.id)
                 _slow_snail(snail)
                 if self.args.fee_spike:
-                    self._notify('Fee spike detected')
+                    if not self.database.global_db.fee_spike_notified:
+                        self._notify('Fee spike detected')
+                        self.database.global_db.fee_spike_notified = True
                     # track start, rather than end, to be able to change --fee-spike in runtime :flex:
-                    self._fee_spike_start = self._now()
+                    self.database.global_db.fee_spike_start = self._now()
+                    self.database.global_db.save()
                     under_fee_spike = True
                 continue
             except client.web3client.exceptions.TimeExhausted:
@@ -763,7 +769,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--fee-spike',
         type=int,
-        default=3600,
+        default=60,
         help='Number of minutes to disable last spots (FOR EVERYTHING - boosts and minimum tickets) when fee spike is detected. Set to 0 to disable',
     )
     @commands.command()
@@ -1781,7 +1787,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             snail = self.my_snails[snail_id]
             if race.is_mission and not valid_one:
                 # if not made valid previously, log as cache failed (maybe first run?)
-                self.logger.error("Snail %s for mission %s (%s) was not found in joins cache!", snail.name_id, race.track, race.id)
+                self.logger.error(
+                    "Snail %s for mission %s (%s) was not found in joins cache!", snail.name_id, race.track, race.id
+                )
             valid_one = True
         return valid_one, last_spot, snail
 

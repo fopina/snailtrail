@@ -32,6 +32,8 @@ class WalletDB(PersistingBaseModel):
 
 class GlobalDB(PersistingBaseModel):
     wallets: dict[str, WalletDB] = Field(exclude=True, default={})
+    fee_spike_start: Optional[AwareDatetime] = None
+    fee_spike_notified: bool = False
 
     @model_validator(mode='after')
     def add_db_to_wallets(self) -> 'GlobalDB':
