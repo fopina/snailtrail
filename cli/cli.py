@@ -413,6 +413,8 @@ class CLI:
                 if r.get('status') == 0:
                     self.logger.info(f'{msg}')
                     self.notify_mission(notify_msg)
+                    self.database.joins_normal.add((snail.id, race.id))
+                    self.database.save()
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     if tx['status'] == 1:
@@ -421,6 +423,8 @@ class CLI:
                             f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
                         )
                         self.notify_mission(f'{notify_msg} *LAST SPOT*')
+                        self.database.joins_last.add((snail.id, race.id))
+                        self.database.save()
                     else:
                         self.logger.error(
                             f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
@@ -1757,6 +1761,29 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     self.database.notified_races.add(race['id'])
                     self.database.save()
 
+    def _find_race_snail(self, snail_id, race):
+        """
+        find snail in the different caches....
+        could use a refactor...
+        """
+        valid_one = False
+        last_spot = False
+        snail = None
+        if (snail_id, race.id) in self.database.joins_last:
+            valid_one = True
+            snail = Snail({'id': snail_id, 'name': 'MOVED SNAIL'})
+            last_spot = True
+        if (snail_id, race.id) in self.database.joins_normal:
+            valid_one = True
+            snail = Snail({'id': snail_id, 'name': 'MOVED SNAIL'})
+            last_spot = False
+        if snail_id in self.my_snails:
+            snail = self.my_snails[snail_id]
+            if not race.is_mission:
+                # only valid if race is not a mission, otherwise it should have become valid from previous IFs!
+                valid_one = True
+        return valid_one, last_spot, snail
+
     def find_races_over(self):
         first_run = not self.database.notified_races_over and not self.args.first_run_over
         for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
@@ -1776,10 +1803,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 continue
 
             found = False
-            for p, i in enumerate(race['results']):
-                if i['token_id'] in self.my_snails:
+            for p, i in enumerate(race.results):
+                valid_one, last_spot, snail = self._find_race_snail(i['token_id'], race)
+                if valid_one:
                     found = True
-                    snail = self.my_snails[i['token_id']]
                     if race.is_tournament:
                         msg = f"🥅 {snail.name_id} ({self.profile_guild}) in {race.track}, for {race.distance}, time {i['time']:.2f}s"
                     else:
@@ -1795,6 +1822,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         msg = f"{e} {snail.name_id} number {p} in {race.track}, for {race.distance}, reward {reward}"
                         if race.is_mission:
                             self.database.slime_won += reward
+                            if last_spot:
+                                self.database.slime_won_last += reward
+                            else:
+                                self.database.slime_won_normal += reward
                             self.database.save()
                     if race.is_competitive and self.args.race_stats:
                         self._snail_history.update(snail, race)
@@ -1808,7 +1839,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
             if not found:
                 snail = Snail({'id': 0, 'name': 'UNKNOWN SNAIL'})
-                msg = f"⁉️ {snail.name_id} in {race.track}, for {race.distance}"
+                msg = f"⁉️ {snail.name_id} in {race.track} ({race.id}), for {race.distance}"
                 self.logger.info(msg)
                 self._notify(msg)
         if first_run and not self.database.notified_races_over:

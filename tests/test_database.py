@@ -14,8 +14,17 @@ class Test(TestCase):
         self.assertEqual(db.wallets['x'].global_db, db)
         self.assertEqual(db.model_dump_json(), '{}')
         self.assertEqual(
-            w.model_dump_json(),
-            '{"slime_won":0.0,"notify_auto_claim":null,"notified_races":{},"notified_races_over":{}}',
+            w.model_dump(),
+            {
+                "slime_won": 0,
+                "notify_auto_claim": None,
+                "notified_races": {},
+                "notified_races_over": {},
+                "joins_last": {},
+                "joins_normal": {},
+                'slime_won_last': 0,
+                'slime_won_normal': 0,
+            },
         )
 
     def test_load(self):
