@@ -145,6 +145,9 @@ class Client(requests.Session):
                         id
                         adaptations
                         name
+                        work_boost
+                        slime_boost
+                        purity
                         market {
                         price
                         item_id

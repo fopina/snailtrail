@@ -709,6 +709,53 @@ Total: {breed_fees + gender_fees}
             del totals[c]
             prev_c = c
 
+    @commands.argument('-t', '--tournament', action='store_true', help='Also include tournament adapts to search for')
+    @commands.argument('adaptations', nargs='*', help='Adaptation combo to look for, comma-separated: Desert,Hot,Slide')
+    @commands.util_command()
+    def cmd_utils_market_adapts(self):
+        """
+        Search market for snails that match these adaptations
+        """
+
+        conditions = {}
+        if self.args.tournament:
+            data = self.main_cli.client.tournament(self.main_cli.owner)
+            for week in data.weeks:
+                c = tuple(week.ordered_conditions)
+                conditions[c] = week.week
+                conditions[c[:2]] = week.week
+        else:
+            if not self.args.adaptations:
+                print('Please specify SOME adaptations')
+                return
+            for adapt in self.args.adaptations:
+                # hack to re-use login in Snail class
+                _s = Snail({'adaptations': adapt.split(',')})
+                c = tuple(_s.ordered_adaptations)
+                conditions[c] = 'x'
+                conditions[c[:2]] = 'x'
+
+        for snail in self.main_cli.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': 5}}}):
+            if not snail.market_price:
+                # no more for sale
+                break
+            c = tuple(snail.ordered_adaptations)
+            w = conditions.get(c)
+            place = '🥇'
+            if not w:
+                w = conditions.get(c[:2])
+                if snail.level < 15:
+                    place = '🥉'
+                else:
+                    place = '🥈'
+            if not w:
+                continue
+
+            if w == 'x':
+                print(f'{place} {snail} {snail.ordered_adaptations} - {snail.market_price} 🔺')
+            else:
+                print(f'{place} Week {w} - {snail} - {snail.market_price} 🔺')
+
     def run(self):
         if not self.args.cmd:
             return
