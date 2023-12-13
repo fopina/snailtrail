@@ -426,6 +426,7 @@ class CLI:
                         self.database.save()
                         if self.args.fee_spike and self.database.global_db.fee_spike_notified:
                             # joined a last spot, reset fee spike notification
+                            self._notify('Fee spike is over 🥳')
                             self.database.global_db.fee_spike_notified = False
                             self.database.global_db.save()
                     else:
