@@ -1779,9 +1779,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             last_spot = False
         if snail_id in self.my_snails:
             snail = self.my_snails[snail_id]
-            if not race.is_mission:
-                # only valid if race is not a mission, otherwise it should have become valid from previous IFs!
-                valid_one = True
+            if race.is_mission and not valid_one:
+                # if not made valid previously, log as cache failed (maybe first run?)
+                self.logger.error("Snail %s for mission %s (%s) was not found in joins cache!", snail.name_id, race.track, race.id)
+            valid_one = True
         return valid_one, last_spot, snail
 
     def find_races_over(self):
