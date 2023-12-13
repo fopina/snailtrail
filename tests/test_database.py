@@ -12,7 +12,7 @@ class Test(TestCase):
         w = db.add_wallet("x")
         self.assertEqual(w.notified_races.__class__, SetQueue)
         self.assertEqual(db.wallets['x'].global_db, db)
-        self.assertEqual(db.model_dump_json(), '{}')
+        self.assertEqual(db.model_dump(), {"fee_spike_start": None, "fee_spike_notified": False})
         self.assertEqual(
             w.model_dump(),
             {

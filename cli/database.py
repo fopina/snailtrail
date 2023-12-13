@@ -27,7 +27,7 @@ class WalletDB(PersistingBaseModel):
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_normal: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
 
-    global_db: 'GlobalDB' = Field(default=None, exclude=True)
+    global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)
 
 
 class GlobalDB(PersistingBaseModel):
