@@ -24,6 +24,8 @@ class Test(TestCase):
                 "joins_normal": {},
                 'slime_won_last': 0,
                 'slime_won_normal': 0,
+                'tournament_market_cache': {},
+                'tournament_market_last': None,
             },
         )
 

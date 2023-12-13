@@ -83,7 +83,6 @@ class CLI:
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
-        self._tournament_market_cache = [None, {}]
 
     @staticmethod
     def _now():
@@ -346,7 +345,9 @@ class CLI:
                 closest = self._snail_mission_cooldown[snail.id]
 
         if self.args.fee_spike and self.database.global_db.fee_spike_start:
-            under_fee_spike = self._now() - self.database.global_db.fee_spike_start < timedelta(minutes=self.args.fee_spike)
+            under_fee_spike = self._now() - self.database.global_db.fee_spike_start < timedelta(
+                minutes=self.args.fee_spike
+            )
         else:
             under_fee_spike = False
 
@@ -574,11 +575,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._notify_coefficent = coef
 
     def _bot_tournament_market(self):
-        last, cache = self._tournament_market_cache
-        if last is not None and self._now() - last < timedelta(minutes=10):
+        if (
+            self.database.tournament_market_last is not None
+            and self._now() - self.database.tournament_market_last < timedelta(minutes=10)
+        ):
             # check only once every 10min
             return
-        self._tournament_market_cache[0] = self._now()
+        self.database.tournament_market_last = self._now()
 
         data = self.client.tournament(self.owner)
         conditions = {}
@@ -601,7 +604,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if not w:
                 continue
 
-            cached_price = cache.get(snail.id)
+            cached_price = self.database.tournament_market_cache.get(snail.id)
             if cached_price == snail.market_price:
                 continue
 
@@ -610,8 +613,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 msg = f'{msg} (from {cached_price})'
             matches.append(msg)
 
-            cache[snail.id] = snail.market_price
+            self.database.tournament_market_cache[snail.id] = snail.market_price
 
+        # always save as at least _last has changed
+        self.database.save()
         if matches:
             self._notify('\n'.join(matches))
 
