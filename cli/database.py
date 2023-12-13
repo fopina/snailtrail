@@ -49,8 +49,13 @@ class GlobalDB(PersistingBaseModel):
                 self.wallets[owner] = WalletDB(global_db=self)
         return self.wallets[owner]
 
-    def total_slime_won(self) -> float:
-        total = 0.0
+    def total_slime_won(self) -> tuple[float, float, float]:
+        """aggregates totals of every wallet and returns tuple with: total, total_last, total_normal"""
+        total = 0
+        total_last = 0
+        total_normal = 0
         for w in self.wallets.values():
             total += w.slime_won
-        return total
+            total_last += w.slime_won_last
+            total_normal += w.slime_won_normal
+        return total, total_last, total_normal

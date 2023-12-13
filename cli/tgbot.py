@@ -736,10 +736,12 @@ Median is {pct:.2f}% of your base fee
         Display current bot statistics
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        total = self.any_cli.database.global_db.total_slime_won()
+        total, total_last, total_normal = self.any_cli.database.global_db.total_slime_won()
         update.message.reply_markdown(
             f'''\
 Total slime won in missions: **{total}**
+... with normal spots: **{total_normal}**
+... with last spots: **{total_last}**
 '''
         )
 
