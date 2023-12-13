@@ -625,9 +625,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         matches = []
         for snail, score, w in self._bot_tournament_market_search(conditions, minimum_level=15):
-            place = '🥇🥈🥉'[score - 1]
             if score > 2:
                 continue
+            place = '🥇🥈'[score - 1]
             full = score == 1
 
             cached_price = self.database.tournament_market_cache.get(snail.id, [None])[0]

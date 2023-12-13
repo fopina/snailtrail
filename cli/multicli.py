@@ -470,21 +470,8 @@ Total: {breed_fees + gender_fees}
     @commands.util_command()
     def cmd_utils_all_adapts(self):
         """Print out all possible adaptation combinations"""
-        adapt_types = [[], [], []]
-
-        for x in Adaptation:
-            if x.is_landscape():
-                adapt_types[0].append(x)
-            elif x.is_weather():
-                adapt_types[1].append(x)
-            else:
-                adapt_types[2].append(x)
-
-        for a in adapt_types[0]:
-            for b in adapt_types[1]:
-                for c in adapt_types[2]:
-                    x = ', '.join(map(str, [a, b, c]))
-                    print(x)
+        for triplet in Adaptation.all():
+            print(', '.join(map(str, triplet)))
 
     @commands.argument('--file', type=Path, help='Cache filename')
     @commands.argument('--save', action='store_true', help='If --file is specified, fetch snails and update it')

@@ -143,6 +143,24 @@ class Adaptation(Enum):
         # simplify for now while name matches value text
         return cls[id.upper()]
 
+    @classmethod
+    def all(cls):
+        """return all possible adaptation triplets"""
+        adapt_types = [[], [], []]
+
+        for x in Adaptation:
+            if x.is_landscape():
+                adapt_types[0].append(x)
+            elif x.is_weather():
+                adapt_types[1].append(x)
+            else:
+                adapt_types[2].append(x)
+
+        for a in adapt_types[0]:
+            for b in adapt_types[1]:
+                for c in adapt_types[2]:
+                    yield tuple([a, b, c])
+
 
 class AttrDict(dict):
     _DICT_METHODS = set(dir(dict))
@@ -216,8 +234,8 @@ class Snail(AttrDict):
         if 'adaptations' in self:
             return list(map(Adaptation.from_str, self['adaptations']))
 
-    @staticmethod
-    def order_adaptations(adaptations):
+    @classmethod
+    def order_adaptations(cls, adaptations):
         if adaptations is None:
             return
         r = [None, None, None]
