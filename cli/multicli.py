@@ -716,41 +716,21 @@ Total: {breed_fees + gender_fees}
         """
         Search market for snails that match these adaptations
         """
-
         conditions = {}
         if self.args.tournament:
             data = self.main_cli.client.tournament(self.main_cli.owner)
             for week in data.weeks:
-                c = tuple(week.ordered_conditions)
-                conditions[c] = week.week
-                conditions[c[:2]] = week.week
+                conditions[tuple(week.ordered_conditions)] = week.week
         else:
             if not self.args.adaptations:
                 print('Please specify SOME adaptations')
                 return
             for adapt in self.args.adaptations:
-                # hack to re-use login in Snail class
-                _s = Snail({'adaptations': adapt.split(',')})
-                c = tuple(_s.ordered_adaptations)
+                c = tuple(adapt.split(','))
                 conditions[c] = 'x'
-                conditions[c[:2]] = 'x'
 
-        for snail in self.main_cli.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': 5}}}):
-            if not snail.market_price:
-                # no more for sale
-                break
-            c = tuple(snail.ordered_adaptations)
-            w = conditions.get(c)
-            place = '🥇'
-            if not w:
-                w = conditions.get(c[:2])
-                if snail.level < 15:
-                    place = '🥉'
-                else:
-                    place = '🥈'
-            if not w:
-                continue
-
+        for snail, score, w in self.main_cli._bot_tournament_market_search(conditions):
+            place = '🥇🥈🥉'[score - 1]
             if w == 'x':
                 print(f'{place} {snail} {snail.ordered_adaptations} - {snail.market_price} 🔺')
             else:

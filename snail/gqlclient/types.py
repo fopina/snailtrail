@@ -216,14 +216,8 @@ class Snail(AttrDict):
         if 'adaptations' in self:
             return list(map(Adaptation.from_str, self['adaptations']))
 
-    @property
-    def ordered_adaptations(self):
-        """
-        >>> s = Snail({'gender':{'id':2}, 'adaptations': ['Wet', 'Mountain', 'Jump']})
-        >>> s.ordered_adaptations
-        [Mountain, Wet, Jump]
-        """
-        adaptations = self.adaptations
+    @staticmethod
+    def order_adaptations(adaptations):
         if adaptations is None:
             return
         r = [None, None, None]
@@ -235,6 +229,15 @@ class Snail(AttrDict):
             else:
                 r[2] = adaptation
         return r
+
+    @property
+    def ordered_adaptations(self):
+        """
+        >>> s = Snail({'gender':{'id':2}, 'adaptations': ['Wet', 'Mountain', 'Jump']})
+        >>> s.ordered_adaptations
+        [Mountain, Wet, Jump]
+        """
+        return self.order_adaptations(self.adaptations)
 
     @property
     def monthly_breed_available(self):
@@ -488,18 +491,7 @@ class TournamentWeek(AttrDict):
         >>> s.ordered_conditions
         [Mountain, Wet, Jump]
         """
-        adaptations = self.conditions
-        if adaptations is None:
-            return
-        r = [None, None, None]
-        for adaptation in adaptations:
-            if adaptation.is_landscape():
-                r[0] = adaptation
-            elif adaptation.is_weather():
-                r[1] = adaptation
-            else:
-                r[2] = adaptation
-        return r
+        return Snail.order_adaptations(self.conditions)
 
 
 class Tournament(AttrDict):

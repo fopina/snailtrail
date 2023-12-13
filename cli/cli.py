@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import requests
 from colorama import Fore
@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from scommon.decorators import cached_property_with_ttl
 from snail import VERSION, client
-from snail.gqlclient.types import Gender, Race, Snail, _parse_datetime
+from snail.gqlclient.types import Adaptation, Family, Gender, Race, Snail, _parse_datetime
 from snail.web3client import DECIMALS
 
 from . import commands, tgbot
@@ -574,6 +574,43 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
         self._notify_coefficent = coef
 
+    def _bot_tournament_market_search(
+        self, condition_list: dict[tuple[Union[Adaptation, str]], any], minimum_level=5, family: Family = None
+    ):
+        """
+        search market for snails that match these adaptations, and rate them in this order:
+        * 3 matches
+        * 2 matches (missing athletics) >=lv15
+        * 2 matches (missing athletics) <lv15
+        """
+        conditions = {}
+        for combo, carry in condition_list.items():
+            if isinstance(combo[0], Adaptation):
+                c = tuple(Snail.order_adaptations(combo))
+            else:
+                # hack to re-use login in Snail class
+                _s = Snail({'adaptations': combo})
+                c = tuple(_s.ordered_adaptations)
+            conditions[c] = carry
+            conditions[c[:2]] = carry
+
+        for snail in self.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': minimum_level}}}):
+            if not snail.market_price:
+                # no more for sale
+                break
+            c = tuple(snail.ordered_adaptations)
+            w = conditions.get(c)
+            score = 1
+            if not w:
+                w = conditions.get(c[:2])
+                if snail.level < 15:
+                    score = 3
+                else:
+                    score = 2
+            if not w:
+                continue
+            yield snail, score, w
+
     def _bot_tournament_market(self):
         if (
             self.database.tournament_market_last is not None
@@ -584,31 +621,20 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self.database.tournament_market_last = self._now()
 
         data = self.client.tournament(self.owner)
-        conditions = {}
-        for week in data.weeks:
-            c = tuple(week.ordered_conditions)
-            conditions[c] = week.week
-            conditions[c[:2]] = week.week
+        conditions = {tuple(week.ordered_conditions): week.week for week in data.weeks}
 
         matches = []
-        for snail in self.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': 15}}}):
-            if not snail.market_price:
-                # no more for sale
-                break
-            c = tuple(snail.ordered_adaptations)
-            w = conditions.get(c)
-            full = True
-            if not w:
-                w = conditions.get(c[:2])
-                full = False
-            if not w:
+        for snail, score, w in self._bot_tournament_market_search(conditions, minimum_level=15):
+            place = '🥇🥈🥉'[score - 1]
+            if score > 2:
                 continue
+            full = score == 1
 
             cached_price = self.database.tournament_market_cache.get(snail.id, [None])[0]
             if cached_price == snail.market_price:
                 continue
 
-            msg = f'{"🥇" if full else "🥈"}Week {w} - {snail.name_id} - {snail.market_price} 🔺'
+            msg = f'{place} Week {w} - {snail.name_id} - {snail.market_price} 🔺'
             if cached_price:
                 msg = f'{msg} (from {cached_price})'
             matches.append(msg)
