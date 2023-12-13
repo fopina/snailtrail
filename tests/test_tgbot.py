@@ -60,6 +60,7 @@ class Test(TestCase):
 /stats - My snails stats
 /fee - Display current avalanche fees
 /botstats - Display current bot statistics
+/markettournament - Show market great buys for this month's tournament
 /balancebalance - Distribute AVAX balance from richest wallet to the others
 /reloadsnails - Reset snails cache (and reload wallet guilds)
 /settings - Toggle bot settings
