@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 
 class SetQueue(dict):
@@ -31,7 +31,7 @@ class SetQueue(dict):
         self.size -= 1
 
 
-class DBPersistMixin:
+class PersistingBaseModel(BaseModel):
     save_file: Path = Field(default=None, exclude=True)
 
     @classmethod

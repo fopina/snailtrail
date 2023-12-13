@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import AwareDatetime, BaseModel, BeforeValidator, Field, model_validator
+from pydantic import AwareDatetime, BeforeValidator, Field, model_validator
 from typing_extensions import Annotated
 
-from .helpers import DBPersistMixin, SetQueue
+from .helpers import PersistingBaseModel, SetQueue
 
 
 def dictToSetQueue(x):
@@ -14,7 +14,7 @@ def dictToSetQueue(x):
 SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue)]
 
 
-class WalletDB(BaseModel, DBPersistMixin):
+class WalletDB(PersistingBaseModel):
     class Config:
         arbitrary_types_allowed = True
 
@@ -26,7 +26,7 @@ class WalletDB(BaseModel, DBPersistMixin):
     global_db: 'GlobalDB' = Field(default=None, exclude=True)
 
 
-class GlobalDB(BaseModel, DBPersistMixin):
+class GlobalDB(PersistingBaseModel):
     wallets: dict[str, WalletDB] = Field(exclude=True, default={})
 
     @model_validator(mode='after')
