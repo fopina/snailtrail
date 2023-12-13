@@ -48,6 +48,17 @@ def bot_auth(func):
     return wrapper_func
 
 
+def no_rental(func):
+    def wrapper_func(notifier, update: Update, context: CallbackContext):
+        if notifier.any_cli.args.rental:
+            update.message.reply_markdown('This is not available')
+            return
+        return func(notifier, update, context)
+
+    wrapper_func.__doc__ = func.__doc__
+    return wrapper_func
+
+
 class Notifier:
     clis: Dict[str, 'cli.CLI']
     _owner_chat_id = None
@@ -89,6 +100,7 @@ class Notifier:
             dispatcher.add_handler(CommandHandler("stats", self.cmd_stats))
             dispatcher.add_handler(CommandHandler("fee", self.cmd_fee))
             dispatcher.add_handler(CommandHandler("botstats", self.cmd_bot_stats))
+            dispatcher.add_handler(CommandHandler("markettournament", self.cmd_market_tournament))
             dispatcher.add_handler(CommandHandler("balancebalance", self.cmd_balance_balance))
             dispatcher.add_handler(CommandHandler("reloadsnails", self.cmd_reload_snails))
             dispatcher.add_handler(CommandHandler("settings", self.cmd_settings))
@@ -960,6 +972,21 @@ Total slime won in missions: **{total}**
         for k, v in d['prices'].items():
             txt.append(f"*{k}*: {' / '.join(map(str, v))}")
         update.message.reply_markdown('\n'.join(txt))
+
+    @bot_auth
+    @no_rental
+    def cmd_market_tournament(self, update: Update, context: CallbackContext) -> None:
+        """
+        Show market great buys for this month's tournament
+        """
+        if not self.main_cli.database.tournament_market_cache:
+            update.message.reply_markdown('Nothing sorry...')
+            return
+        msg = []
+        for snail_id, v in self.main_cli.database.tournament_market_cache.items():
+            price, full, w = v
+            msg.append(f'{"🥇" if full else "🥈"}Week {w} - Snail #{snail_id} - {price} 🔺')
+        update.message.reply_markdown(self._link_snails('\n'.join(msg)))
 
     @bot_auth
     def cmd_reload_snails(self, update: Update, context: CallbackContext) -> None:

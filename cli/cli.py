@@ -604,7 +604,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if not w:
                 continue
 
-            cached_price = self.database.tournament_market_cache.get(snail.id)
+            cached_price = self.database.tournament_market_cache.get(snail.id, [None])[0]
             if cached_price == snail.market_price:
                 continue
 
@@ -613,7 +613,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 msg = f'{msg} (from {cached_price})'
             matches.append(msg)
 
-            self.database.tournament_market_cache[snail.id] = snail.market_price
+            self.database.tournament_market_cache[snail.id] = (snail.market_price, int(full), w)
 
         # always save as at least _last has changed
         self.database.save()
