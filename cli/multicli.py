@@ -360,6 +360,11 @@ Total: {breed_fees + gender_fees}
         type=int,
         help='Minimum purity to consider',
     )
+    @commands.argument(
+        '--same-wallet',
+        action='store_true',
+        help='Only report those in same wallet (useful to transfer out these conflicting ones)',
+    )
     @commands.util_command()
     def cmd_utils_duplicates(self):
         """Find snails with same adaptations"""
@@ -385,6 +390,9 @@ Total: {breed_fees + gender_fees}
             if len(v) == 1 and not self.args.all:
                 continue
             adapt = v[0][1].adaptations
+            if self.args.same_wallet and len(set(c for c, _ in v)) == len(v):
+                # none in same wallet
+                continue
             if self.args.family:
                 print(f'[{k[0]}] {adapt} ({len(v)}):')
             else:
