@@ -29,7 +29,7 @@ class WalletDB(PersistingBaseModel):
     notified_races_over: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_normal: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
-    tournament_market_cache: dict = {}
+    tournament_market_cache: dict[int, tuple] = {}
     tournament_market_last: Optional[AwareDatetime] = None
 
     global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)

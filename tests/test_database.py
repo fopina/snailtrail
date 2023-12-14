@@ -71,6 +71,8 @@ class Test(TestCase):
     def test_set_queue_int_key_issue(self):
         """
         notified_races_over is (was?) not working properly due to SetQueue being serialized with string keys
+        found bigger issue with SetQueue in general - resolution = serialize SetQueue as list instead of dict
+        cleaner and more flexible
         """
         with tempfile.NamedTemporaryFile() as t:
             t = Path(t.name)
@@ -95,3 +97,26 @@ class Test(TestCase):
             db_copy.notified_races_over.add(2)
             self.assertEqual(db_copy.notified_races_over, {'2': None, 2: None})
             self.assertEqual(db_copy.model_dump()['notified_races_over'], ['2', 2])
+
+    def test_dict_key_issue(self):
+        """
+        as with test_set_queue_int_key_issue, make sure dict fields with int keys also work
+        """
+        with tempfile.NamedTemporaryFile() as t:
+            t = Path(t.name)
+            db = database.WalletDB(save_file=t)
+            db.tournament_market_cache[1] = ('a', 1, 2)
+            self.assertEqual(db.tournament_market_cache, {1: ('a', 1, 2)})
+            self.assertIn(1, db.tournament_market_cache)
+            self.assertEqual(db.model_dump()['tournament_market_cache'], {1: ('a', 1, 2)})
+            self.assertTrue(db.save())
+
+            db_copy = database.WalletDB.load_from_file(t)
+            self.assertEqual(db_copy.tournament_market_cache, {1: ('a', 1, 2)})
+            self.assertIn(1, db_copy.tournament_market_cache)
+
+            # test retrocompatibility
+            t.write_text('{"tournament_market_cache": {"1": ["a", 1, 2]}}')
+            db_copy = database.WalletDB.load_from_file(t)
+            self.assertEqual(db_copy.tournament_market_cache, {1: ('a', 1, 2)})
+            self.assertIn(1, db_copy.tournament_market_cache)
