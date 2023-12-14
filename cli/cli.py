@@ -575,7 +575,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._notify_coefficent = coef
 
     def _bot_tournament_market_search(
-        self, condition_list: dict[tuple[Union[Adaptation, str]], any], minimum_level=5, family: Family = None
+        self,
+        condition_list: dict[tuple[Union[Adaptation, str]], any],
+        minimum_level=5,
+        families: Optional[list[Family]] = None,
     ):
         """
         search market for snails that match these adaptations, and rate them in this order:
@@ -583,6 +586,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         * 2 matches (missing athletics) >=lv15
         * 2 matches (missing athletics) <lv15
         """
+        if families is None:
+            families = list(Family)
         conditions = {}
         for combo, carry in condition_list.items():
             if isinstance(combo[0], Adaptation):
@@ -594,22 +599,29 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             conditions[c] = carry
             conditions[c[:2]] = carry
 
-        for snail in self.client.iterate_all_snails_marketplace(filters={'stats': {'level': {'min': minimum_level}}}):
-            if not snail.market_price:
-                # no more for sale
-                break
-            c = tuple(snail.ordered_adaptations)
-            w = conditions.get(c)
-            score = 1
-            if not w:
-                w = conditions.get(c[:2])
-                if snail.level < 15:
-                    score = 3
-                else:
-                    score = 2
-            if not w:
-                continue
-            yield snail, score, w
+        filters = {'stats': {'level': {'min': minimum_level}}}
+        for family in Family:
+            filters['family'] = family.id
+            for snail in self.client.iterate_all_snails_marketplace(filters=filters):
+                if not snail.market_price:
+                    # no more for sale
+                    break
+                c = tuple(snail.ordered_adaptations)
+                try:
+                    w = conditions[c]
+                    score = 1
+                except KeyError:
+                    try:
+                        w = conditions[c[:2]]
+                    except KeyError:
+                        continue
+                    if snail.level < 15:
+                        score = 3
+                    else:
+                        score = 2
+                # market promise does not return family, so set it in the snail like this
+                snail['family'] = str(family)
+                yield snail, score, w
 
     def _bot_tournament_market(self):
         if (
@@ -634,7 +646,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if cached_price == snail.market_price:
                 continue
 
-            msg = f'{place} Week {w} - {snail.name_id} - {snail.market_price} 🔺'
+            msg = f'{place} Week {w} - {snail.name_id} ({snail.family}) - {snail.market_price} 🔺'
             if cached_price:
                 msg = f'{msg} (from {cached_price})'
             matches.append(msg)

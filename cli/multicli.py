@@ -11,7 +11,7 @@ from typing import List
 from colorama import Fore
 from tqdm import tqdm
 
-from snail.gqlclient.types import Adaptation, Snail
+from snail.gqlclient.types import Adaptation, Family, Snail
 
 from . import cli, commands, utils
 from .database import GlobalDB
@@ -697,6 +697,12 @@ Total: {breed_fees + gender_fees}
             prev_c = c
 
     @commands.argument('-t', '--tournament', action='store_true', help='Also include tournament adapts to search for')
+    @commands.argument(
+        '-m',
+        '--missing',
+        action='store_true',
+        help='Also include adaptation triplets that do not exist in these wallets/accounts',
+    )
     @commands.argument('adaptations', nargs='*', help='Adaptation combo to look for, comma-separated: Desert,Hot,Slide')
     @commands.util_command()
     def cmd_utils_market_adapts(self):
@@ -704,24 +710,55 @@ Total: {breed_fees + gender_fees}
         Search market for snails that match these adaptations
         """
         conditions = {}
+
         if self.args.tournament:
             data = self.main_cli.client.tournament(self.main_cli.owner)
             for week in data.weeks:
-                conditions[tuple(week.ordered_conditions)] = week.week
-        else:
-            if not self.args.adaptations:
-                print('Please specify SOME adaptations')
+                conditions[tuple(week.ordered_conditions)] = ('t', week.week)
+
+        if self.args.missing:
+            all_adapts = {x for x in Adaptation.all()}
+            owned_adapts = defaultdict(lambda: set())
+            for c in tqdm(self.clis, desc='Loading snails'):
+                for snail in itertools.chain(
+                    c.my_snails.values(), c.client.iterate_my_snails(c.owner, filters={'status': 5})
+                ):
+                    if snail.level < 15:
+                        continue
+                    owned_adapts[snail.family].add(tuple(snail.ordered_adaptations))
+            family_condition = defaultdict(lambda: set())
+            for family, adapts in owned_adapts.items():
+                missing = all_adapts - adapts
+                for adapt in missing:
+                    family_condition[adapt].add(family)
+            for adapt, families in family_condition.items():
+                if adapt in conditions:
+                    print('TRIPLET OVERLAP', adapt)
+                    return
+                conditions[adapt] = ('f', families)
+
+        for adapt in self.args.adaptations:
+            c = tuple(adapt.split(','))
+            if c in conditions:
+                print('TRIPLET OVERLAP', c)
                 return
-            for adapt in self.args.adaptations:
-                c = tuple(adapt.split(','))
-                conditions[c] = 'x'
+            conditions[c] = ('m',)
+
+        if not conditions:
+            print('Please specify SOME adaptations (or one of the flags)')
+            return
 
         for snail, score, w in self.main_cli._bot_tournament_market_search(conditions):
             place = '🥇🥈🥉'[score - 1]
-            if w == 'x':
+            if w[0] == 'm':
                 print(f'{place} {snail} {snail.ordered_adaptations} - {snail.market_price} 🔺')
+            elif w[0] == 't':
+                print(f'{place} Week {w[1]} - {snail} - {snail.market_price} 🔺')
+            elif w[0] == 'f':
+                if snail.family in w[1]:
+                    print(f'{place} {snail} {snail.ordered_adaptations} - {snail.market_price} 🔺')
             else:
-                print(f'{place} Week {w} - {snail} - {snail.market_price} 🔺')
+                print(f'{place} UNK - {snail} - {snail.market_price} 🔺')
 
     def run(self):
         if not self.args.cmd:
