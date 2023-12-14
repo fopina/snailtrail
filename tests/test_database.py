@@ -68,7 +68,7 @@ class Test(TestCase):
         db2 = database.WalletDB()
         self.assertEqual(db2.notified_races, {})
 
-    def test_set_queue_issue(self):
+    def test_set_queue_int_key_issue(self):
         """
         notified_races_over is (was?) not working properly due to SetQueue being serialized with string keys
         """
@@ -82,6 +82,5 @@ class Test(TestCase):
             self.assertTrue(db.save())
 
             db_copy = database.WalletDB.load_from_file(t)
-            # FIXME: this is the issue, fix it!
             self.assertEqual(db_copy.notified_races_over, {1: None})
             self.assertIn(1, db_copy.notified_races_over)

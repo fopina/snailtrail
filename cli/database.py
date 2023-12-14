@@ -11,7 +11,12 @@ def dictToSetQueue(x):
     return SetQueue(x, capacity=100)
 
 
+def dictKeysToInt(x):
+    return {int(k): v for k, v in x.items()}
+
+
 SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue)]
+IntSetQueueField = Annotated[SetQueueField, BeforeValidator(dictKeysToInt)]
 
 
 class WalletDB(PersistingBaseModel):
@@ -22,8 +27,8 @@ class WalletDB(PersistingBaseModel):
     slime_won_normal: float = 0
     slime_won_last: float = 0
     notify_auto_claim: Optional[AwareDatetime] = None
-    notified_races: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
-    notified_races_over: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
+    notified_races: IntSetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
+    notified_races_over: IntSetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_normal: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     tournament_market_cache: dict = {}
