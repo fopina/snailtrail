@@ -750,11 +750,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='Monitor finished competitive races with participation and notify on position',
     )
     @commands.argument(
-        '--missions-over',
-        action='store_true',
-        help='Monitor finished missions with participation and log position/earns (no notification sent)',
-    )
-    @commands.argument(
         '--first-run-over',
         action='store_true',
         help='Also trigger log/notify for first run (mostly for testing)',
@@ -1180,8 +1175,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if self.args.races:
                     self.find_races()
 
-                if self.args.races_over or self.args.missions_over:
-                    self.find_races_over()
+                self.find_races_over()
 
                 if self.report_as_main:
                     if self.args.market:
@@ -1849,8 +1843,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             if first_run:
                 # do not log or notify anything on "first run"
                 # avoid restart spam with "pre-existing" finished races
-                continue
-            if race.is_mission and not self.args.missions_over:
                 continue
             if not race.is_mission and not self.args.races_over:
                 continue

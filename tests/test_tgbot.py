@@ -105,7 +105,6 @@ class Test(TestCase):
                 'race_matches',
                 'race_price',
                 'races_over',
-                'missions_over',
                 'first_run_over',
                 'mission_matches',
                 'market',
