@@ -1832,18 +1832,25 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return valid_one, last_spot, snail
 
     def find_races_over(self):
-        first_run = not self.database.notified_races_over and not self.args.first_run_over
-        for race in self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1):
-            if race['id'] in self.database.notified_races_over:
-                # notify only once...
+        races = list(self.client.iterate_finished_races(filters={'owner': self.owner}, own=True, max_calls=1))
+        if not races:
+            return
+
+        if not self.database.notified_races_over and not self.args.first_run_over:
+            # first run, just save last race_id and stop
+            for race in races:
+                self.database.notified_races_over.add(race.id)
+            self.database.save()
+            return
+
+        for race in races:
+            if race.id in self.database.notified_races_over:
+                # races are supposed to be ordered, but let's not assume that...
+                # we save 100 races in queue and page only contains 20, so it's ok to iterate all
                 continue
-            self.database.notified_races_over.add(race['id'])
+            self.database.notified_races_over.add(race.id)
             self.database.save()
 
-            if first_run:
-                # do not log or notify anything on "first run"
-                # avoid restart spam with "pre-existing" finished races
-                continue
             if not race.is_mission and not self.args.races_over:
                 continue
 
@@ -1887,9 +1894,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 msg = f"⁉️ {snail.name_id} in {race.track} ({race.id}), for {race.distance}"
                 self.logger.info(msg)
                 self._notify(msg)
-        if first_run and not self.database.notified_races_over:
-            # HACK ALERT: add random value just to make sure next run is not "first_run"
-            self.database.notified_races_over.add(1)
 
     def _open_races(self):
         for league in client.League:
