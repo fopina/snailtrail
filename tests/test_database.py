@@ -18,10 +18,10 @@ class Test(TestCase):
             {
                 "slime_won": 0,
                 "notify_auto_claim": None,
-                "notified_races": {},
-                "notified_races_over": {},
-                "joins_last": {},
-                "joins_normal": {},
+                "notified_races": [],
+                "notified_races_over": [],
+                "joins_last": [],
+                "joins_normal": [],
                 'slime_won_last': 0,
                 'slime_won_normal': 0,
                 'tournament_market_cache': {},
@@ -78,9 +78,20 @@ class Test(TestCase):
             db.notified_races_over.add(1)
             self.assertEqual(db.notified_races_over, {1: None})
             self.assertIn(1, db.notified_races_over)
-            self.assertEqual(db.model_dump()['notified_races_over'], {1: None})
+            self.assertEqual(db.model_dump()['notified_races_over'], [1])
             self.assertTrue(db.save())
 
             db_copy = database.WalletDB.load_from_file(t)
             self.assertEqual(db_copy.notified_races_over, {1: None})
             self.assertIn(1, db_copy.notified_races_over)
+
+            t.write_text('{"notified_races_over": [2]}')
+            db_copy = database.WalletDB.load_from_file(t)
+            self.assertEqual(db_copy.notified_races_over, {2: None})
+
+            # test retrocompatibility
+            t.write_text('{"notified_races_over": {"2": null}}')
+            db_copy = database.WalletDB.load_from_file(t)
+            db_copy.notified_races_over.add(2)
+            self.assertEqual(db_copy.notified_races_over, {'2': None, 2: None})
+            self.assertEqual(db_copy.model_dump()['notified_races_over'], ['2', 2])

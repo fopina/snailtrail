@@ -6,7 +6,14 @@ from pydantic import BaseModel, Field
 
 class SetQueue(dict):
     def __init__(self, *args, capacity=10, **kwargs):
-        super().__init__(*args, **kwargs)
+        if args:
+            # support constructor from list/set
+            arg0, *others = args
+            if isinstance(arg0, (list, set, tuple)):
+                arg0 = {x: None for x in arg0}
+            super().__init__(arg0, *others, **kwargs)
+        else:
+            super().__init__(**kwargs)
         self.capacity = capacity
         self.size = 0
 
@@ -29,6 +36,9 @@ class SetQueue(dict):
     def remove(self, item):
         del self[item]
         self.size -= 1
+
+    def to_dict(self):
+        return super(self).to_dict()
 
 
 class PersistingBaseModel(BaseModel):

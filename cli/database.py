@@ -1,7 +1,7 @@
-from pathlib import Path
 from typing import Optional
 
 from pydantic import AwareDatetime, BeforeValidator, Field, model_validator
+from pydantic.functional_serializers import PlainSerializer
 from typing_extensions import Annotated
 
 from .helpers import PersistingBaseModel, SetQueue
@@ -11,24 +11,22 @@ def dictToSetQueue(x):
     return SetQueue(x, capacity=100)
 
 
-def dictKeysToInt(x):
-    return {int(k): v for k, v in x.items()}
+def set_queue_to_list(x):
+    return list(x.keys())
 
 
-SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue)]
-IntSetQueueField = Annotated[SetQueueField, BeforeValidator(dictKeysToInt)]
+SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue), PlainSerializer(set_queue_to_list)]
 
 
 class WalletDB(PersistingBaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = dict(arbitrary_types_allowed=True)
 
     slime_won: float = 0
     slime_won_normal: float = 0
     slime_won_last: float = 0
     notify_auto_claim: Optional[AwareDatetime] = None
-    notified_races: IntSetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
-    notified_races_over: IntSetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
+    notified_races: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
+    notified_races_over: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_normal: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     tournament_market_cache: dict = {}
