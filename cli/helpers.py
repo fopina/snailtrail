@@ -10,7 +10,7 @@ class SetQueue(dict):
             # support constructor from list/set
             arg0, *others = args
             if isinstance(arg0, (list, set, tuple)):
-                arg0 = {x: None for x in arg0}
+                arg0 = {tuple(x): None for x in arg0}
             super().__init__(arg0, *others, **kwargs)
         else:
             super().__init__(**kwargs)
