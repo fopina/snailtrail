@@ -750,11 +750,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='Monitor finished competitive races with participation and notify on position',
     )
     @commands.argument(
-        '--first-run-over',
-        action='store_true',
-        help='Also trigger log/notify for first run (mostly for testing)',
-    )
-    @commands.argument(
         '--mission-matches',
         type=int,
         default=1,
@@ -1749,7 +1744,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return '`' + '.'.join(map(str, self._snail_history.get(snail)[1][race.distance])) + '`'
 
     def find_races(self, check_notified=True):
-        first_run = not self.database.notified_races and not self.args.first_run_over
+        first_run = not self.database.notified_races
         for league in client.League:
             _, races = self.find_races_in_league(league)
             for race in races:
@@ -1836,7 +1831,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not races:
             return
 
-        if not self.database.notified_races_over and not self.args.first_run_over:
+        if not self.database.notified_races_over:
             # first run, just save last race_id and stop
             for race in races:
                 self.database.notified_races_over.add(race.id)

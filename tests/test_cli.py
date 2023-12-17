@@ -357,7 +357,7 @@ AVAX: 1.000 / SNAILS: 1
         )
 
     def test_find_races_over_normal(self):
-        self.cli.args.first_run_over = True
+        self.cli.database.notified_races_over.add(1)
         self.cli.args.races_over = True
         self.cli.client.gql.get_finished_races.return_value = data.GQL_FINISHED_RACES
         self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
@@ -368,7 +368,7 @@ AVAX: 1.000 / SNAILS: 1
         )
 
     def test_find_races_over_mega(self):
-        self.cli.args.first_run_over = True
+        self.cli.database.notified_races_over.add(1)
         self.cli.args.races_over = True
         mega_race = copy.deepcopy(data.GQL_FINISHED_RACES)
         self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
@@ -391,7 +391,7 @@ AVAX: 1.000 / SNAILS: 1
         )
 
     def test_find_races_over_tournament(self):
-        self.cli.args.first_run_over = True
+        self.cli.database.notified_races_over.add(1)
         self.cli.args.races_over = True
         self.cli._profile = {'guild': {'name': 'myGuild'}}
         self.cli.notifier.notify.reset_mock()
@@ -409,7 +409,6 @@ AVAX: 1.000 / SNAILS: 1
         )
 
     def test_incubate_lazy_plan(self):
-        self.cli.args.first_run_over = True
         self.cli.args.races_over = True
         self.cli.client.gql.get_finished_races.return_value = data.GQL_FINISHED_RACES
         self.cli.client.gql.get_all_snails.return_value = data.GQL_MISSION_SNAILS
