@@ -2,7 +2,7 @@ import contextlib
 import copy
 import io
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import TestCase, mock
 
@@ -555,6 +555,21 @@ AVAX: 1.000 / SNAILS: 1
                 (0, 3, 20, 6),
             ],
         )
+
+    def test_every(self):
+        p = mock.PropertyMock(return_value=1)
+        type(self.cli.client.web3).gas_price = p
+        self.cli.every(self.cli._bot_fee_monitor, seconds=120)
+        p.assert_called_once()
+        p.reset_mock()
+        self.cli.every(self.cli._bot_fee_monitor, seconds=120)
+        p.assert_not_called()
+
+        _n = self.cli._now()
+        self.cli._now = lambda: _n + timedelta(seconds=125)
+        p.reset_mock()
+        self.cli.every(self.cli._bot_fee_monitor, seconds=120)
+        p.assert_called_once()
 
 
 class TestMain(TestCase):

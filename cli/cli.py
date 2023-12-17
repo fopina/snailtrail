@@ -83,6 +83,7 @@ class CLI:
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
+        self._every_cache = {}
 
     @staticmethod
     def _now():
@@ -624,14 +625,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 yield snail, score, w
 
     def _bot_tournament_market(self):
-        if (
-            self.database.tournament_market_last is not None
-            and self._now() - self.database.tournament_market_last < timedelta(minutes=10)
-        ):
-            # check only once every 10min
-            return
-        self.database.tournament_market_last = self._now()
-
         data = self.client.tournament(self.owner)
         conditions = {tuple(week.ordered_conditions): week.week for week in data.weeks}
 
@@ -653,30 +646,42 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
             self.database.tournament_market_cache[snail.id] = (snail.market_price, int(full), w)
 
-        # always save as at least _last has changed
-        self.database.save()
         if matches:
+            self.database.save()
             self._notify('\n'.join(matches))
 
     def _bot_burn_coefficent(self):
-        if self._notify_burn_coefficent is not None and self._notify_burn_coefficent[1] > self._now():
-            # refresh only once every 2min
-            return
-
         r = self._burn_coef()
         if r is None:
             self.logger.error('No snail available for burn coefficient')
             return
         coef = r['payload']['coef']
-        if self._notify_burn_coefficent is not None and coef < self._notify_burn_coefficent[0]:
-            msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self._notify_burn_coefficent[0]}*)'
+        if self.database.notify_burn_coefficent is not None and coef < self.database.notify_burn_coefficent:
+            msg = f'🔥 Coefficent drop to *{coef:0.4f}* (from *{self.database.notify_burn_coefficent}*)'
             self.logger.info(msg)
             self._notify(msg)
 
-        self._notify_burn_coefficent = (
-            coef,
-            self._now() + timedelta(minutes=120),
-        )
+        if self._notify_burn_coefficent != coef:
+            self.database.notify_burn_coefficent = coef
+            self.database.save()
+
+    def _bot_fee_monitor(self):
+        median = self.client.gas_price()
+
+        if self.database.notify_fee_monitor is None:
+            self.database.notify_fee_monitor = median
+            self.database.save()
+            return
+
+        floor = self.database.notify_fee_monitor * (100 - self.args.fee_monitor) / 100
+        ceil = self.database.notify_fee_monitor * (100 + self.args.fee_monitor) / 100
+
+        if median < floor or median > ceil:
+            msg = f'🔥 Fee currently at *{median:0.4f}* (from *{self.database.notify_fee_monitor}*)'
+            self.logger.info(msg)
+            self._notify(msg)
+            self.database.notify_fee_monitor = median
+            self.database.save()
 
     @commands.argument('-m', '--missions', action='store_true', help='Auto join daily missions (non-last/free)')
     @commands.argument(
@@ -778,6 +783,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--tournament-market', action=commands.NoRentalStoreTrueAction, help='Monitor market for snails for tournament'
     )
+    @commands.argument('--fee-monitor', type=int, help='Monitor median AVAX fee - value is delta % for notification')
     @commands.argument(
         '--balance-balance',
         type=float,
@@ -1146,6 +1152,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self.database.notify_auto_claim = self._now() + timedelta(hours=24)
         self.database.save()
 
+    def every(self, func, minutes=0, seconds=0):
+        next_run = self._every_cache.get(func.__name__)
+        if next_run is not None and next_run > self._now():
+            # do not run yet
+            return
+        func()
+        self._every_cache[func.__name__] = self._now() + timedelta(minutes=minutes, seconds=seconds)
+
     def cmd_bot_tick(self):
         try:
             w = self.args.wait
@@ -1178,11 +1192,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     if self.args.coefficent:
                         self._bot_coefficent()
                     if self.args.burn:
-                        self._bot_burn_coefficent()
+                        self.every(self._bot_burn_coefficent, minutes=2)
+                    if self.args.fee_monitor is not None:
+                        self.every(self._bot_fee_monitor, minutes=5)
                     if not self.args.rental:
                         # exclusive features of mine, not rentals!
                         if self.args.tournament_market:
-                            self._bot_tournament_market()
+                            self.every(self._bot_tournament_market, minutes=10)
 
                 if self.args.tournament:
                     self._bot_tournament()

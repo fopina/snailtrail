@@ -30,7 +30,8 @@ class WalletDB(PersistingBaseModel):
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_normal: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     tournament_market_cache: dict[int, tuple] = {}
-    tournament_market_last: Optional[AwareDatetime] = None
+    notify_burn_coefficent: Optional[float] = None
+    notify_fee_monitor: Optional[float] = None
 
     global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)
 
