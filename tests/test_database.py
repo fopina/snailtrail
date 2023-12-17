@@ -18,6 +18,8 @@ class Test(TestCase):
             {
                 "slime_won": 0,
                 "notify_auto_claim": None,
+                'notify_burn_coefficent': None,
+                'notify_fee_monitor': None,
                 "notified_races": [],
                 "notified_races_over": [],
                 "joins_last": [],
@@ -25,7 +27,6 @@ class Test(TestCase):
                 'slime_won_last': 0,
                 'slime_won_normal': 0,
                 'tournament_market_cache': {},
-                'tournament_market_last': None,
             },
         )
 

@@ -117,6 +117,7 @@ class Test(TestCase):
                 'level_ups',
                 'level_ups_to_15',
                 'tournament_market',
+                'fee_monitor',
                 'css_minimum',
                 'fee_spike',
             ],
@@ -576,7 +577,7 @@ class Test(TestCase):
             owner='0x3fff',
             args=mock.MagicMock(wtv=False),
         )
-        self.cli.client.web3.swap_slime_avax.return_value = 10000000000000000
+        self.cli.client.web3.swap_slime_avax.side_effect = [10000000000000000, {'status': 1}]
         cli2.name = '0x3f'
         cli2.client.web3.balance_of_slime = lambda raw=True: 3000000000000000000
         cli2.client.web3.get_balance = lambda: 4

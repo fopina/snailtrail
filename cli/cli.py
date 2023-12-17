@@ -666,6 +666,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.database.save()
 
     def _bot_fee_monitor(self):
+        if self.args.fee_monitor is None:
+            return
+
         median = self.client.gas_price()
 
         if self.database.notify_fee_monitor is None:

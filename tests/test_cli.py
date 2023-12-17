@@ -557,6 +557,7 @@ AVAX: 1.000 / SNAILS: 1
         )
 
     def test_every(self):
+        self.cli.args.fee_monitor = 10
         p = mock.PropertyMock(return_value=1)
         type(self.cli.client.web3).gas_price = p
         self.cli.every(self.cli._bot_fee_monitor, seconds=120)
