@@ -529,8 +529,13 @@ class Notifier:
         extra_text.append(f'Swapping {_msg}')
         trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
 
-        cli.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
-        extra_text[-1] = f'Swapped {_msg} ✅'
+        out_min_real = cli.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
+        if out_min_real.get('status') == 1:
+            extra_text[-1] = f'Swapped {_msg} ✅'
+        else:
+            extra_text[-1] = f'NOT swapped {_msg} ❌'
+            logger.error('error swapping: %s', out_min_real)
+
         query.edit_message_text('\n'.join(extra_text), parse_mode='Markdown')
 
     @bot_auth
