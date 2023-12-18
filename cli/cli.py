@@ -1334,6 +1334,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         action='store_true',
         help='Include workers (when listing snails)',
     )
+    @commands.argument(
+        '--estimate',
+        action='store_true',
+        help='Only estimate transaction costs',
+    )
     @commands.command()
     def cmd_snails(self):
         """
@@ -1341,6 +1346,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         """
         if self.args.transfer is not None:
             return self.cmd_snails_transfer()
+        if self.args.estimate:
+            raise Exception('estimate is only supported for transfer')
 
         if self.args.metadata is not None:
             return self._cmd_snails_metadata()
@@ -1424,15 +1431,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return False
 
         if len(matches) == 1:
-            tx = self.client.web3.transfer_snail(self.owner, transfer_wallet.address, matches[0].id)
+            tx = self.client.web3.transfer_snail(
+                self.owner, transfer_wallet.address, matches[0].id, estimate_only=self.args.estimate
+            )
         else:
-            tx = self.client.web3.approve_all_snails_for_bulk()
-            if tx:
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-                print(f'Approved bulkTransfer for {fee} AVAX')
+            if not self.args.estimate:
+                tx = self.client.web3.approve_all_snails_for_bulk()
+                if tx:
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                    print(f'Approved bulkTransfer for {fee} AVAX')
             tx = self.client.web3.bulk_transfer_snails(
                 transfer_wallet.address,
                 [m.id for m in matches],
+                estimate_only=self.args.estimate,
             )
         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'Transferred for {fee} AVAX')
