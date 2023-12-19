@@ -499,10 +499,7 @@ class CLI:
             data = self.client.web3.multicall_balances([self.owner])[self.owner]
         r = {
             'SLIME': (data[4], data[2]),
-            # FIXME: if I ever get claimable wavax, test if self.client.web3.claimable_wavax() == rewardTracker(address) contract call!!!
-            # 'WAVAX': (self.client.web3.claimable_wavax(), data[1]),
-            # until then, return 0 and save on these calls
-            'WAVAX': (0, data[1]),
+            'WAVAX': (data[5], data[1]),
             'AVAX': data[3],
             'SNAILS': data[0],
         }
