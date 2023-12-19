@@ -244,7 +244,7 @@ class CLI:
             base_msg = f"{x.name_id} : ({x.level_str} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
-                self.logger.info(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
+                self.logger.debug(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
             else:
                 if closest is None or to_queue < closest:
                     closest = to_queue
