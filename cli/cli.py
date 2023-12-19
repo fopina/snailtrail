@@ -1109,10 +1109,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._notify_tournament = (_next, data, old_next)
 
     def _bot_autoclaim(self):
-        if self.database.notify_auto_claim is not None and self.database.notify_auto_claim > self._now():
-            # refresh only once every 24h
-            return
-
         data = self._cmd_guild_data()
         if not data:
             return
@@ -1152,10 +1148,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
             self._notify('\n'.join(msg))
 
-        self.database.notify_auto_claim = self._now() + timedelta(hours=24)
-        self.database.save()
-
-    def every(self, func, minutes=0, seconds=0):
+    def every(self, func, hours=0, minutes=0, seconds=0):
         next_run = self._every_cache.get(func.__name__)
         if next_run is not None and next_run > self._now():
             # do not run yet
@@ -1207,7 +1200,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     self._bot_tournament()
 
                 if self.args.auto_claim:
-                    self._bot_autoclaim()
+                    self.every(self._bot_autoclaim, hours=24)
 
             self.logger.debug('waiting %d seconds', w)
             return w

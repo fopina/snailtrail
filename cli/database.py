@@ -24,7 +24,6 @@ class WalletDB(PersistingBaseModel):
     slime_won: float = 0
     slime_won_normal: float = 0
     slime_won_last: float = 0
-    notify_auto_claim: Optional[AwareDatetime] = None
     notified_races: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     notified_races_over: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
     joins_last: SetQueueField = Field(default_factory=lambda: SetQueue(capacity=100))
