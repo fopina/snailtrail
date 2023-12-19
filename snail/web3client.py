@@ -271,15 +271,20 @@ class Client:
             calls.append(
                 (self.multicall_contract.address, self.multicall_contract.encodeABI('getEthBalance', args=(w,)))
             )
+            calls.append((self.race_contract.address, self.race_contract.encodeABI('dailyRewardTracker', args=(w,))))
         x = self.multicall_contract.functions.aggregate(calls).call({'from': self.wallet})
         w_ind = 0
         results = {}
-        for y in range(0, len(x[1]), 4):
+        for y in range(0, len(x[1]), 5):
             results[wallets[w_ind]] = [
+                # balanceOf for all 3 contracts
                 self.web3.to_int(x[1][y]),
                 self.web3.to_int(x[1][y + 1]) / DECIMALS,
                 self.web3.to_int(x[1][y + 2]) / DECIMALS,
+                # avax balance
                 self.web3.to_int(x[1][y + 3]) / DECIMALS,
+                # claimable rewards
+                self.web3.to_int(x[1][y + 4]) / DECIMALS,
             ]
             w_ind += 1
         return results

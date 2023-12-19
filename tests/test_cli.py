@@ -338,20 +338,20 @@ class TestBot(TestCase):
     def test_balance(self):
         self.cli.args.claim = False
         self.cli.args.send = None
-        self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1, 1]}
+        # FIXME: not called at the moment, get some claimable wavax
+        # self.cli.client.web3.claimable_wavax.return_value = 1
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1, 1, 1]}
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.assertEqual(
                 self.cli.cmd_balance(),
-                {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1},
+                {'SLIME': (1, 1), 'WAVAX': (0, 1), 'AVAX': 1, 'SNAILS': 1},
             )
         self.assertEqual(
             f.getvalue(),
             '''\
 SLIME: 1 / 1.000
-WAVAX: 1 / 1
+WAVAX: 0 / 1
 AVAX: 1.000 / SNAILS: 1
 ''',
         )

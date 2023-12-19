@@ -684,7 +684,7 @@ class Notifier:
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
-            trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
+            # trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
             data = c._balance(data=cache[c.owner])
             totals[0] += sum(data['SLIME'])
             totals[1] += sum(data['WAVAX']) + data['AVAX']
@@ -694,7 +694,7 @@ class Notifier:
                 -1
             ] = f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
 {wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}'''
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            # m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
         if self.is_multi_cli:
             msg.append(
@@ -703,7 +703,7 @@ class Notifier:
 🔺 {totals[1]:.3f}
 🐌 {totals[2]}'''
             )
-            m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+        m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
 
     @bot_auth
     def cmd_inventory(self, update: Update, context: CallbackContext) -> None:
