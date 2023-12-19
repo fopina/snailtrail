@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from pydantic import AwareDatetime, BeforeValidator, Field, model_validator
@@ -33,6 +34,21 @@ class WalletDB(PersistingBaseModel):
     notify_fee_monitor: Optional[float] = None
 
     global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)
+
+    @classmethod
+    def load_from_file(cls, filename: Path):
+        obj = super().load_from_file(filename)
+        # FIXME remove these datafix during Jan2024 (after running in all bot instances)
+        to_del = {x for x in obj.joins_normal if isinstance(x, str)}
+        for x in to_del:
+            obj.joins_normal.remove(x)
+        to_del = {x for x in obj.notified_races if isinstance(x, str)}
+        for x in to_del:
+            obj.notified_races.remove(x)
+        to_del = {x for x in obj.notified_races_over if isinstance(x, str)}
+        for x in to_del:
+            obj.notified_races_over.remove(x)
+        return obj
 
 
 class GlobalDB(PersistingBaseModel):

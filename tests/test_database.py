@@ -17,7 +17,6 @@ class Test(TestCase):
             w.model_dump(),
             {
                 "slime_won": 0,
-                "notify_auto_claim": None,
                 'notify_burn_coefficent': None,
                 'notify_fee_monitor': None,
                 "notified_races": [],
@@ -96,8 +95,11 @@ class Test(TestCase):
             t.write_text('{"notified_races_over": {"2": null}}')
             db_copy = database.WalletDB.load_from_file(t)
             db_copy.notified_races_over.add(2)
-            self.assertEqual(db_copy.notified_races_over, {'2': None, 2: None})
-            self.assertEqual(db_copy.model_dump()['notified_races_over'], ['2', 2])
+            # FIXME: after the datafix is removed, uncomment this again
+            # self.assertEqual(db_copy.notified_races_over, {'2': None, 2: None})
+            self.assertEqual(db_copy.notified_races_over, {2: None})
+            # self.assertEqual(db_copy.model_dump()['notified_races_over'], ['2', 2])
+            self.assertEqual(db_copy.model_dump()['notified_races_over'], [2])
 
     def test_dict_key_issue(self):
         """
