@@ -322,11 +322,16 @@ class Notifier:
     def _async_claim(
         clis: 'List[cli.CLI]', cb: Callable[['cli.CLI', int, str, Optional[List[Any]]], None], minimum=None
     ):
-        hash_queue = []
+        if not clis:
+            return
 
+        hash_queue = []
+        any_cli = clis[0]
+
+        cache = any_cli.client.web3.multicall_balances([c.owner for c in clis])
         for _cli in clis:
             if minimum:
-                _b = _cli.client.web3.claimable_slime()
+                _b = cache[_cli.owner]
                 if _b > minimum:
                     cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
                 else:
@@ -382,7 +387,9 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            trivial_edit_message_text(query, '\n'.join(extra_text))
+            if st != 0:
+                trivial_edit_message_text(query, '\n'.join(extra_text))
+
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -391,7 +398,7 @@ class Notifier:
             elif st == 2:
                 final_status[_cli.name] = extra_text[-1]
 
-        self._async_claim(clis, _cb)
+        self._async_claim(clis, _cb, minimum=self.main_cli.args.css_minimum)
 
         # clean up message
         query.edit_message_text(
@@ -491,7 +498,8 @@ class Notifier:
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
-            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+            if st != 0:
+                trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -897,11 +905,12 @@ Total slime won in missions: **{total}**
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         keyboard = []
+        cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()])
         for c in self.clis.values():
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.name}: {c.client.web3.claimable_slime()}',
+                        f'💰 {c.name}: {cache[c.owner][4]}',
                         callback_data=f'claim {c.owner}',
                     )
                 ]

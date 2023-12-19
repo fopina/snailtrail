@@ -384,18 +384,17 @@ class Test(TestCase):
         )
 
     def test_claim(self):
-        self.cli.client.web3.balance_of_slime = lambda: 1
-        self.cli.client.web3.claimable_slime = lambda: 1
-        self.cli.client.web3.get_balance = lambda: 2
         cli2 = mock.MagicMock(
             owner='0x3fff',
             args=mock.MagicMock(wtv=False),
         )
         cli2.name = '0x3f'
-        cli2.client.web3.balance_of_slime = lambda: 3
-        cli2.client.web3.claimable_slime = lambda: 3
-        cli2.client.web3.get_balance = lambda: 4
         self.bot.register_cli(cli2)
+
+        self.cli.client.web3.multicall_balances.return_value = {
+            self.cli.owner: [1, 1, 1, 1, 1],
+            cli2.owner: [1, 1, 1, 1, 3],
+        }
 
         self.bot.cmd_claim(self.update, self.context)
         expected_markup = InlineKeyboardMarkup(
@@ -447,8 +446,7 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 3)
-        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 2)
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
             'claimed 1e-18 from 0x2f\n*Total claimed*: 1e-18',
@@ -459,11 +457,10 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 5)
-        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 3)
         self.assertEqual(
-            self.update.callback_query.edit_message_text.call_args_list[1][0][0],
-            'claiming from 0x2f...\nclaiming from 0x3f...',
+            self.update.callback_query.edit_message_text.call_args_list[0][0][0],
+            'claiming from 0x2f...\nclaiming from 0x3f...\nclaimed 1e-18 from 0x2f',
         )
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
@@ -611,8 +608,11 @@ class Test(TestCase):
         self.update.callback_query.message.text = ''
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
-        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 10)
-        self.assertEqual(self.update.callback_query.edit_message_text.call_args_list[0][0][0], 'claiming from 0x2f...')
+        self.assertEqual(len(self.update.callback_query.edit_message_text.call_args_list), 7)
+        self.assertEqual(
+            self.update.callback_query.edit_message_text.call_args_list[0][0][0],
+            'claiming from 0x2f...\nclaiming from 0x3f...\nclaimed 1e-18 from 0x2f',
+        )
         self.assertEqual(
             self.update.callback_query.edit_message_text.call_args_list[-1][0][0],
             '''claimed 1e-18 from 0x2f
@@ -626,10 +626,6 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
         )
 
     def test_cmd_balance(self):
-        self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1]}
         # mock value taken from test_cli::test_balance
         self.cli._balance.return_value = {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1}
         self.bot.cmd_balance(self.update, self.context)
@@ -637,7 +633,6 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
         self.assertEqual(
             self.update.message.reply_markdown.return_value.edit_text.call_args_list,
             [
-                mock.call(text='...Loading...', parse_mode='Markdown'),
                 mock.call(
                     text='''\
 🧪 1 / 1.000
@@ -655,10 +650,6 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
         )
         cli2.name = '0x3f'
         self.bot.register_cli(cli2)
-        self.cli.client.web3.claimable_slime.return_value = 1
-        self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.get_balance.return_value = 1
-        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1], cli2.owner: [2, 2, 2]}
         # mock value taken from test_cli::test_balance
         self.cli._balance.return_value = {'SLIME': (1, 1), 'WAVAX': (1, 1), 'AVAX': 1, 'SNAILS': 1}
         cli2.client.web3.claimable_slime.return_value = 2
@@ -668,7 +659,7 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
         self.bot.cmd_balance(self.update, self.context)
         self.update.message.reply_markdown.assert_called_once_with('Loading balances...')
         reply = self.update.message.reply_markdown.return_value
-        self.assertEqual(len(reply.edit_text.call_args_list), 5)
+        self.assertEqual(len(reply.edit_text.call_args_list), 1)
         self.assertEqual(
             reply.edit_text.call_args_list[-1],
             mock.call(
