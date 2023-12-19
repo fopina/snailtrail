@@ -39,15 +39,21 @@ class WalletDB(PersistingBaseModel):
     def load_from_file(cls, filename: Path):
         obj = super().load_from_file(filename)
         # FIXME remove these datafix during Jan2024 (after running in all bot instances)
+        changed = False
         to_del = {x for x in obj.joins_normal if isinstance(x, str)}
         for x in to_del:
+            changed = True
             obj.joins_normal.remove(x)
         to_del = {x for x in obj.notified_races if isinstance(x, str)}
         for x in to_del:
+            changed = True
             obj.notified_races.remove(x)
         to_del = {x for x in obj.notified_races_over if isinstance(x, str)}
         for x in to_del:
+            changed = True
             obj.notified_races_over.remove(x)
+        if changed:
+            obj.save()
         return obj
 
 
