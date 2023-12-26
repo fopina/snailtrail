@@ -120,6 +120,7 @@ class Test(TestCase):
                 'fee_monitor',
                 'css_minimum',
                 'fee_spike',
+                'mission_priority_fee',
             ],
         )
 

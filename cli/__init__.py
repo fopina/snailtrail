@@ -73,12 +73,6 @@ def build_parser() -> 'argparse.ArgumentParser':
         default=0,
         help='Priority fee to be used for any transaction (non-mission) - percentage of current gas price',
     )
-    parser.add_argument(
-        '--web3-mission-priority-fee',
-        type=float,
-        default=5,
-        help='Priority fee to be used for time-sensitive transactions (such as joining last spots) - percentage of current gas price',
-    )
     parser.add_argument('--proxy', help='Use this proxy for graphql (recommended: mitmproxy, burp)')
     parser.add_argument(
         '--graphql-endpoint',

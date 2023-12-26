@@ -69,7 +69,6 @@ class CLI:
             gql_retry=args.retry if args.retry > 0 else None,
             web3_max_fee=args.web3_max_fee,
             web3_priority_fee=args.web3_priority_fee,
-            web3_mission_priority_fee=args.web3_mission_priority_fee,
         )
         if graphql_endpoint:
             self.client.gql.url = graphql_endpoint
@@ -373,19 +372,26 @@ class CLI:
                     # join without allowing last spot to capture payload
                     try:
                         # if this succeeds, it was not a last spot - that should not happen...
-                        r, _ = self.client.join_mission_races(snail.id, race.id, allow_last_spot=False)
+                        r, _ = self.client.join_mission_races(
+                            snail.id, race.id, allow_last_spot=False, priority_fee=self.args.mission_priority_fee
+                        )
                         self.logger.error('WTF? SHOULD HAVE FAILED TO JOIN AS LAST SPOT - but ok')
                     except client.RequiresTransactionClientError as e:
                         r = e.args[1]
                         if r['payload']['size'] == 0:
-                            tx = self.client.rejoin_mission_races(r)
+                            tx = self.client.rejoin_mission_races(r, priority_fee=self.args.mission_priority_fee)
                         else:
                             self.logger.error('RACE NOT CHEAP - %s on %d', snail.name, race.id)
                             _slow_snail(snail)
                             continue
                 else:
                     try:
-                        r, tx = self.client.join_mission_races(snail.id, race.id, allow_last_spot=(snail.id in boosted))
+                        r, tx = self.client.join_mission_races(
+                            snail.id,
+                            race.id,
+                            allow_last_spot=(snail.id in boosted),
+                            priority_fee=self.args.mission_priority_fee,
+                        )
                     except client.RequiresTransactionClientError as e:
                         self.logger.error('TOO SLOW TO JOIN NON-LAST - %s on %d', snail.name, race.id)
                         # join last spot anyway (if --cheap-soon), even if not needing tickets
@@ -403,7 +409,7 @@ class CLI:
                             _slow_snail(snail)
                             continue
 
-                        tx = self.client.rejoin_mission_races(r)
+                        tx = self.client.rejoin_mission_races(r, priority_fee=self.args.mission_priority_fee)
                         self.logger.info('Joined cheap last spot without need - %s on %d', snail.name, race.id)
 
                 msg = (
@@ -814,6 +820,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=int,
         default=60,
         help='Number of minutes to disable last spots (FOR EVERYTHING - boosts and minimum tickets) when fee spike is detected. Set to 0 to disable',
+    )
+    @commands.argument(
+        '--mission-priority-fee',
+        type=float,
+        default=5,
+        help='Priority fee to be used for time-sensitive transactions (such as joining last spots) - percentage of current gas price',
     )
     @commands.command()
     def cmd_bot(self):
