@@ -8,6 +8,8 @@ from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Rep
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
+from snail import web3client
+
 from . import cli, utils
 from .cli import DECIMALS
 
@@ -745,13 +747,20 @@ class Notifier:
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         median = self.main_cli.client.gas_price()
-        mission_fee = self.main_cli.client.max_fee
-        pct = median * 100 / mission_fee
+        max_fee = self.main_cli.client.max_fee
+        if self.main_cli.args.mission_priority_fee:
+            mission_fee = self.main_cli.args.mission_priority_fee
+            mission_max_fee = web3client.BOTTOM_BASE_FEE * (100 + mission_fee) / 100 / web3client.GWEI_DECIMALS
+        else:
+            mission_max_fee = max_fee
+        pct = median * 100 / max_fee
+        mpct = median * 100 / mission_max_fee
         update.message.reply_markdown(
             f'''\
-Configured max (mission) fee: {mission_fee}
+Configured max fee: {max_fee}
+Configured max fee for missions: {mission_max_fee}
 Current median fee: {median}
-Median is {pct:.2f}% of your base fee
+Median is {pct:.2f}% of your max fee and {mpct:.2f}% of your max mission fee
 '''
         )
 
