@@ -261,6 +261,10 @@ class Client:
         return self.snailnft_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
 
     def multicall_balances(self, wallets: list[str]):
+        """
+        return multiple balances in one single web3 (multi)call:
+        snails, wavax, slime, avax, claimable slime, claimable wavax
+        """
         calls = []
         contracts = [self.snailnft_contract, self.wavax_contract, self.slime_contract]
         for w in wallets:

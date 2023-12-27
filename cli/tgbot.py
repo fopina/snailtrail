@@ -331,7 +331,7 @@ class Notifier:
         cache = any_cli.client.web3.multicall_balances([c.owner for c in clis])
         for _cli in clis:
             if minimum:
-                _b = cache[_cli.owner]
+                _b = cache[_cli.owner][4]
                 if _b > minimum:
                     cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
                 else:
