@@ -289,42 +289,23 @@ class Client:
 
     def microwave_snails_preview(self, snails: list[int]):
         signature = self.web3.sign_burn(snails)
-        return self.gql.query(
-            "microwave_promise",
-            {'params': {'token_ids': snails, 'signature': signature, 'address': self.web3.wallet, 'use_scroll': False}},
-            """
-            query microwave_promise($params: MicrowaveParams) {
-            microwave_promise(params: $params) {
-                ... on Problem {
-                problem
-                }
-                ... on GenericResponse {
-                status
-                message
-                signature
-                payload {
-                    ... on MicrowavePayload {
-                    owner
-                    order_id
-                    size
-                    token_ids
-                    timeout
-                    salt
-                    fee_wei
-                    fee_details
-                    coef
-                    }
-                }
-                }
-            }
-            }
-            """,
-            auth=self.gql_token,
-        )['microwave_promise']
+        return self.gql.burn(self.web3.wallet, signature, snails, gql_token=self.gql_token)
 
-    def microwave_snails(self, snails: list[int]):
-        r = self.microwave_snails_preview(snails)
-        raise NotImplementedError('code it before you use it')
+    def microwave_snails(self, snails: list[int], use_scroll=False):
+        signature = self.web3.sign_burn(snails)
+        data = self.gql.burn(self.web3.wallet, signature, snails, use_scroll=use_scroll, gql_token=self.gql_token)
+        if data['status'] != 1:
+            raise Exception(data)
+        p = data['payload']
+        return self.web3.use_lab(
+            p['order_id'],
+            p['size'],
+            int(p['fee_wei']),
+            snails,
+            p['timeout'],
+            p['salt'],
+            data['signature'],
+        )
 
     def rename_account(self, new_name: str):
         return self.gql.query(

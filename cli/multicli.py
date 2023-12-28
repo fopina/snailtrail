@@ -548,6 +548,72 @@ Total: {breed_fees + gender_fees}
             if len(vlw) == pairs[2][4]:
                 print(f"{snail} (ticlets {snail.stats['mission_tickets']})")
 
+    @commands.argument('snail', nargs='+', type=int, help='snail id to burn')
+    @commands.util_command()
+    def cmd_utils_burn_snails(self):
+        """Burn these snails using scrolls (and transfers)"""
+        snail_owners = {}
+
+        for c in tqdm(self.clis, desc='Searching snail'):
+            for s in self.args.snail:
+                if s in c.my_snails:
+                    ss = c.my_snails[s]
+                    print(f'Found {ss} in {c.name}')
+                    snail_owners[s] = (ss, c)
+            if len(snail_owners) == len(self.args.snail):
+                # all found
+                break
+
+        if len(snail_owners) != len(self.args.snail):
+            print('Some snails not found')
+            print('Missing:', set(self.args.snail) - set(snail_owners.keys()))
+            return
+
+        totals = defaultdict(lambda: 0)
+        for c in tqdm(self.clis, desc='Loading inventory'):
+            for _, v in c.cmd_inventory(verbose=False).items():
+                if v[0].name.startswith('Microwave Scroll'):
+                    totals[c] = v
+
+        while snail_owners:
+            snail = None
+            for _snail, owner in snail_owners.values():
+                if owner in totals:
+                    snail = _snail
+                    owner = owner
+                    new_owner = owner
+                    break
+            if snail is None:
+                snail, owner = list(snail_owners.values())[0]
+                new_owner = list(totals.keys())[0]
+
+            if owner != new_owner:
+                tx = owner.client.web3.transfer_snail(owner.owner, new_owner.owner, snail.id)
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                print(f'{snail} transferred from {owner.name} to {new_owner.name} for {fee}')
+
+            tx = new_owner.client.web3.approve_all_snails_for_lab()
+            if tx:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                print(f'{c.name} approved lab for {fee}')
+
+            for _ in range(30):
+                try:
+                    tx = new_owner.client.microwave_snails([snail.id], use_scroll=True)
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    print(f'{snail} burnt for {fee}')
+                    break
+                except cli.client.gqlclient.APIError as e:
+                    if 'You are not the holder of Snail' not in str(e):
+                        raise
+                    print('.', end='', flush=True)
+                    time.sleep(0.5)
+            else:
+                raise Exception('too many retries, not the holder?!')
+
+            del snail_owners[snail.id]
+            del totals[new_owner]
+
     @commands.argument('snail', type=int, help='Snail ID')
     @commands.util_command()
     def cmd_utils_bruteforce_test(self):

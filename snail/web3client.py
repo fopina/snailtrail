@@ -94,6 +94,10 @@ class Client:
         return self._contract(contracts.snail_nft)
 
     @cached_property
+    def snaillab_contract(self):
+        return self._contract(contracts.snail_lab)
+
+    @cached_property
     def incubator_contract(self):
         return self._contract(contracts.snail_incubator)
 
@@ -451,6 +455,21 @@ class Client:
             **kwargs,
         )
 
+    def approve_all_snails_for_lab(
+        self, remove=False, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs
+    ):
+        current = self.snailnft_contract.functions.isApprovedForAll(self.wallet, self.snaillab_contract.address).call(
+            {'from': self.wallet}
+        )
+        target = not remove
+        if current is target:
+            return
+        return self._bss(
+            self.snailnft_contract.functions.setApprovalForAll(self.snaillab_contract.address, target),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )
+
     def stake_snails(
         self,
         order_id: int,
@@ -626,3 +645,32 @@ class Client:
         if r != BOTTOM_BASE_FEE:
             logger.info('Median fee: %d', r)
         return r
+
+    def use_lab(
+        self,
+        order_id: int,
+        size: int,
+        fee: int,
+        snail_ids: list[int],
+        timeout: int,
+        salt: int,
+        signature: str,
+        wait_for_transaction_receipt: Union[bool, float] = None,
+        **kwargs,
+    ):
+        return self._bss(
+            self.snaillab_contract.functions.useLab(
+                (
+                    order_id,
+                    size,
+                    snail_ids,
+                    self.wallet,
+                    fee,
+                    timeout,
+                    salt,
+                ),
+                signature,
+            ),
+            wait_for_transaction_receipt=wait_for_transaction_receipt,
+            **kwargs,
+        )

@@ -977,6 +977,53 @@ class Client(requests.Session):
             'incubate_promise',
         ).execute(self, auth=gql_token)['incubate_promise']
 
+    def burn(
+        self,
+        address,
+        signature,
+        snail_ids,
+        use_scroll=False,
+        gql_token=None,
+    ):
+        return GQL(
+            'microwave_promise',
+            '''
+    ... on Problem {
+      problem
+    }
+    ... on GenericResponse {
+      status
+      message
+      signature
+      payload {
+        ... on MicrowavePayload {
+          owner
+          order_id
+          size
+          token_ids
+          timeout
+          salt
+          fee_wei
+          fee_details
+          coef
+        }
+      }
+    }
+            ''',
+            {
+                'params': (
+                    'MicrowaveParams',
+                    {
+                        "address": address,
+                        "signature": signature,
+                        "token_ids": snail_ids,
+                        "use_scroll": use_scroll,
+                    },
+                ),
+            },
+            'microwave_promise',
+        ).execute(self, auth=gql_token)['microwave_promise']
+
     def apply_pressure(
         self,
         address,
