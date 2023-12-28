@@ -538,15 +538,15 @@ Total: {breed_fees + gender_fees}
 
             vlw = pairs[0][0].get((str(snail.family), snail.ordered_adaptations[0], snail.ordered_adaptations[1]), [])
             if len(vlw) == pairs[0][4]:
-                print(snail)
+                print(f"{snail} (ticlets {snail.stats['mission_tickets']})")
 
             vlw = pairs[1][0].get((str(snail.family), snail.ordered_adaptations[0], snail.ordered_adaptations[2]), [])
             if len(vlw) == pairs[1][4]:
-                print(snail)
+                print(f"{snail} (ticlets {snail.stats['mission_tickets']})")
 
             vlw = pairs[2][0].get((str(snail.family), snail.ordered_adaptations[1], snail.ordered_adaptations[2]), [])
             if len(vlw) == pairs[2][4]:
-                print(snail)
+                print(f"{snail} (ticlets {snail.stats['mission_tickets']})")
 
     @commands.argument('snail', type=int, help='Snail ID')
     @commands.util_command()
