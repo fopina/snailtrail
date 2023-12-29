@@ -709,6 +709,8 @@ Total: {breed_fees + gender_fees}
         print(f'Total fees: {total_fees}')
 
     @commands.argument('snail', type=int, help='Snail ID')
+    @commands.argument('--exclude', type=float, action='append', help='Exclude scrolls with these coefs')
+    @commands.argument('--include', type=float, action='append', help='Only include scrolls with these coefs')
     @commands.util_command()
     def cmd_utils_boost_snail(self):
         """
@@ -731,6 +733,10 @@ Total: {breed_fees + gender_fees}
         for c in tqdm(self.clis, desc='Loading inventory'):
             for _, v in c.cmd_inventory(verbose=False).items():
                 if v[0].name.startswith('Slime Boost '):
+                    if self.args.exclude and v[0].coef in self.args.exclude:
+                        continue
+                    if self.args.include and v[0].coef not in self.args.include:
+                        continue
                     totals[c] = v
 
         prev_c = owner_c
@@ -743,13 +749,13 @@ Total: {breed_fees + gender_fees}
 
             for v in totals[c]:
                 # try a few times
-                for _ in range(15):
+                for _ in range(30):
                     try:
                         r = c.client.apply_pressure(self.args.snail, v.id)
                         if not 'changes' in r:
                             raise Exception('Unexpected reply', r)
                         for chg in r['changes']:
-                            print(f'{snail} slime boost changed from {chg["_from"]} to {chg["_to"]}')
+                            print(f'{snail} slime boost changed to {chg["_from"]}')
                         break
                     except cli.client.gqlclient.APIError as e:
                         if 'You are not the holder of Snail' not in str(e):
