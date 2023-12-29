@@ -1480,7 +1480,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         """
         type_group = defaultdict(list)
         for item in self.client.iterate_inventory(self.owner):
-            type_group[item.type_id].append(item)
+            type_group[(item.type_id, item.coef)].append(item)
         for _, v in type_group.items():
             f = v[0]
             for f2 in v[1:]:
