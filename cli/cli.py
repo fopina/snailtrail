@@ -15,7 +15,7 @@ from tqdm import tqdm
 from scommon.decorators import cached_property_with_ttl
 from snail import VERSION, client
 from snail.gqlclient.types import Adaptation, Family, Gender, Race, Snail, _parse_datetime
-from snail.web3client import DECIMALS
+from snail.web3client import BOTTOM_BASE_FEE, DECIMALS, GWEI_DECIMALS
 
 from . import commands, tgbot
 from .database import WalletDB
@@ -677,6 +677,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         median = self.client.gas_price()
 
+        if self.database.notify_fee_monitor == median:
+            # no changes, quick exit
+            return
+
         if self.database.notify_fee_monitor is None:
             self.database.notify_fee_monitor = median
             self.database.save()
@@ -685,7 +689,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         floor = self.database.notify_fee_monitor * (100 - self.args.fee_monitor) / 100
         ceil = self.database.notify_fee_monitor * (100 + self.args.fee_monitor) / 100
 
-        if median < floor or median > ceil:
+        if median == (BOTTOM_BASE_FEE / DECIMALS) or median < floor or median > ceil:
             msg = f'🔥 Fee currently at *{median:0.4f}* (from *{self.database.notify_fee_monitor}*)'
             self.logger.info(msg)
             self._notify(msg)

@@ -556,6 +556,45 @@ AVAX: 1.000 / SNAILS: 1
             ],
         )
 
+    def test_fee_monitor(self):
+        self.cli.args.fee_monitor = 10
+        p = mock.PropertyMock(return_value=25)
+        type(self.cli.client.web3).gas_price = p
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_not_called()
+
+        # up 10%, notifies
+        p.return_value = 30
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_called_once()
+
+        # down less than 10%, NO notification
+        p.return_value = 28
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_not_called()
+
+        # down the rest, notification
+        p.return_value = 25
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_called_once()
+
+        # if down than 10% but back to base fee, also notifies
+        p.return_value = 30
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_called_once()
+        p.return_value = 26
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_called_once()
+        # down less than 10% but back to 25, notify
+        p.return_value = 25
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_fee_monitor()
+        self.cli.notifier.notify.assert_called_once()
+
     def test_every(self):
         self.cli.args.fee_monitor = 10
         p = mock.PropertyMock(return_value=1)
