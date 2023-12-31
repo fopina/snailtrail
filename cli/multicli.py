@@ -473,6 +473,16 @@ Total: {breed_fees + gender_fees}
         for triplet in Adaptation.all():
             print(', '.join(map(str, triplet)))
 
+    @commands.util_command()
+    def cmd_utils_dkron(self):
+        """Print out dkron balances command"""
+        for cli in self.clis:
+            print(cli.owner)
+        print('--hass')
+        for cli in self.clis:
+            print(f"https://hass.pis.sf/api/states/sensor.balance_snailtrail{cli._profile['_i'] if cli._profile['_i'] != 1 else ''}")
+        print('--hass-token "%hass token dkron jobs"')
+
     @commands.argument('--file', type=Path, help='Cache filename')
     @commands.argument('--save', action='store_true', help='If --file is specified, fetch snails and update it')
     @commands.util_command()
