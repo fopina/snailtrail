@@ -1170,7 +1170,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             # do not run yet
             return
         func()
-        self._every_cache[func.__name__] = self._now() + timedelta(minutes=minutes, seconds=seconds)
+        self._every_cache[func.__name__] = self._now() + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
     def cmd_bot_tick(self):
         try:
