@@ -39,6 +39,11 @@ def build_parser() -> 'argparse.ArgumentParser':
         is_config_file_arg=True,
     )
     parser.add_argument(
+        '--wallet-seed',
+        type=commands.FileOrString,
+        help='Mnemonic to generate wallets'
+    )
+    parser.add_argument(
         '--wallet',
         metavar='ADDRESS_OR_PRIVATE_KEY',
         action=commands.AppendWalletAction,
