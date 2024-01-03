@@ -1439,21 +1439,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             print('Target is the same as owner')
             return False
 
-        if len(matches) == 1:
-            tx = self.client.web3.transfer_snail(
-                self.owner, transfer_wallet.address, matches[0].id, estimate_only=self.args.estimate
-            )
-        else:
-            if not self.args.estimate:
-                tx = self.client.web3.approve_all_snails_for_bulk()
-                if tx:
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
-                    print(f'Approved bulkTransfer for {fee} AVAX')
-            tx = self.client.web3.bulk_transfer_snails(
-                transfer_wallet.address,
-                [m.id for m in matches],
-                estimate_only=self.args.estimate,
-            )
+        app_tx, tx = self.client.transfer_snails(transfer_wallet.address, *matches, estimate_only=self.args.estimate)
+        if app_tx:
+            fee = app_tx['gasUsed'] * app_tx['effectiveGasPrice'] / DECIMALS
+            print(f'Approved bulkTransfer for {fee} AVAX')
         fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
         print(f'Transferred for {fee} AVAX')
         for m in matches:

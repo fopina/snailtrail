@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from time import time
-from typing import Generator, List
+from typing import Generator, List, Union
 
 import requests
 
@@ -458,3 +458,22 @@ class Client:
 
     def snail_owners(self, *snails: int):
         return self.web3.owner_of_snails(*snails)
+
+    def transfer_snails(self, recipient: str, *snails: Union[types.Snail, int], estimate_only=False):
+        snail_ids = [x if isinstance(x, int) else x.id for x in snails]
+        if len(snails) == 1:
+            return None, self.web3.transfer_snail(
+                self.web3.wallet, recipient, snail_ids[0], estimate_only=estimate_only
+            )
+
+        if self.args.estimate:
+            approval_tx = None
+        else:
+            approval_tx = self.web3.approve_all_snails_for_bulk()
+
+        tx = self.web3.bulk_transfer_snails(
+            recipient,
+            snail_ids,
+            estimate_only=estimate_only,
+        )
+        return approval_tx, tx

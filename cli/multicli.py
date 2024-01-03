@@ -899,6 +899,21 @@ Total: {breed_fees + gender_fees + transfer_fees}
             else:
                 print(f'{place} UNK - {snail} - {snail.market_price} 🔺')
 
+    def cmd_snails(self):
+        """re-implement to handle transfers more efficiently"""
+        if self.args.transfer is None:
+            return False
+        _, transfer_snails = self.args.transfer
+        owners = self.main_cli.client.snail_owners(*transfer_snails)
+        done = set()
+        for _, v in owners.items():
+            if v in done:
+                continue
+            done.add(v)
+            cli = self._cli_by_address(v)
+            cli._header()
+            cli.cmd_snails_transfer()
+
     def run(self):
         if not self.args.cmd:
             return
