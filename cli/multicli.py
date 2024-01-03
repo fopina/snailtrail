@@ -275,24 +275,22 @@ SNAILS: {totals[2]}'''
                         owners = c.client.snail_owners(ms, fs)
                         if owners[ms] == owners[fs]:
                             oc = self._cli_by_address(owners[ms])
-                            tx = oc.client.web3.approve_all_snails_for_bulk()
-                            if tx:
+                            if oc != nc:
+                                ap_tx, tx = oc.client.transfer_snails(nc.owner, ms, fs)
+                                if ap_tx:
+                                    fee = ap_tx['gasUsed'] * ap_tx['effectiveGasPrice'] / cli.DECIMALS
+                                    print(f'Approved bulkTransfer for {fee} AVAX')
                                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                                print(f'Approved bulkTransfer for {fee} AVAX')
-                            tx = oc.client.web3.bulk_transfer_snails(
-                                nc.owner,
-                                [ms, fs],
-                            )
-                            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                            print(f'bulkTransfer to {nc} for {fee} AVAX')
-                            transfer_fees += fee
+                                print(f'bulkTransfer to {nc} for {fee} AVAX')
+                                transfer_fees += fee
                         else:
                             for _s in (ms, fs):
                                 oc = self._cli_by_address(owners[_s])
-                                tx = oc.client.web3.transfer_snail(oc.owner, nc.owner, _s)
-                                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                                print(f'transfer to {nc} for {fee} AVAX')
-                                transfer_fees += fee
+                                if oc != nc:
+                                    _, tx = oc.client.transfer_snail(nc.owner, _s)
+                                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                                    print(f'transfer to {nc} for {fee} AVAX')
+                                    transfer_fees += fee
                         c = nc
                         self._wait_api_transfer(c, ms, fs)
 
