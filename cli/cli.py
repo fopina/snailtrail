@@ -2493,3 +2493,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return
         self._header()
         return getattr(self, f'cmd_{self.args.cmd}')()
+
+    def __str__(self):
+        return self.name

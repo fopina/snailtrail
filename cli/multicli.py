@@ -161,20 +161,20 @@ SNAILS: {totals[2]}'''
             if cli.owner[-40:].lower() == address[-40:].lower():
                 return cli
 
-    def _wait_api_transfer(self, cli: cli.CLI, *snails: int, sleep=0.5):
+    def _wait_api_transfer(self, cli: cli.CLI, *snails: int, sleep=0.5) -> list[Snail]:
         """wait for API to refresh after snail transfers"""
         for _ in range(60):
             _snails = list(cli.client.iterate_all_snails(filters={'id': snails}))
-            if (_snails[0].owner, _snails[1].owner) == (cli.owner, cli.owner):
-                print('API updated with transfers')
-                return
+            if len(_snails) == len(snails) and {x.owner for x in _snails} == {cli.owner}:
+                print('API updated')
+                return _snails
             print('.', end='', flush=True)
             time.sleep(sleep)
         raise Exception('too many retries, not the holder?!')
 
     def _cmd_incubate_execute(self):
         # validate
-        plan = [list(map(int, l.split(' ')[0].split(':'))) for l in self.args.execute.read_text().splitlines()]
+        plan = [list(map(int, l.split(' ')[0].split(':'))) for l in self.args.execute.read_text().splitlines() if l]
 
         # any incomplete breed cycle?
         males = defaultdict(lambda: 0)
@@ -263,11 +263,6 @@ SNAILS: {totals[2]}'''
                     if rest:
                         print(f'Skipping {ms, fs}')
                         continue
-                    # transgender
-                    fee = _transgender(c, ms, cli.Gender.MALE)
-                    gender_fees += fee
-                    fee = _transgender(c, fs, cli.Gender.FEMALE)
-                    gender_fees += fee
 
                     if self.args.execute_scroll and scrolls[c] < 1:
                         # use another cli with scroll
@@ -289,24 +284,33 @@ SNAILS: {totals[2]}'''
                                 [ms, fs],
                             )
                             fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                            print(f'bulkTransfer for {fee} AVAX')
+                            print(f'bulkTransfer to {nc} for {fee} AVAX')
                             transfer_fees += fee
                         else:
                             for _s in (ms, fs):
                                 oc = self._cli_by_address(owners[_s])
                                 tx = oc.client.web3.transfer_snail(oc.owner, nc.owner, _s)
                                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                                print(f'transfer for {fee} AVAX')
+                                print(f'transfer to {nc} for {fee} AVAX')
                                 transfer_fees += fee
                         c = nc
                         self._wait_api_transfer(c, ms, fs)
+
+                    # transgender
+                    fee = _transgender(c, ms, cli.Gender.MALE)
+                    gender_fees += fee
+                    fee = _transgender(c, fs, cli.Gender.FEMALE)
+                    gender_fees += fee
+
                     # get coefficient just for displaying
                     coef = c.client.web3.get_current_coefficent()
                     print(f'breeding {ms, fs} (with coeff {coef})...')
                     tx = retriable_breed(c, fs, ms, use_scroll=self.args.execute_scroll)
+                    new_snail_id = c.client.web3.web3.to_int(tx.logs[0].topics[3])
+                    new_snail = self._wait_api_transfer(c, new_snail_id)[0]
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                     breed_fees += fee
-                    print(f'bred {ms, fs} for {fee}')
+                    print(f'bred {new_snail} from {ms, fs} for {fee}')
         finally:
             print(
                 f'''
