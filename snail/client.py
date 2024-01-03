@@ -388,9 +388,11 @@ class Client:
             auth=self.gql_token,
         )['claim_building_reward_promise']
 
-    def breed_snails(self, female_id, male_id):
+    def breed_snails(self, female_id, male_id, use_scroll=False):
         nonce = self.web3.incubate_nonce()
-        data = self.gql.incubate(self.web3.wallet, female_id, male_id, nonce, gql_token=self.gql_token)
+        data = self.gql.incubate(
+            self.web3.wallet, female_id, male_id, nonce, use_scroll=use_scroll, gql_token=self.gql_token
+        )
         payload = data['payload']
         return self.web3.incubate_snails(
             payload['item_id'],
@@ -453,3 +455,6 @@ class Client:
 
     def gas_price(self):
         return self.web3.gas_price / web3client.GWEI_DECIMALS
+
+    def snail_owners(self, *snails: int):
+        return self.web3.owner_of_snails(*snails)

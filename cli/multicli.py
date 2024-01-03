@@ -12,6 +12,7 @@ from colorama import Fore
 from tqdm import tqdm
 
 from snail.gqlclient.types import Adaptation, Family, Snail
+from snail.web3client import DECIMALS
 
 from . import cli, commands, utils
 from .database import GlobalDB
@@ -150,125 +151,185 @@ SNAILS: {totals[2]}'''
 
     def cmd_incubate(self):
         if self.args.execute:
-            # validate
-            plan = [list(map(int, l.split(' ')[0].split(':'))) for l in self.args.execute.read_text().splitlines()]
+            return self._cmd_incubate_execute()
+        if self.args.fee is not None and self.args.plan:
+            return self._cmd_incubate_plan()
+        return False
 
-            # any incomplete breed cycle?
-            males = defaultdict(lambda: 0)
-            females = defaultdict(lambda: 0)
-            for p in plan:
-                males[p[1]] += 1
-                females[p[2]] += 1
-            fail = False
-            for k, v in males.items():
-                if v < 3:
-                    print(f'male {k} only has {v} breeds')
-                    fail = True
-            if fail:
-                raise Exception('incomplete plan')
-            for k, v in females.items():
-                if v != 1:
-                    print(f'female {k} has {v} breeds')
-                    fail = True
-            if fail:
-                raise Exception('incomplete plan')
+    def _cli_by_address(self, address):
+        for cli in self.clis:
+            if cli.owner[-40:].lower() == address[-40:].lower():
+                return cli
 
-            # transgender plan
-            done = set()
+    def _wait_api_transfer(self, cli: cli.CLI, *snails: int, sleep=0.5):
+        """wait for API to refresh after snail transfers"""
+        for _ in range(60):
+            _snails = list(cli.client.iterate_all_snails(filters={'id': snails}))
+            if (_snails[0].owner, _snails[1].owner) == (cli.owner, cli.owner):
+                print('API updated with transfers')
+                return
+            print('.', end='', flush=True)
+            time.sleep(sleep)
+        raise Exception('too many retries, not the holder?!')
 
-            def _transgender(c, snail, gender):
-                fee = 0
-                if snail not in done:
-                    tx = c.client.web3.set_snail_gender(snail, gender.value)
-                    if tx:
-                        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                        print(f'{snail} changed gender to {gender} for {fee}')
-                    done.add(snail)
-                return fee
+    def _cmd_incubate_execute(self):
+        # validate
+        plan = [list(map(int, l.split(' ')[0].split(':'))) for l in self.args.execute.read_text().splitlines()]
 
-            acc_indices = {c._profile['_i']: _i for _i, c in enumerate(self.clis)}
-            # regroup per account
-            new_plan = {}
-            # reversed would be more profitable (more expensive first) but if it runs out of funds
-            # the cheapest are not processed...
-            for p in plan:
-                if p[0] not in new_plan:
-                    new_plan[p[0]] = []
-                new_plan[p[0]].append(p[1:])
+        # any incomplete breed cycle?
+        males = defaultdict(lambda: 0)
+        females = defaultdict(lambda: 0)
+        for p in plan:
+            males[p[1]] += 1
+            females[p[2]] += 1
+        fail = False
+        for k, v in males.items():
+            if v < 3:
+                print(f'male {k} only has {v} breeds')
+                fail = True
+        if fail and not self.args.execute_force:
+            raise Exception('incomplete plan')
+        for k, v in females.items():
+            if v != 1:
+                print(f'female {k} has {v} breeds')
+                fail = True
+        if fail and not self.args.execute_force:
+            raise Exception('incomplete plan')
 
-            # approve incubator
-            for acc in tqdm(new_plan, desc='Approve incubator'):
-                c = self.clis[acc_indices[acc]]
-                tx = c.client.web3.approve_slime_for_incubator()
+        # transgender plan
+        done = set()
+
+        def _transgender(c, snail, gender):
+            fee = 0
+            if snail not in done:
+                tx = c.client.web3.set_snail_gender(snail, gender.value)
                 if tx:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                    print(f'{c.name} approved incubator for {fee}')
+                    print(f'{snail} changed gender to {gender} for {fee}')
+                done.add(snail)
+            return fee
 
-            def retriable_breed(c, fs, ms):
-                _r = None
-                for _ in range(60):
-                    try:
-                        return c.client.breed_snails(fs, ms)
-                    except cli.client.gqlclient.APIError as e:
-                        if 'Please provide a' not in str(e):
-                            raise
-                        _r = e
-                        time.sleep(0.5)
-                    except cli.client.web3client.exceptions.ContractLogicError as e:
-                        if 'Protocol coefficent changed' not in str(e):
-                            raise
-                        time.sleep(1)
-                        _r = e
-                raise _r
+        acc_indices = {c._profile['_i']: _i for _i, c in enumerate(self.clis)}
+        # regroup per account
+        new_plan: dict[int, list[int]] = defaultdict(list)
+        # reversed would be more profitable (more expensive first) but if it runs out of funds
+        # the cheapest are not processed...
+        for p in plan:
+            new_plan[p[0]].append(p[1:])
 
-            last_client = None
-            gender_fees = 0
-            breed_fees = 0
+        # approve incubator
+        for acc in tqdm(new_plan, desc='Approve incubator'):
+            c = self.clis[acc_indices[acc]]
+            tx = c.client.web3.approve_slime_for_incubator()
+            if tx:
+                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                print(f'{c.name} approved incubator for {fee}')
 
-            try:
-                for acc, acc_plan in new_plan.items():
-                    c = self.clis[acc_indices[acc]]
-                    if last_client is not None and last_client != c:
-                        last_client.cmd_balance_transfer(c.owner)
-                    last_client = c
-                    for ms, fs, *rest in acc_plan:
-                        if rest:
-                            print(f'Skipping {ms, fs}')
-                            continue
-                        # transgender
-                        fee = _transgender(c, ms, cli.Gender.MALE)
-                        gender_fees += fee
-                        fee = _transgender(c, fs, cli.Gender.FEMALE)
-                        gender_fees += fee
-                        # get coefficient just for displaying
-                        coef = c.client.web3.get_current_coefficent()
-                        print(f'breeding {ms, fs} (with coeff {coef})...')
-                        tx = retriable_breed(c, fs, ms)
-                        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                        breed_fees += fee
-                        print(f'bred {ms, fs} for {fee}')
-            finally:
-                print(
-                    f'''
+        def retriable_breed(c, fs, ms, use_scroll=False):
+            _r = None
+            for _ in range(60):
+                try:
+                    return c.client.breed_snails(fs, ms, use_scroll=use_scroll)
+                except cli.client.gqlclient.APIError as e:
+                    if 'Please provide a' not in str(e):
+                        raise
+                    _r = e
+                    time.sleep(0.5)
+                except cli.client.web3client.exceptions.ContractLogicError as e:
+                    if 'Protocol coefficent changed' not in str(e):
+                        raise
+                    time.sleep(1)
+                    _r = e
+            raise _r
+
+        last_client = None
+        gender_fees = 0
+        breed_fees = 0
+        transfer_fees = 0
+        scrolls: dict[cli.CLI, int] = defaultdict(lambda: 0)
+        if self.args.execute_scroll:
+            for c in tqdm(self.clis, desc='Loading inventory'):
+                for _, v in c.cmd_inventory(verbose=False).items():
+                    if v[0].name.startswith('Breeding Scroll'):
+                        scrolls[c] += 1
+
+        try:
+            for acc, acc_plan in new_plan.items():
+                c = self.clis[acc_indices[acc]]
+                if not self.args.execute_scroll and last_client is not None and last_client != c:
+                    last_client.cmd_balance_transfer(c.owner)
+                last_client = c
+                for ms, fs, *rest in acc_plan:
+                    if rest:
+                        print(f'Skipping {ms, fs}')
+                        continue
+                    # transgender
+                    fee = _transgender(c, ms, cli.Gender.MALE)
+                    gender_fees += fee
+                    fee = _transgender(c, fs, cli.Gender.FEMALE)
+                    gender_fees += fee
+
+                    if self.args.execute_scroll and scrolls[c] < 1:
+                        # use another cli with scroll
+                        for nc, nv in scrolls.items():
+                            if nv > 0 and nc not in new_plan:
+                                break
+                        else:
+                            raise Exception('no useable scrolls found')
+                        scrolls[nc] -= 1
+                        owners = c.client.snail_owners(ms, fs)
+                        if owners[ms] == owners[fs]:
+                            oc = self._cli_by_address(owners[ms])
+                            tx = oc.client.web3.approve_all_snails_for_bulk()
+                            if tx:
+                                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                                print(f'Approved bulkTransfer for {fee} AVAX')
+                            tx = oc.client.web3.bulk_transfer_snails(
+                                nc.owner,
+                                [ms, fs],
+                            )
+                            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                            print(f'bulkTransfer for {fee} AVAX')
+                            transfer_fees += fee
+                        else:
+                            for _s in (ms, fs):
+                                oc = self._cli_by_address(owners[_s])
+                                tx = oc.client.web3.transfer_snail(oc.owner, nc.owner, _s)
+                                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                                print(f'transfer for {fee} AVAX')
+                                transfer_fees += fee
+                        c = nc
+                        self._wait_api_transfer(c, ms, fs)
+                    # get coefficient just for displaying
+                    coef = c.client.web3.get_current_coefficent()
+                    print(f'breeding {ms, fs} (with coeff {coef})...')
+                    tx = retriable_breed(c, fs, ms, use_scroll=self.args.execute_scroll)
+                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    breed_fees += fee
+                    print(f'bred {ms, fs} for {fee}')
+        finally:
+            print(
+                f'''
 == Fees summary ==
+Transfers: {transfer_fees}
 Transgender: {gender_fees}
 Breed: {breed_fees}
-Total: {breed_fees + gender_fees}
+Total: {breed_fees + gender_fees + transfer_fees}
 '''
-                )
-            return
-        if self.args.fee is not None and self.args.plan:
-            snails = []
-            for c in self.clis:
-                _, ss = c.run()
-                snails.extend((x1, x2, x3, c) for x1, x2, x3 in ss)
-            print(f'\n{Fore.GREEN}== FULL PLAN =={Fore.RESET}')
-            for fee, snail1, snail2, c in sorted(snails, key=lambda x: x[0]):
-                print(
-                    f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
-                )
-            return
-        return False
+            )
+        return
+
+    def _cmd_incubate_plan(self):
+        snails = []
+        for c in self.clis:
+            _, ss = c.run()
+            snails.extend((x1, x2, x3, c) for x1, x2, x3 in ss)
+        print(f'\n{Fore.GREEN}== FULL PLAN =={Fore.RESET}')
+        for fee, snail1, snail2, c in sorted(snails, key=lambda x: x[0]):
+            print(
+                f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+            )
+        return
 
     def cmd_tournament(self):
         if self.args.stats or self.args.preview or self.args.market:
@@ -480,7 +541,9 @@ Total: {breed_fees + gender_fees}
             print(cli.owner)
         print('--hass')
         for cli in self.clis:
-            print(f"https://hass.pis.sf/api/states/sensor.balance_snailtrail{cli._profile['_i'] if cli._profile['_i'] != 1 else ''}")
+            print(
+                f"https://hass.pis.sf/api/states/sensor.balance_snailtrail{cli._profile['_i'] if cli._profile['_i'] != 1 else ''}"
+            )
         print('--hass-token "%hass token dkron jobs"')
 
     @commands.argument('--file', type=Path, help='Cache filename')
@@ -607,20 +670,10 @@ Total: {breed_fees + gender_fees}
                 fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                 print(f'{c.name} approved lab for {fee}')
 
-            for _ in range(30):
-                try:
-                    tx = new_owner.client.microwave_snails([snail.id], use_scroll=True)
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
-                    print(f'{snail} burnt for {fee}')
-                    break
-                except cli.client.gqlclient.APIError as e:
-                    if 'You are not the holder of Snail' not in str(e):
-                        raise
-                    print('.', end='', flush=True)
-                    time.sleep(0.5)
-            else:
-                raise Exception('too many retries, not the holder?!')
-
+            self._wait_api_transfer(new_owner, snail.id)
+            tx = new_owner.client.microwave_snails([snail.id], use_scroll=True)
+            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+            print(f'{snail} burnt for {fee}')
             del snail_owners[snail.id]
             del totals[new_owner]
 

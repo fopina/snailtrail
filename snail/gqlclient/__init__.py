@@ -224,6 +224,7 @@ class Client(requests.Session):
                         id
                         adaptations
                         name
+                        owner
                         gender {
                         id
                         can_change_at

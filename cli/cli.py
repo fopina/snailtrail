@@ -2208,6 +2208,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=Path,
         help='Execute breeding plan from saved file',
     )
+    @commands.argument(
+        '--execute-scroll',
+        action='store_true',
+        help='Execute breeding plan only using scrolls',
+    )
+    @commands.argument(
+        '--execute-force',
+        action='store_true',
+        help='Execute breeding plan even if incomplete',
+    )
     @commands.command()
     def cmd_incubate(self):
         """

@@ -674,3 +674,18 @@ class Client:
             wait_for_transaction_receipt=wait_for_transaction_receipt,
             **kwargs,
         )
+
+    def owner_of_snails(self, *snails: int):
+        """
+        return owners of `snails` in one single web3 (multi)call of `ownerOf`
+        """
+        calls = []
+        for snail in snails:
+            calls.append((self.snailnft_contract.address, self.snailnft_contract.encodeABI('ownerOf', args=(snail,))))
+        x = self.multicall_contract.functions.aggregate(calls).call({'from': self.wallet})
+        w_ind = 0
+        results = {}
+        for y in range(0, len(x[1])):
+            results[snails[w_ind]] = self.web3.to_hex(x[1][y])[-40:]
+            w_ind += 1
+        return results

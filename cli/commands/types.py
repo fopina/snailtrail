@@ -21,7 +21,7 @@ class FileOrInt(int):
             return int.__new__(cls, f.read_text().strip())
         return int.__new__(cls, content)
 
-    
+
 class AppendWalletAction(configargparse.argparse._AppendAction):
     # FIXME: hack to access wallet list from any other action as the primary parser namespace is not available to subparsers...
     WALLETS = []
@@ -36,10 +36,13 @@ class AppendWalletAction(configargparse.argparse._AppendAction):
                 w = Wallet(val, None)
             elif val[0].lower() == '+':
                 from web3 import Web3
+
                 w3 = Web3()
                 w3.eth.account.enable_unaudited_hdwallet_features()
                 ind = int(val[1:])
-                w = Wallet.from_private_key(w3.eth.account.from_mnemonic(namespace.wallet_seed, account_path=f"m/44'/60'/0'/0/{ind}").key)
+                w = Wallet.from_private_key(
+                    w3.eth.account.from_mnemonic(namespace.wallet_seed, account_path=f"m/44'/60'/0'/0/{ind}").key
+                )
             else:
                 w = Wallet.from_private_key(val)
 
