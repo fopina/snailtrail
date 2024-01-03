@@ -468,7 +468,7 @@ class Client:
                 self.web3.wallet, recipient, snail_ids[0], estimate_only=estimate_only
             )
 
-        if self.args.estimate:
+        if estimate_only:
             approval_tx = None
         else:
             approval_tx = self.web3.approve_all_snails_for_bulk()

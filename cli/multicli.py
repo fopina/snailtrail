@@ -900,16 +900,23 @@ Total: {breed_fees + gender_fees + transfer_fees}
         """re-implement to handle transfers more efficiently"""
         if self.args.transfer is None:
             return False
-        _, transfer_snails = self.args.transfer
+        transfer_wallet, transfer_snails = self.args.transfer
         owners = self.main_cli.client.snail_owners(*transfer_snails)
         done = set()
+        r = True
         for _, v in owners.items():
             if v in done:
                 continue
             done.add(v)
             cli = self._cli_by_address(v)
             cli._header()
-            cli.cmd_snails_transfer()
+            r = cli.cmd_snails_transfer()
+
+        # only wait for snails if ALL were transferred...
+        if not r:
+            cli = self._cli_by_address(transfer_wallet.address)
+            if cli is not None:
+                self._wait_api_transfer(cli, *owners.keys())
 
     def run(self):
         if not self.args.cmd:
