@@ -388,13 +388,13 @@ class Client:
             auth=self.gql_token,
         )['claim_building_reward_promise']
 
-    def breed_snails(self, female_id, male_id, use_scroll=False):
+    def breed_snails(self, female_id, male_id, use_scroll=False) -> tuple[int, web3client.web3_types.TxReceipt]:
         nonce = self.web3.incubate_nonce()
         data = self.gql.incubate(
             self.web3.wallet, female_id, male_id, nonce, use_scroll=use_scroll, gql_token=self.gql_token
         )
         payload = data['payload']
-        return self.web3.incubate_snails(
+        tx = self.web3.incubate_snails(
             payload['item_id'],
             int(payload['base_fee_wei']),
             int(payload['market_price_wei']),
@@ -405,6 +405,8 @@ class Client:
             payload['salt'],
             data['signature'],
         )
+        new_snail_id = self.web3.web3.to_int(tx.logs[0].topics[3])
+        return new_snail_id, tx
 
     def apply_pressure(self, token_id, scroll_id):
         signature = self.web3.sign_pot(token_id, scroll_id)

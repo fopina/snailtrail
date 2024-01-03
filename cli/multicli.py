@@ -303,8 +303,7 @@ SNAILS: {totals[2]}'''
                     # get coefficient just for displaying
                     coef = c.client.web3.get_current_coefficent()
                     print(f'breeding {ms, fs} (with coeff {coef})...')
-                    tx = retriable_breed(c, fs, ms, use_scroll=self.args.execute_scroll)
-                    new_snail_id = c.client.web3.web3.to_int(tx.logs[0].topics[3])
+                    new_snail_id, tx = retriable_breed(c, fs, ms, use_scroll=self.args.execute_scroll)
                     new_snail = self._wait_api_transfer(c, new_snail_id)[0]
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
                     breed_fees += fee
