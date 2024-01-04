@@ -665,12 +665,3 @@ wallet: [{self.wallet_file.name}]
         self.assertEqual(notifier._Notifier__token, TOKEN)
         self.assertEqual(notifier.chat_id, 2)
         self.assertEqual(notifier.owner_chat_id, {3})
-
-    @mock.patch('cli.multicli.MultiCLI')
-    def test_default_wallet(self, multi_mock: mock.MagicMock):
-        # hardcoded filename, shortcut and then assert call
-        with mock.patch('cli.commands.FileOrString') as wallet_mock:
-            wallet_mock.return_value = TEST_WALLET_PKEY
-            cli.main(['-c', '', 'missions'])
-        multi_mock.assert_called_once_with(wallets=[TEST_WALLET_WALLET], proxy_url=None, args=mock.ANY)
-        wallet_mock.assert_called_with('pkey.conf')

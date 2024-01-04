@@ -203,7 +203,7 @@ def main(argv=None):
         args.notify.owner_chat_id = args.tg_bot_owner
 
     if not args.wallet:
-        args.wallet = [types.Wallet.from_private_key(commands.FileOrString('pkey.conf'))]
+        args.wallet = []
     wallets = args.wallet
     if args.friends:
         wallets.extend(args.friend)
