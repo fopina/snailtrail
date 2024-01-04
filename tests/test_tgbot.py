@@ -15,7 +15,7 @@ class Test(TestCase):
         parser.add_argument('--css-minimum', type=int, help='css')
         parser.add_argument('--wtv', action='store_true', help='Whatever')
         parser.add_argument('--css-fee', nargs=2, type=int, help='Whatever Other')
-        parser.add_argument('--choose', type=int, choices=(1, 2), help='Whatever Other')
+        parser.add_argument('--choose', type=int, choices=(1, 2), default=1, help='Whatever Other')
         parser.add_argument('--wtv-list', type=float, action='append', help='Whatever List')
         args = mparser.parse_args(['bot', '--css-minimum', '0'], config_file_contents='')
         self.main_parser = mparser
@@ -159,7 +159,7 @@ class Test(TestCase):
                     InlineKeyboardButton('🔧 🔴 wtv', callback_data=f'toggle wtv'),
                 ],
                 [
-                    InlineKeyboardButton('🔧 ❌ choose', callback_data=f'toggle choose'),
+                    InlineKeyboardButton('🔧 [1] choose', callback_data=f'toggle choose'),
                     InlineKeyboardButton('🔧 ❌ wtv_list', callback_data=f'toggle wtv_list'),
                 ],
                 [
@@ -309,9 +309,9 @@ class Test(TestCase):
         self.bot.handle_buttons(self.update, self.context)
         self.update.callback_query.answer.assert_called_once_with()
         self.update.callback_query.edit_message_text.assert_called_once_with(
-            text='`choose`\nWhatever Other\n```\nNone\n```', reply_markup=None, parse_mode='Markdown'
+            text='`choose`\nWhatever Other\n```\n1\n```', reply_markup=None, parse_mode='Markdown'
         )
-        self.assertEqual(self.cli.args.choose, None)
+        self.assertEqual(self.cli.args.choose, 1)
 
         self.update.message = mock.MagicMock(
             reply_to_message=mock.MagicMock(text='choose'),
@@ -339,12 +339,12 @@ class Test(TestCase):
         self.bot.cmd_message(self.update, self.context)
         self.bot.updater.bot.send_message.assert_called_once_with(
             999999999,
-            text='Toggled *choose* to *None*',
+            text='Toggled *choose* to *1*',
             reply_to_message_id=123,
             reply_markup=mock.ANY,
             parse_mode='Markdown',
         )
-        self.assertEqual(self.cli.args.choose, None)
+        self.assertEqual(self.cli.args.choose, 1)
 
         self.update.message = mock.MagicMock(
             reply_to_message=mock.MagicMock(text='choose'),
@@ -361,7 +361,7 @@ class Test(TestCase):
             reply_markup=mock.ANY,
             parse_mode='Markdown',
         )
-        self.assertEqual(self.cli.args.choose, None)
+        self.assertEqual(self.cli.args.choose, 1)
 
     def test_handle_buttons_toggle_help(self):
         self.update.callback_query = mock.MagicMock(data='toggle __help')
@@ -371,7 +371,7 @@ class Test(TestCase):
             text='''\
 `css_minimum` \\[0] css
 `wtv` 🔴 Whatever
-`choose` ❌ Whatever Other
+`choose` \\[1] Whatever Other
 `wtv_list` ❌ Whatever List''',
             parse_mode='Markdown',
         )

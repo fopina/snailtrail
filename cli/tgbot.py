@@ -266,7 +266,7 @@ class Notifier:
                     parse_mode='Markdown',
                 )
                 query.message.reply_markdown(
-                    text=f'New value for `{opts}`.\nUse `cancel` to ignore, `empty` to set it to None and multiple lines if it is a multiple argument option.',
+                    text=f'New value for `{opts}`.\nUse `cancel` to ignore, `empty` to set it back to default value and multiple lines if it is a multiple argument option.',
                     reply_markup=ForceReply(force_reply=True, input_field_placeholder=ov),
                     reply_to_message_id=query.message.message_id,
                 )
@@ -595,7 +595,7 @@ class Notifier:
         args = self.any_cli.args
         try:
             if update.message.text.lower() == 'empty':
-                nv = None
+                nv = setting.default
                 setattr(args, keyword, nv)
             else:
                 if isinstance(setting, (configargparse.argparse._AppendAction)):
