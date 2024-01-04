@@ -100,8 +100,8 @@ class MultiCLI:
         # this cmd is special as it should loop infinitely
         self.args.notify.start_polling()
 
-        cli_waits = defaultdict(lambda: 0)
-        cli_waits_other = defaultdict(lambda: 0)
+        cli_waits = defaultdict(lambda: datetime(1970, 1, 1))
+        cli_waits_other = defaultdict(lambda: datetime(1970, 1, 1))
         try:
             self.clis[0].cmd_bot_greet()
             while True:
