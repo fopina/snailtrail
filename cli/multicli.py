@@ -94,8 +94,7 @@ class MultiCLI:
                 c._bot_tournament = lambda: None
             guilds.add(c.profile_guild)
 
-        c = self.clis[0]
-        c.load_bot_settings()
+        self.main_cli.load_bot_settings()
 
         # this cmd is special as it should loop infinitely
         self.args.notify.start_polling()
@@ -103,9 +102,9 @@ class MultiCLI:
         cli_waits = defaultdict(lambda: datetime(1970, 1, 1, tz=timezone.utc))
         cli_waits_other = defaultdict(lambda: datetime(1970, 1, 1, tz=timezone.utc))
         try:
-            self.clis[0].cmd_bot_greet()
+            self.main_cli.cmd_bot_greet()
             while True:
-                now = self.clis[0]._now()
+                now = self.main_cli._now()
                 # do all missions in a row, first
                 for c in self.clis:
                     if now < cli_waits[c.owner]:
