@@ -100,16 +100,24 @@ class MultiCLI:
         # this cmd is special as it should loop infinitely
         self.args.notify.start_polling()
 
-        cli_waits = {}
+        cli_waits = defaultdict(0)
+        cli_waits_other = defaultdict(0)
         try:
             self.clis[0].cmd_bot_greet()
             while True:
                 now = datetime.now(tz=timezone.utc)
+                # do all missions in a row, first
                 for c in self.clis:
-                    if c.owner in cli_waits and now < cli_waits[c.owner]:
+                    if now < cli_waits[c.owner]:
                         continue
-                    w = c.cmd_bot_tick()
+                    w = c._cmd_bot_tick_exception_handler(c._cmd_bot_tick_missions)
                     cli_waits[c.owner] = now + timedelta(seconds=w)
+                # then the others
+                for c in self.clis:
+                    if now < cli_waits_other[c.owner]:
+                        continue
+                    c._cmd_bot_tick_exception_handler(c._cmd_bot_tick_other)
+                    cli_waits_other[c.owner] = now + timedelta(seconds=self.args.wait)
                 wf = min(list(cli_waits.values()))
                 time.sleep((wf - now).total_seconds())
         except KeyboardInterrupt:

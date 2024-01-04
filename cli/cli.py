@@ -1173,11 +1173,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._every_cache[func.__name__] = self._now() + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
     def cmd_bot_tick(self):
-        w = self.args.wait
-        if not self.args.paused:
-            if self.args.missions:
-                w = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_missions)
-            self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_other)
+        w = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_missions)
+        self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_other)
         return w
 
     def _cmd_bot_tick_exception_handler(self, m):
@@ -1221,6 +1218,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _cmd_bot_tick_missions(self):
         w = self.args.wait
+        if self.args.paused:
+            return w
+        if not self.args.missions:
+            return w
+
         now = self._now()
         if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
             self._next_mission = self.join_missions()
@@ -1239,6 +1241,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return w
 
     def _cmd_bot_tick_other(self):
+        if self.args.paused:
+            return
         if self.args.races:
             self.find_races()
 
