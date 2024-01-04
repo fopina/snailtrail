@@ -56,9 +56,22 @@ class TestBot(TestCase):
     def test_masked_owner(self):
         self.assertEqual(self.cli.masked_wallet, '0xbad...081')
 
+    def _get_mission_races_mock(self):
+        race_start = True
+
+        def x(*a, **b):
+            nonlocal race_start
+            if race_start:
+                race_start = False
+                return data.GQL_MISSION_RACES
+            race_start = True
+            return {'all': []}
+
+        return x
+
     def test_join_missions(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.join_missions()
         self.assertEqual(
@@ -72,7 +85,7 @@ class TestBot(TestCase):
 
     def test_join_missions_no_adaptations(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.mission_matches = 0
         self.cli.join_missions()
@@ -87,7 +100,7 @@ class TestBot(TestCase):
 
     def test_join_missions_max_adaptations(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
 
         self.cli.args.mission_matches = 0
@@ -102,7 +115,7 @@ class TestBot(TestCase):
             ],
         )
 
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.gql.join_mission_races.reset_mock()
         self.cli.args.mission_matches = 3
         self.cli.join_missions()
@@ -118,7 +131,7 @@ class TestBot(TestCase):
 
     def test_join_missions_boosted(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.mission_matches = 0
         self.cli.args.boost = [int(s['id']) for s in data.GQL_MISSION_SNAILS['snails']]
@@ -138,7 +151,7 @@ class TestBot(TestCase):
 
     def test_join_missions_boosted_wallet(self):
         self.cli.client.gql.get_my_snails_for_missions.return_value = data.GQL_MISSION_SNAILS
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.boost_wallet = [self._wallet]
         self.cli.args.mission_matches = 0
@@ -158,7 +171,7 @@ class TestBot(TestCase):
         self.cli.client.web3.join_daily_mission.assert_not_called()
 
         # enable no-adaptations for boosted snails and 9104 pops up
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.gql.join_mission_races.reset_mock()
         self.cli.args.no_adapt = True
         self.cli.join_missions()
@@ -181,7 +194,7 @@ class TestBot(TestCase):
             if s['id'] == 8667:
                 s['stats']['experience']['level'] = 15
         self.cli.client.gql.get_my_snails_for_missions.return_value = msnails
-        self.cli.client.gql.get_mission_races.side_effect = [data.GQL_MISSION_RACES, {'all': []}]
+        self.cli.client.gql.get_mission_races.side_effect = self._get_mission_races_mock()
         self.cli.client.web3.sign_race_join.return_value = 'signed'
         self.cli.args.boost = [int(s['id']) for s in data.GQL_MISSION_SNAILS['snails']]
         self.cli.args.boost_to = 15

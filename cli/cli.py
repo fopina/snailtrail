@@ -330,9 +330,7 @@ class CLI:
             not_cheap = set()
 
         # add snails with few tickets to "boosted" to re-use logic
-        for s in queueable:
-            if s.stats['mission_tickets'] < self.args.minimum_tickets:
-                boosted.add(s.id)
+        boosted.update({s.id for s in queueable if s.stats['mission_tickets'] < self.args.minimum_tickets})
 
         def _slow_snail(snail, seconds=90):
             # add snail to cooldown, use 90 for now - check future logs if they still get locked
@@ -351,7 +349,20 @@ class CLI:
         else:
             under_fee_spike = False
 
-        for race in missions:
+        missions_done = set()
+        while True:
+            # refresh mission EVERY time
+            missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
+            missions.sort(key=lambda race: len(race.athletes), reverse=True)
+            for race in missions:
+                # find one that hasn't been processed yet
+                if race.id not in missions_done:
+                    missions_done.add(race.id)
+                    break
+            else:
+                # stop if all seen
+                break
+
             if under_fee_spike:
                 boosted = set()
             snail = self._join_missions_race_snail(race, queueable, boosted)
