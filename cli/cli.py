@@ -1173,53 +1173,16 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._every_cache[func.__name__] = self._now() + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
     def cmd_bot_tick(self):
+        w = self.args.wait
+        if not self.args.paused:
+            if self.args.missions:
+                w = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_missions)
+            self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_other)
+        return w
+
+    def _cmd_bot_tick_exception_handler(self, m):
         try:
-            w = self.args.wait
-            if not self.args.paused:
-                if self.args.missions:
-                    now = self._now()
-                    if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
-                        self._next_mission = self.join_missions()
-                        if self._next_mission[0] is False:
-                            msg = f'{self._next_mission[1]} pending'
-                        elif self._next_mission[1] is None:
-                            msg = f'no snails'
-                        else:
-                            msg = str(self._next_mission[1])
-                        self.logger.info('next mission in at %s', msg)
-                    if self._next_mission[0] and self._next_mission[1] is not None:
-                        # if wait for next mission is lower than wait argument, use it
-                        _w = (self._next_mission[1] - now).total_seconds()
-                        if 0 < _w < w:
-                            w = _w
-
-                if self.args.races:
-                    self.find_races()
-
-                self.find_races_over()
-
-                if self.report_as_main:
-                    if self.args.market:
-                        self._bot_marketplace()
-                    if self.args.coefficent:
-                        self._bot_coefficent()
-                    if self.args.burn:
-                        self.every(self._bot_burn_coefficent, minutes=2)
-                    if self.args.fee_monitor is not None:
-                        self.every(self._bot_fee_monitor, minutes=5)
-                    if not self.args.rental:
-                        # exclusive features of mine, not rentals!
-                        if self.args.tournament_market:
-                            self.every(self._bot_tournament_market, minutes=10)
-
-                if self.args.tournament:
-                    self._bot_tournament()
-
-                if self.args.auto_claim:
-                    self.every(self._bot_autoclaim, hours=24)
-
-            self.logger.debug('waiting %d seconds', w)
-            return w
+            return m()
         except client.gqlclient.requests.exceptions.HTTPError as e:
             if e.response.status_code in (502, 504):
                 # log stacktrace to check if specific calls cause this more frequently
@@ -1255,6 +1218,51 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 '''
                 )
             return 120
+
+    def _cmd_bot_tick_missions(self):
+        w = self.args.wait
+        now = self._now()
+        if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
+            self._next_mission = self.join_missions()
+            if self._next_mission[0] is False:
+                msg = f'{self._next_mission[1]} pending'
+            elif self._next_mission[1] is None:
+                msg = f'no snails'
+            else:
+                msg = str(self._next_mission[1])
+            self.logger.info('next mission in at %s', msg)
+        if self._next_mission[0] and self._next_mission[1] is not None:
+            # if wait for next mission is lower than wait argument, use it
+            _w = (self._next_mission[1] - now).total_seconds()
+            if 0 < _w < w:
+                w = _w
+        return w
+
+    def _cmd_bot_tick_other(self):
+        if self.args.races:
+            self.find_races()
+
+        self.find_races_over()
+
+        if self.report_as_main:
+            if self.args.market:
+                self._bot_marketplace()
+            if self.args.coefficent:
+                self._bot_coefficent()
+            if self.args.burn:
+                self.every(self._bot_burn_coefficent, minutes=2)
+            if self.args.fee_monitor is not None:
+                self.every(self._bot_fee_monitor, minutes=5)
+            if not self.args.rental:
+                # exclusive features of mine, not rentals!
+                if self.args.tournament_market:
+                    self.every(self._bot_tournament_market, minutes=10)
+
+        if self.args.tournament:
+            self._bot_tournament()
+
+        if self.args.auto_claim:
+            self.every(self._bot_autoclaim, hours=24)
 
     @commands.argument('-j', '--join', action=commands.StoreRaceJoin, help='Join mission RACE_ID with SNAIL_ID')
     @commands.argument('--last-spot', action='store_true', help='Allow last spot (when --join)')
