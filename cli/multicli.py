@@ -111,15 +111,16 @@ class MultiCLI:
                     if now < cli_waits[c.owner]:
                         continue
                     w = c._cmd_bot_tick_exception_handler(c._cmd_bot_tick_missions)
-                    cli_waits[c.owner] = now + timedelta(seconds=w)
+                    if w:
+                        cli_waits[c.owner] = now + timedelta(seconds=w)
                 # then the others
                 for c in self.clis:
                     if now < cli_waits_other[c.owner]:
                         continue
-                    c._cmd_bot_tick_exception_handler(c._cmd_bot_tick_other)
-                    cli_waits_other[c.owner] = now + timedelta(seconds=self.args.wait)
-                wf = min(list(cli_waits.values()))
-                time.sleep((wf - now).total_seconds())
+                    w = c._cmd_bot_tick_exception_handler(c._cmd_bot_tick_other)
+                    if w:
+                        cli_waits_other[c.owner] = now + timedelta(seconds=w)
+                time.sleep(1)
         except KeyboardInterrupt:
             logger.info('Stopping...')
         finally:

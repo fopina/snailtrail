@@ -791,7 +791,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--no-adapt', action='store_true', help='If auto, ignore --mission-matches for boosted snails in missions'
     )
-    @commands.argument('-w', '--wait', type=int, default=30, help='Default wait time between checks')
     @commands.argument(
         '--paused', action='store_true', help='Start the bot paused (only useful for testing or with --tg-bot)'
     )
@@ -853,7 +852,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         try:
             while True:
                 w = self.cmd_bot_tick()
-                time.sleep(w)
+                time.sleep(w or 1)
         finally:
             self.args.notify.stop_polling()
 
@@ -1184,9 +1183,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         self._every_cache[func.__name__] = self._now() + timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
     def cmd_bot_tick(self):
-        w = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_missions)
-        self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_other)
-        return w
+        w1 = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_missions)
+        w2 = self._cmd_bot_tick_exception_handler(self._cmd_bot_tick_other)
+        return w1 or w2
 
     def _cmd_bot_tick_exception_handler(self, m):
         try:
@@ -1228,11 +1227,10 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return 120
 
     def _cmd_bot_tick_missions(self):
-        w = self.args.wait
         if self.args.paused:
-            return w
+            return
         if not self.args.missions:
-            return w
+            return
 
         now = self._now()
         if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
@@ -1244,26 +1242,21 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             else:
                 msg = str(self._next_mission[1])
             self.logger.info('next mission in at %s', msg)
-        if self._next_mission[0] and self._next_mission[1] is not None:
-            # if wait for next mission is lower than wait argument, use it
-            _w = (self._next_mission[1] - now).total_seconds()
-            if 0 < _w < w:
-                w = _w
-        return w
 
     def _cmd_bot_tick_other(self):
         if self.args.paused:
             return
-        if self.args.races:
-            self.find_races()
 
-        self.find_races_over()
+        if self.args.races:
+            self.every(self.find_races, minutes=1)
+
+        self.every(self.find_races_over, minutes=1)
 
         if self.report_as_main:
             if self.args.market:
-                self._bot_marketplace()
+                self.every(self._bot_marketplace, seconds=30)
             if self.args.coefficent:
-                self._bot_coefficent()
+                self.every(self._bot_coefficent, seconds=30)
             if self.args.burn:
                 self.every(self._bot_burn_coefficent, minutes=2)
             if self.args.fee_monitor is not None:

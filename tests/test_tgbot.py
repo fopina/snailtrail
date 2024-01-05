@@ -111,7 +111,6 @@ class Test(TestCase):
                 'burn',
                 'tournament',
                 'no_adapt',
-                'wait',
                 'paused',
                 'auto_claim',
                 'level_ups',
