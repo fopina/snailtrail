@@ -32,9 +32,8 @@ class Proxy:
                 self._binary,
             )
         args = [self._binary, '--bind', f':{self._port}']
-        # FIXME: implement upstream proxy
         if self._upstream:
-            args.extend(['--mode', f'upstream:{self._upstream}'])
+            args.extend(['-upstream-proxy', self._upstream])
         args.append('https://api.snailtrail.art/graphql/')
         args.extend(
             [

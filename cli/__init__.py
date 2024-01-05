@@ -16,7 +16,7 @@ from . import commands, multicli, tempconfigparser, tgbot, types
 if TYPE_CHECKING:
     import argparse
 
-DEFAULT_GOTLS_PATH = Path(__name__).resolve().parent / 'gotlsproxy' / 'dist' / 'gotlsproxy'
+DEFAULT_GOTLS_PATH = Path(__name__).resolve().parent / '.gotlsproxy' / 'gotlsproxy'
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s][%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -191,7 +191,6 @@ def main(argv=None):
         logger.debug('starting proxy')
         use_upstream_proxy = os.getenv('http_proxy') or os.getenv('https_proxy')
         if use_upstream_proxy:
-            use_upstream_proxy = use_upstream_proxy.split('://')[-1]
             logger.warning('(upstream proxy %s)', use_upstream_proxy)
         p = proxy.Proxy(args.gotls_bin, upstream_proxy=use_upstream_proxy)
         p.start()
