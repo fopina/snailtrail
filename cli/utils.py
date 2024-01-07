@@ -12,14 +12,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def balance_balance(clis, limit, stop, callback, force=False):
+def balance_balance(clis: 'list[cli.CLI]', limit, stop, callback, force=False):
     if limit <= stop:
         raise Exception('stop must be lower than limit')
     balances = []
     clis = list(clis)
     main_c = clis[0]
     wallets = [c.owner for c in clis]
-    balances_d = main_c.client.web3.multicall_balances(wallets)
+    balances_d = main_c.client.web3.multicall_balances(wallets, _all=False, snails=True)
     for c in clis:
         # ignore wallets with 0 snails, no need for balance...
         if balances_d[c.owner][0] > 0:

@@ -914,7 +914,9 @@ Total slime won in missions: **{total}**
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         keyboard = []
-        cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()], _all=False, unclaimed_slime=True)
+        cache = self.main_cli.client.web3.multicall_balances(
+            [c.owner for c in self.clis.values()], _all=False, unclaimed_slime=True
+        )
         for c in self.clis.values():
             keyboard.append(
                 [
