@@ -106,8 +106,13 @@ class MultiCLI:
             self.main_cli.cmd_bot_greet()
             while True:
                 now = self.main_cli._now()
-                # do all missions in a row, first
+                snail_balance = self.main_cli.client.web3.multicall_balances(
+                    [c.owner for c in self.clis], _all=False, snails=True
+                )
+                # do all missions in a row, first (but skip wallets with 0 snails)
                 for c in self.clis:
+                    if snail_balance[c.owner][0] == 0:
+                        continue
                     if now < cli_waits[c.owner]:
                         continue
                     _start = self.main_cli._now()

@@ -392,8 +392,8 @@ class Test(TestCase):
         self.bot.register_cli(cli2)
 
         self.cli.client.web3.multicall_balances.return_value = {
-            self.cli.owner: [1, 1, 1, 1, 1],
-            cli2.owner: [1, 1, 1, 1, 3],
+            self.cli.owner: [1],
+            cli2.owner: [3],
         }
 
         self.bot.cmd_claim(self.update, self.context)
