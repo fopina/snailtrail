@@ -265,41 +265,51 @@ class Client:
     def balance_of_snails(self):
         return self.snailnft_contract.functions.balanceOf(self.wallet).call({'from': self.wallet})
 
-    def multicall_balances(self, wallets: list[str]):
+    def multicall_balances(
+        self,
+        wallets: list[str],
+        _all=True,
+        snails=False,
+        wavax=False,
+        slime=False,
+        avax=False,
+        unclaimed_slime=False,
+        unclaimed_wavax=False,
+    ):
         """
         return multiple balances in one single web3 (multi)call:
         snails, wavax, slime, avax, claimable slime, claimable wavax
         """
         calls = []
-        contracts = [self.snailnft_contract, self.wavax_contract, self.slime_contract]
+
+        contracts = [
+            (self.snailnft_contract, 'balanceOf', snails),
+            (self.wavax_contract, 'balanceOf', wavax),
+            (self.slime_contract, 'balanceOf', slime),
+            (self.multicall_contract, 'getEthBalance', avax),
+            (self.race_contract, 'dailyRewardTracker', unclaimed_slime),
+            (self.mega_race_contract, 'rewardTracker', unclaimed_wavax),
+        ]
+
         for w in wallets:
-            for contract in contracts:
-                calls.append(
-                    (contract.address, contract.encodeABI('balanceOf', args=(w,))),
-                )
-            calls.append(
-                (self.multicall_contract.address, self.multicall_contract.encodeABI('getEthBalance', args=(w,)))
-            )
-            calls.append((self.race_contract.address, self.race_contract.encodeABI('dailyRewardTracker', args=(w,))))
-            calls.append(
-                (self.mega_race_contract.address, self.mega_race_contract.encodeABI('rewardTracker', args=(w,)))
-            )
+            for contract, function, do_it in contracts:
+                if _all or do_it:
+                    calls.append(
+                        (contract.address, contract.encodeABI(function, args=(w,))),
+                    )
         x = self.multicall_contract.functions.aggregate(calls).call({'from': self.wallet})
         w_ind = 0
         results = {}
-        for y in range(0, len(x[1]), 6):
-            results[wallets[w_ind]] = [
-                # balanceOf for all 3 contracts
-                self.web3.to_int(x[1][y]),
-                self.web3.to_int(x[1][y + 1]) / DECIMALS,
-                self.web3.to_int(x[1][y + 2]) / DECIMALS,
-                # avax balance
-                self.web3.to_int(x[1][y + 3]) / DECIMALS,
-                # claimable rewards: slime
-                self.web3.to_int(x[1][y + 4]) / DECIMALS,
-                # claimable rewards: wavax
-                self.web3.to_int(x[1][y + 5]) / DECIMALS,
-            ]
+        step = 6 if _all else len(list(x for x in contracts if x[2]))
+        for y in range(0, len(x[1]), step):
+            _r = []
+            results[wallets[w_ind]] = _r
+            if _all or snails:
+                _r.append(self.web3.to_int(x[1][y]))
+            else:
+                _r.append(self.web3.to_int(x[1][y]) / DECIMALS)
+            for yy in range(1, step):
+                _r.append(self.web3.to_int(x[1][y + yy]) / DECIMALS)
             w_ind += 1
         return results
 

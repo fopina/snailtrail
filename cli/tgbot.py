@@ -330,10 +330,10 @@ class Notifier:
         hash_queue = []
         any_cli = clis[0]
 
-        cache = any_cli.client.web3.multicall_balances([c.owner for c in clis])
+        cache = any_cli.client.web3.multicall_balances([c.owner for c in clis], _all=False, unclaimed_slime=True)
         for _cli in clis:
             if minimum:
-                _b = cache[_cli.owner][4]
+                _b = cache[_cli.owner][0]
                 if _b > minimum:
                     cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
                 else:
@@ -914,12 +914,12 @@ Total slime won in missions: **{total}**
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
         keyboard = []
-        cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()])
+        cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()], _all=False, unclaimed_slime=True)
         for c in self.clis.values():
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.name}: {cache[c.owner][4]}',
+                        f'💰 {c.name}: {cache[c.owner][0]}',
                         callback_data=f'claim {c.owner}',
                     )
                 ]
