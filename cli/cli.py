@@ -1099,9 +1099,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     return
 
             if old_next is None and _next is not None:
-                msg = f'{tour_data["name"]} week {week} starting!'
-                self.logger.info(msg)
-                self._notify(msg)
+                _k = (tour_data["name"], week)
+                if self.database.global_db.last_tournament_started != _k:
+                    self.database.global_db.last_tournament_started = _k
+                    msg = f'{tour_data["name"]} week {week} starting!'
+                    self.logger.info(msg)
+                    self._notify(msg)
 
             if old_data != data:
                 if data is None:
