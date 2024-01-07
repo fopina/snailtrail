@@ -289,14 +289,7 @@ class CLI:
         return self.notifier.notify(*args, from_wallet=self.masked_wallet, **kwargs)
 
     def _join_missions_race_snail(self, race, queueable, boosted):
-        if race.participation:
-            # already joined
-            return None
         athletes = len(race.athletes)
-        if athletes == 10:
-            # race full
-            return None
-
         candidates = self.find_candidates(race, queueable, include_zero=True)
         for score, adapts, _, snail in candidates:
             # mission-matches only applies to lv15+
@@ -351,16 +344,26 @@ class CLI:
 
         missions_done = set()
         while True:
+            # stop if there are no more snails in the queue
+            if not queueable:
+                return True, closest
             # refresh mission EVERY time
             missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
             missions.sort(key=lambda race: len(race.athletes), reverse=True)
             for race in missions:
                 # find one that hasn't been processed yet
                 if race.id not in missions_done:
+                    if race.participation:
+                        # already joined
+                        continue
+                    athletes = len(race.athletes)
+                    if athletes == 10:
+                        # race full
+                        continue
                     missions_done.add(race.id)
                     break
             else:
-                # stop if all seen
+                # stop if there are no unprocessed races
                 break
 
             if under_fee_spike:

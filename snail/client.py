@@ -187,7 +187,9 @@ class Client:
             args=[address],
         )
 
-    def iterate_mission_races(self, filters={}, max_calls=None) -> Generator[types.Race, None, None]:
+    def iterate_mission_races(self, filters={}, max_calls=1) -> Generator[types.Race, None, None]:
+        # WARNING: currently there's only 10 missions at any time and there is no "count"
+        # DEFAULT IS 1 max_call to avoid the extra useless request
         yield from self._iterate_pages(
             self.gql.get_mission_races,
             'all',

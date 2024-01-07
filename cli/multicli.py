@@ -116,7 +116,9 @@ class MultiCLI:
                         cli_waits[c.owner] = now + timedelta(seconds=w)
                     duration = (self.main_cli._now() - _start).total_seconds()
                     if duration > 1:
-                        c.logger.info('Tick-mission processed in %s (%d seconds)', self.main_cli._now() - _start, duration)
+                        c.logger.info(
+                            'Tick-mission processed in %s (%d seconds)', self.main_cli._now() - _start, duration
+                        )
                 # then the others
                 for c in self.clis:
                     if now < cli_waits_other[c.owner]:
@@ -127,7 +129,9 @@ class MultiCLI:
                         cli_waits_other[c.owner] = now + timedelta(seconds=w)
                     duration = (self.main_cli._now() - _start).total_seconds()
                     if duration > 1:
-                        c.logger.info('Tick-other processed in %s (%d seconds)', self.main_cli._now() - _start, duration)
+                        c.logger.info(
+                            'Tick-other processed in %s (%d seconds)', self.main_cli._now() - _start, duration
+                        )
                 time.sleep(1)
         except KeyboardInterrupt:
             logger.info('Stopping...')
