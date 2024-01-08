@@ -75,7 +75,6 @@ class CLI:
         self.notifier: tgbot.Notifier = args.notify
         self._notify_mission_data = None
         self._notify_marketplace = {}
-        self._notify_burn_coefficent = None
         self._notify_tournament = UNDEF
         self._next_mission = False, -1
         self._snail_mission_cooldown = {}
@@ -682,7 +681,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             self.logger.info(msg)
             self._notify(msg)
 
-        if self._notify_burn_coefficent != coef:
+        if self.notify_burn_coefficent != coef:
             self.database.notify_burn_coefficent = coef
             self.database.save()
 
