@@ -509,13 +509,17 @@ class Notifier:
             return
 
         extra_text = []
+
+        def _update():
+            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+
         final_status = {}
         total_claimed = [0]
 
         def _cb(_cli: 'cli.CLI', st: int, msg: str, args=None):
             extra_text.append(msg)
             if st != 0:
-                trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+                _update()
             if st == 0:
                 final_status[_cli.name] = None
             elif st == 1:
@@ -524,11 +528,16 @@ class Notifier:
             elif st == 2:
                 final_status[_cli.name] = extra_text[-1]
 
+        extra_text.append('Claiming...')
+        _update()
+        extra_text.pop()
         self._async_claim(list(self.clis.values()), _cb, minimum=self.main_cli.args.css_minimum)
 
         slime_claimed = total_claimed[0]
         extra_text = list(final_status.values()) + [f'*Total claimed*: {slime_claimed}', '']
-        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+        extra_text.append('Sending...')
+        _update()
+        extra_text.pop()
 
         final_status = {}
         total_claimed[0] = 0
@@ -536,7 +545,7 @@ class Notifier:
         self._async_swapsend(cli, list(self.clis.values()), _cb)
 
         extra_text = extra_text[:sti] + list(final_status.values()) + [f'*Total sent*: {total_claimed[0]}', '']
-        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+        _update()
 
         if self.main_cli.args.css_fee and slime_claimed:
             creditor, rate = self.main_cli.args.css_fee
@@ -544,14 +553,14 @@ class Notifier:
             r = cli.client.web3.transfer_slime(creditor, fee)
             sent = int(r['logs'][0]['data'], 16) / DECIMALS
             extra_text.append(f'*Paid fee of {sent}*')
-            trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+            _update()
 
         balance = cli.client.web3.balance_of_slime(raw=True)
         out_min = cli.client.web3.swap_slime_avax(amount_in=balance, preview=True)
 
         _msg = f'{balance / DECIMALS:0.2f} SLIME for {out_min / DECIMALS:0.2f} AVAX'
         extra_text.append(f'Swapping {_msg}')
-        trivial_edit_message_text(query, '\n'.join(extra_text), parse_mode='Markdown')
+        _update()
 
         out_min_real = cli.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
         if out_min_real.get('status') == 1:
