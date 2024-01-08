@@ -353,8 +353,11 @@ class TestBot(TestCase):
     def test_bot_coefficent(self):
         self.cli.client.web3.get_current_coefficent.side_effect = [2, 3, 1]
         self.cli._bot_coefficent()
-        self.cli.notifier.notify.assert_not_called()
+        self.cli.notifier.notify.assert_called_once_with(
+            '🍆 Coefficent drop to *2.0000* (from *None*)', from_wallet=TEST_WALLET_MASKED
+        )
 
+        self.cli.notifier.notify.reset_mock()
         self.cli._bot_coefficent()
         self.cli.notifier.notify.assert_not_called()
 

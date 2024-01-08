@@ -32,7 +32,8 @@ class WalletDB(PersistingBaseModel):
     tournament_market_cache: dict[int, tuple] = {}
     notify_burn_coefficent: Optional[float] = None
     notify_fee_monitor: Optional[float] = None
-
+    notify_coefficent: Optional[float] = None
+    
     global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)
 
     @classmethod

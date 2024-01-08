@@ -19,6 +19,7 @@ class Test(TestCase):
                 "slime_won": 0,
                 'notify_burn_coefficent': None,
                 'notify_fee_monitor': None,
+                'notify_coefficent': None,
                 "notified_races": [],
                 "notified_races_over": [],
                 "joins_last": [],

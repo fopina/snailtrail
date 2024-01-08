@@ -75,7 +75,6 @@ class CLI:
         self.notifier: tgbot.Notifier = args.notify
         self._notify_mission_data = None
         self._notify_marketplace = {}
-        self._notify_coefficent = None
         self._notify_burn_coefficent = None
         self._notify_tournament = UNDEF
         self._next_mission = False, -1
@@ -589,11 +588,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _bot_coefficent(self):
         coef = self.client.web3.get_current_coefficent()
-        if self._notify_coefficent is not None and coef < self._notify_coefficent:
-            msg = f'🍆 Coefficent drop to *{coef:0.4f}* (from *{self._notify_coefficent}*)'
+        if self.database.notify_coefficent is None or coef < self.database.notify_coefficent:
+            msg = f'🍆 Coefficent drop to *{coef:0.4f}* (from *{self.database.notify_coefficent}*)'
             self._notify(msg)
             self.logger.info(msg)
-        self._notify_coefficent = coef
+        if self.database.notify_coefficent != coef:
+            self.database.notify_coefficent = coef
+            self.database.save()
 
     def _bot_tournament_market_search(
         self,
