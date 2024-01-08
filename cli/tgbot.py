@@ -84,6 +84,7 @@ class Notifier:
         if token:
             self.updater = Updater(self.__token)
             dispatcher = self.updater.dispatcher
+            dispatcher.add_error_handler(self.handle_exceptions)
             dispatcher.add_handler(CommandHandler("start", self.cmd_start))
             dispatcher.add_handler(CallbackQueryHandler(self.handle_buttons))
             dispatcher.add_handler(CommandHandler("nextmission", self.cmd_nextmission))
@@ -189,6 +190,19 @@ class Notifier:
 
     def register_cli(self, cli):
         self.clis[cli.owner] = cli
+
+    def handle_exceptions(self, update: object, context: CallbackContext) -> None:
+        logger.exception('Error from tgbot', exc_info=context.error)
+        if self.any_cli.args.rental:
+            self.notify('bot unknown error, check logs', from_wallet=self.masked_wallet)
+        else:
+            self.notify(
+                f'''bot unknown error, check logs
+```
+{escape_markdown(str(context.error))}
+```
+'''
+            )
 
     def handle_buttons(self, update: Update, context: CallbackContext) -> None:
         """Parses the CallbackQuery and updates the message text."""
