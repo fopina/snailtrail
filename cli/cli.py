@@ -15,11 +15,10 @@ from tqdm import tqdm
 from scommon.decorators import cached_property_with_ttl
 from snail import VERSION, client
 from snail.gqlclient.types import Adaptation, Family, Gender, Race, Snail, _parse_datetime
-from snail.web3client import BOTTOM_BASE_FEE, DECIMALS, GWEI_DECIMALS
+from snail.web3client import BOTTOM_BASE_FEE, DECIMALS
 
 from . import commands, tgbot
-from .database import WalletDB
-from .helpers import SetQueue
+from .database import MissionLoop, WalletDB
 from .types import RaceJoin, Wallet
 from .utils import CachedSnailHistory
 
@@ -76,7 +75,6 @@ class CLI:
         self._notify_mission_data = None
         self._notify_marketplace = {}
         self._notify_tournament = UNDEF
-        self._next_mission = False, -1
         self._snail_mission_cooldown = {}
         self._snail_history = CachedSnailHistory(self)
         self._snail_levels = {}
@@ -229,24 +227,30 @@ class CLI:
 
     def mission_queueable_snails(self, race_conditions=None):
         queueable = []
-
         closest = None
+        resting = []
+
         for x in self.client.iterate_my_snails_for_missions(self.owner, adaptations=race_conditions):
             if self.args.exclude and x.id in self.args.exclude:
                 continue
             to_queue = x.queueable_at
             if x.id in self._snail_mission_cooldown and to_queue < self._snail_mission_cooldown[x.id]:
+                needs_rest = True
                 to_queue = self._snail_mission_cooldown[x.id]
+            else:
+                needs_rest = False
             tleft = to_queue - self._now()
             base_msg = f"{x.name_id} : ({x.level_str} - {x.stats['experience']['remaining']}) : "
             if tleft.total_seconds() <= 0:
                 queueable.append(x)
                 self.logger.debug(f"{Fore.GREEN}{base_msg}{x.adaptations}{Fore.RESET}")
             else:
+                if needs_rest:
+                    resting.append(x)
                 if closest is None or to_queue < closest:
                     closest = to_queue
                 self.logger.debug(f"{Fore.YELLOW}{base_msg}{tleft}{Fore.RESET}")
-        return queueable, closest
+        return queueable, closest, resting
 
     def _join_missions_compute_boosted(self, queueable):
         boosted = set(self.args.boost or [])
@@ -307,12 +311,20 @@ class CLI:
 
         return snail
 
-    def join_missions(self) -> tuple[bool, datetime]:
+    def join_missions(self) -> MissionLoop:
         missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
         missions.sort(key=lambda race: len(race.athletes), reverse=True)
-        queueable, closest = self.mission_queueable_snails(race_conditions=[c.id for c in missions[0].conditions])
+        queueable, closest, resting = self.mission_queueable_snails(
+            race_conditions=[c.id for c in missions[0].conditions]
+        )
+
+        ret = MissionLoop(status=MissionLoop.Status.DONE, next_at=closest, resting=len(resting))
         if not queueable:
-            return True, closest
+            if ret.next_at is None:
+                # no snails, check again in 5min
+                ret.status = MissionLoop.Status.NO_SNAILS
+                ret.next_at = self._now() + timedelta(minutes=5)
+            return ret
 
         boosted = self._join_missions_compute_boosted(queueable)
         if self.args.cheap and self.args.boost_not_cheap:
@@ -328,10 +340,10 @@ class CLI:
             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=seconds)
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
+            ret.slow_snails += 1
             # update "closest" if needed
-            nonlocal closest
-            if closest is not None and closest > self._snail_mission_cooldown[snail.id]:
-                closest = self._snail_mission_cooldown[snail.id]
+            if ret.next_at is not None and ret.next_at > self._snail_mission_cooldown[snail.id]:
+                ret.next_at = self._snail_mission_cooldown[snail.id]
 
         if self.args.fee_spike and self.database.global_db.fee_spike_start:
             under_fee_spike = self._now() - self.database.global_db.fee_spike_start < timedelta(
@@ -344,7 +356,7 @@ class CLI:
         while True:
             # stop if there are no more snails in the queue
             if not queueable:
-                return True, closest
+                return ret
             # refresh mission EVERY time
             missions = list(self.client.iterate_mission_races(filters={'owner': self.owner}))
             missions.sort(key=lambda race: len(race.athletes), reverse=True)
@@ -434,6 +446,7 @@ class CLI:
                     self.notify_mission(notify_msg)
                     self.database.joins_normal.add((snail.id, race.id))
                     self.database.save()
+                    ret.joined_normal += 1
                 elif r.get('status') == 1:
                     fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
                     if tx['status'] == 1:
@@ -444,6 +457,7 @@ class CLI:
                         self.notify_mission(f'{notify_msg} *LAST SPOT*')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
+                        ret.joined_last += 1
                         if self.args.fee_spike and self.database.global_db.fee_spike_notified:
                             # joined a last spot, reset fee spike notification
                             self._notify('Fee spike is over 🥳')
@@ -509,8 +523,8 @@ class CLI:
 
         if queueable:
             self.logger.info(f'{len(queueable)} without matching race')
-            return False, len(queueable)
-        return True, closest
+        ret.pending = len(queueable)
+        return ret
 
     def _balance(self, data=None):
         if data is None:
@@ -1239,14 +1253,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             return
 
         now = self._now()
-        if self._next_mission[1] is None or self._next_mission[0] is False or self._next_mission[1] < now:
-            self._next_mission = self.join_missions()
-            if self._next_mission[0] is False:
-                msg = f'{self._next_mission[1]} pending'
-            elif self._next_mission[1] is None:
+        if (
+            self.database.mission_loop.status == MissionLoop.Status.UNKNOWN
+            or self.database.mission_loop.pending
+            or self.database.mission_loop.next_at < now
+        ):
+            self.database.mission_loop.status = MissionLoop.Status.PROCESSING
+            self.database.mission_loop = self.join_missions()
+            if self.database.mission_loop.pending:
+                msg = f'{self.database.mission_loop.pending} pending'
+            elif self.database.mission_loop.status == MissionLoop.Status.NO_SNAILS:
                 msg = f'no snails'
             else:
-                msg = str(self._next_mission[1])
+                msg = str(self.database.mission_loop.next_at)
             self.logger.info('next mission in at %s', msg)
 
     def _cmd_bot_tick_other(self):

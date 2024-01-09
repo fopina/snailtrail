@@ -15,7 +15,7 @@ from snail.gqlclient.types import Adaptation, Family, Snail
 from snail.web3client import DECIMALS
 
 from . import cli, commands, utils
-from .database import GlobalDB
+from .database import GlobalDB, MissionLoop
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +112,7 @@ class MultiCLI:
                 # do all missions in a row, first (but skip wallets with 0 snails)
                 for c in self.clis:
                     if snail_balance[c.owner][0] == 0:
+                        c.database.mission_loop.status = MissionLoop.Status.NO_SNAILS
                         continue
                     if now < cli_waits[c.owner]:
                         continue

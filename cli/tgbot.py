@@ -8,6 +8,7 @@ from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Rep
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
+from cli.database import MissionLoop
 from snail import web3client
 
 from . import cli, utils
@@ -981,12 +982,18 @@ Total slime won in missions: **{total}**
         msgs = []
         for c in self.clis.values():
             self.tag_with_wallet(c, msgs)
-            if not c._next_mission[0]:
-                msgs.append(f'🫥 {c._next_mission[1]}')
-            elif not c._next_mission[1]:
-                msgs.append('⁉️')
+            if c.database.mission_loop.status == MissionLoop.Status.DONE:
+                if c.database.mission_loop.pending:
+                    msgs.append(f'🫥 {c.database.mission_loop.pending}')
+                else:
+                    msgs.append(f'⏲️ `{str(c.database.mission_loop.next_at - c._now()).split(".")[0]}`')
+            elif c.database.mission_loop.status == MissionLoop.Status.NO_SNAILS:
+                msgs.append('0️⃣')
+            elif c.database.mission_loop.status == MissionLoop.Status.PROCESSING:
+                msgs.append('🚧')
             else:
-                msgs.append(f'⏲️ `{str(c._next_mission[1] - c._now()).split(".")[0]}`')
+                msgs.append('⁉️')
+
         update.message.reply_markdown('\n'.join(msgs))
 
     @bot_auth

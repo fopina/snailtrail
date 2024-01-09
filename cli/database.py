@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +21,23 @@ def set_queue_to_list(x):
 SetQueueField = Annotated[SetQueue, BeforeValidator(dictToSetQueue), PlainSerializer(set_queue_to_list)]
 
 
+@dataclass
+class MissionLoop:
+    class Status(int, Enum):
+        UNKNOWN = -1
+        PROCESSING = 0
+        NO_SNAILS = 1
+        DONE = 2
+
+    joined_normal: int = 0
+    joined_last: int = 0
+    pending: int = 0
+    slow_snails: int = 0
+    resting: int = 0
+    status: Status = Status.UNKNOWN
+    next_at: Optional[AwareDatetime] = None
+
+
 class WalletDB(PersistingBaseModel):
     model_config = dict(arbitrary_types_allowed=True)
 
@@ -33,7 +52,8 @@ class WalletDB(PersistingBaseModel):
     notify_burn_coefficent: Optional[float] = None
     notify_fee_monitor: Optional[float] = None
     notify_coefficent: Optional[float] = None
-    
+
+    mission_loop: MissionLoop = Field(default_factory=MissionLoop, exclude=True)
     global_db: 'GlobalDB' = Field(default_factory=lambda: GlobalDB(), exclude=True)
 
     @classmethod
