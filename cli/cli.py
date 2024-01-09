@@ -340,7 +340,7 @@ class CLI:
             self._snail_mission_cooldown[snail.id] = self._now() + timedelta(seconds=seconds)
             # also remove from queueable (due to "continue")
             queueable.remove(snail)
-            ret.slow_snails += 1
+            ret.resting += 1
             # update "closest" if needed
             if ret.next_at is not None and ret.next_at > self._snail_mission_cooldown[snail.id]:
                 ret.next_at = self._snail_mission_cooldown[snail.id]

@@ -32,7 +32,6 @@ class MissionLoop:
     joined_normal: int = 0
     joined_last: int = 0
     pending: int = 0
-    slow_snails: int = 0
     resting: int = 0
     status: Status = Status.UNKNOWN
     next_at: Optional[AwareDatetime] = None

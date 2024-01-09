@@ -983,12 +983,14 @@ Total slime won in missions: **{total}**
         for c in self.clis.values():
             self.tag_with_wallet(c, msgs)
             if c.database.mission_loop.status == MissionLoop.Status.DONE:
+                extra = f'{c.database.mission_loop.joined_normal}/{c.database.mission_loop.joined_last}/{c.database.mission_loop.resting}'
                 if c.database.mission_loop.pending:
-                    msgs.append(f'🫥 {c.database.mission_loop.pending}')
+                    msgs.append(f'🫥 {c.database.mission_loop.pending} ({extra})')
                 else:
-                    msgs.append(f'⏲️ `{str(c.database.mission_loop.next_at - c._now()).split(".")[0]}`')
+                    msgs.append(f'⏲️ {str(c.database.mission_loop.next_at - c._now()).split(".")[0]} ({extra})')
             elif c.database.mission_loop.status == MissionLoop.Status.NO_SNAILS:
-                msgs.append('0️⃣')
+                # do nothing, cleaner message
+                pass
             elif c.database.mission_loop.status == MissionLoop.Status.PROCESSING:
                 msgs.append('🚧')
             else:
