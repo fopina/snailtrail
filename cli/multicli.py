@@ -10,6 +10,7 @@ from typing import List
 
 from colorama import Fore
 from tqdm import tqdm
+from snail import VERSION
 
 from snail.gqlclient.types import Adaptation, Family, Snail
 from snail.web3client import DECIMALS
@@ -86,6 +87,7 @@ class MultiCLI:
             c._profile['_i'] = wallet_indices[c.owner]
 
     def cmd_bot(self):
+        logger.info('Running bot %s', VERSION)
         # disable tournament check in all accounts with repeated guilds
         # no need to notify wins for the same guild :D
         guilds = set()
