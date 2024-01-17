@@ -470,7 +470,14 @@ class Client(requests.Session):
                         id
                         adaptations
                         name
+                        purity
                         queueable_at
+                        stats {
+                            experience {level}
+                            mission_tickets
+                            earned_token
+                            earned_avax
+                        }
                     }
                     count
                     }

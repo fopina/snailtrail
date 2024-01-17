@@ -327,7 +327,7 @@ class Notifier:
         owner, snail_id, race_id = opts[0].split(' ')
         try:
             cli = self.clis[owner]
-            r, _ = cli.client.join_competitive_races(int(snail_id), int(race_id), cli.owner)
+            r, _ = cli.client.join_competitive_races(int(snail_id), int(race_id))
             query.edit_message_text(query.message.text + '\n✅  Race joined')
         except Exception as e:
             logger.exception('unexpected joinRace error')

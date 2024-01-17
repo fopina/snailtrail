@@ -1814,7 +1814,6 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return '`' + '.'.join(map(str, self._snail_history.get(snail)[1][race.distance])) + '`'
 
     def find_races(self, check_notified=True):
-        first_run = not self.database.notified_races
         for league in (client.League.GOLD, client.League.PLATINUM):
             _, races = self.find_races_in_league(league)
             for race in races:
@@ -1827,46 +1826,44 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 if race.participation:
                     # already joined
                     continue
-                if race['candidates']:
-                    if not first_run:
-                        # report on just required minimum matches, but use only snails with 2 adaptations (stronger)
-                        cands = [
-                            cand for cand in race['candidates'] if cand[0] >= self.args.race_matches and cand[1] > 1
+                if race.candidates:
+                    # report on just required minimum matches, but use only snails with 2 adaptations (stronger)
+                    cands = [cand for cand in race.candidates if cand[0] >= self.args.race_matches and cand[1] > 1]
+                    if not cands:
+                        continue
+                    candidate_list = ','.join(
+                        f"{cand[3].name_id} {cand[3].level_str} {cand[3].purity_str}{(cand[0] * '⭐')}{self.race_stats_text(cand[3], race)}"
+                        for cand in cands
+                    )
+                    msg = f"🏎️  Race {race} matched {candidate_list}"
+                    if self.args.races_join:
+                        join_actions = None
+                        try:
+                            self.client.join_competitive_races(cands[0][3].id, race.id)
+                            msg += '\nJOINED ✅'
+                        except Exception:
+                            self.logger.exception('failed to join race')
+                            msg += '\nFAILED to join ❌'
+                    else:
+                        # TODO: reformat join message race
+                        # * stats on different line
+                        # * on top of stats for the race distance, show overall stats as well (on any distance)
+                        # * date from last stat
+                        # * use more_stats endpoint from server instead of getting all history?
+                        #   * can we have stats per distance on that endpoint?
+                        # ----
+                        # (if this code is ever used again - competitives suck!)
+                        join_actions = [
+                            (
+                                f'✅ {cand[3].name_id} {cand[0] * "⭐"}',
+                                f'joinrace {self.owner} {cand[3].id} {race.id}',
+                            )
+                            for cand in cands
+                        ] + [
+                            ('🏳️ Skip', 'joinrace'),
                         ]
-                        if not cands:
-                            continue
-                        candidate_list = ','.join(
-                            f"{cand[1].name_id}{(cand[0] * '⭐')}{self.race_stats_text(cand[3], race)}" for cand in cands
-                        )
-                        msg = f"🏎️  Race {race} matched {candidate_list}"
-                        if self.args.races_join:
-                            join_actions = None
-                            try:
-                                self.client.join_competitive_races(cands[0][3].id, race.id, self.owner)
-                                msg += '\nJOINED ✅'
-                            except Exception:
-                                self.logger.exception('failed to join race')
-                                msg += '\nFAILED to join ❌'
-                        else:
-                            # TODO: reformat join message race
-                            # * stats on different line
-                            # * on top of stats for the race distance, show overall stats as well (on any distance)
-                            # * date from last stat
-                            # * use more_stats endpoint from server instead of getting all history?
-                            #   * can we have stats per distance on that endpoint?
-                            # ----
-                            # (if this code is ever used again - competitives suck!)
-                            join_actions = [
-                                (
-                                    f'✅ Join with {cand[3].name_id} {cand[0] * "⭐"}',
-                                    f'joinrace {self.owner} {cand[3].id} {race.id}',
-                                )
-                                for cand in cands
-                            ] + [
-                                ('🏳️ Skip', 'joinrace'),
-                            ]
-                        self.logger.info(msg)
-                        self._notify(msg, actions=join_actions)
+                    self.logger.info(msg)
+                    self._notify(msg, actions=join_actions)
                     self.database.notified_races.add(race['id'])
                     self.database.save()
 
@@ -2161,7 +2158,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def _join_race(self, join_arg: RaceJoin):
         try:
-            r, rcpt = self.client.join_competitive_races(join_arg.snail_id, join_arg.race_id, self.owner)
+            r, rcpt = self.client.join_competitive_races(join_arg.snail_id, join_arg.race_id)
             # FIXME: effectiveGasPrice * gasUsed = WEI used (AVAX 10^-18) - also print hexstring, not bytes...
             self.logger.info(f'{Fore.CYAN}{r["message"]}{Fore.RESET} - (tx: {rcpt.transactionHash.hex()})')
         except client.ClientError:
