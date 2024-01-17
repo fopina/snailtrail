@@ -454,7 +454,7 @@ class Race(AttrDict):
         >>> str(s)
         'None (#None): 57m None 🪙'
         """
-        return self.league != 'Tournament' and (type(self.distance) == int or self.distance.isdigit())
+        return not self.is_tournament and (type(self.distance) == int or self.distance.isdigit())
 
     @property
     def is_tournament(self):

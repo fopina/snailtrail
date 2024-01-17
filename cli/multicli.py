@@ -10,8 +10,8 @@ from typing import List
 
 from colorama import Fore
 from tqdm import tqdm
-from snail import VERSION
 
+from snail import VERSION
 from snail.gqlclient.types import Adaptation, Family, Snail
 from snail.web3client import DECIMALS
 

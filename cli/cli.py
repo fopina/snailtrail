@@ -1795,6 +1795,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         return candidates
 
     def find_races_in_league(self, league):
+        self.logger.debug('Fetching ranked snails for %s in league %d', self.owner, league)
         snails = list(self.client.iterate_my_snails_for_ranked(self.owner, league))
         if not snails:
             return [], []
@@ -1814,7 +1815,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     def find_races(self, check_notified=True):
         first_run = not self.database.notified_races
-        for league in client.League:
+        for league in (client.League.GOLD, client.League.PLATINUM):
             _, races = self.find_races_in_league(league)
             for race in races:
                 if check_notified and race.id in self.database.notified_races:
