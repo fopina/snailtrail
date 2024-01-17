@@ -823,7 +823,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
     @commands.argument(
         '--tournament-market', action=commands.NoRentalStoreTrueAction, help='Monitor market for snails for tournament'
     )
-    @commands.argument('--fee-monitor', type=int, help='Monitor median AVAX fee - value is delta % for notification')
+    @commands.argument('--fee-monitor', type=int, help='Monitor median AVAX fee - value is delta %% for notification')
     @commands.argument(
         '--balance-balance',
         type=float,

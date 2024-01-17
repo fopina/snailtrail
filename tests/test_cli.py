@@ -697,3 +697,17 @@ wallet: [{self.wallet_file.name}]
         self.assertEqual(notifier._Notifier__token, TOKEN)
         self.assertEqual(notifier.chat_id, 2)
         self.assertEqual(notifier.owner_chat_id, {3})
+
+    def test_help_has_no_errors(self):
+        def assert_exit_zero(*args):
+            try:
+                cli.main(args)
+                self.fail("should have exited")
+            except SystemExit as _exit:
+                self.assertEqual(_exit.code, 0)
+
+        assert_exit_zero('-h')
+        for cmd in cli.commands.commands.command.commands.keys():
+            assert_exit_zero(cmd, '-h')
+        for cmd in cli.commands.commands.util_command.commands.keys():
+            assert_exit_zero('utils', cmd, '-h')
