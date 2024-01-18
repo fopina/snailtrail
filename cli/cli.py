@@ -17,7 +17,7 @@ from snail import VERSION, client
 from snail.gqlclient.types import Adaptation, Family, Gender, Race, Snail, _parse_datetime
 from snail.web3client import BOTTOM_BASE_FEE, DECIMALS
 
-from . import commands, tgbot
+from . import commands, templates, tgbot
 from .database import MissionLoop, WalletDB
 from .types import RaceJoin, Wallet
 from .utils import CachedSnailHistory
@@ -434,7 +434,7 @@ class CLI:
                             continue
 
                         tx = self.client.rejoin_mission_races(r, priority_fee=self.args.mission_priority_fee)
-                        self.logger.info('Joined cheap last spot without need - %s on %d', snail.name, race.id)
+                        self.logger.info(templates.render_cheap_soon_join(snail, race))
 
                 msg = (
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
