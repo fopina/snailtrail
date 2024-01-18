@@ -439,11 +439,7 @@ class CLI:
                 msg = (
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
                 )
-                # FIXME: remove tickets for link replacement in notify_mission... re-use same message after fixing filters in Grafana
-                notify_msg = msg.replace('`', '')
                 if r.get('status') == 0:
-                    self.logger.info(f'{msg}')
-                    self.notify_mission(notify_msg)
                     self.database.joins_normal.add((snail.id, race.id))
                     self.database.save()
                     ret.joined_normal += 1
@@ -454,10 +450,6 @@ class CLI:
                         self.logger.info(
                             f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
                         )
-                        if r['payload']['size'] == 0:
-                            self.notify_mission(f'{notify_msg} 💰')
-                        else:
-                            self.notify_mission(f'{notify_msg} 💸💰')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
                         ret.joined_last += 1

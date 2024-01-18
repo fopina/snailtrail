@@ -68,6 +68,8 @@ class Notifier:
 
     SNAIL_ID1_RE = re.compile(r'(Snail \#(\d+))')
     SNAIL_ID2_RE = re.compile(r'(\(#(\d+)\))')
+    SNAIL_ID1_BACKTICKS_RE = re.compile(r'`(.*?)(Snail \#(\d+))(.*?)`')
+    SNAIL_ID2_BACKTICKS_RE = re.compile(r'`(.*?)(\(#(\d+)\))(.*?)`')
 
     def __init__(self, token, chat_id, owner_chat_id=None):
         self.__token = token
@@ -725,18 +727,13 @@ class Notifier:
         cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()])
         for c in self.clis.values():
             self.tag_with_wallet(c, msg)
-            msg.append('...Loading...')
-            # trivial_edit_text(m, text='\n'.join(msg), parse_mode='Markdown')
             data = c._balance(data=cache[c.owner])
             totals[0] += sum(data['SLIME'])
             totals[1] += sum(data['WAVAX']) + data['AVAX']
             totals[2] += data['SNAILS']
             wstr = f"*WAVAX*: {data['WAVAX'][0]} / {data['WAVAX'][1]}\n" if sum(data['WAVAX']) else ''
-            msg[
-                -1
-            ] = f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
-{wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}'''
-            # m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+            msg.append(f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
+{wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}''')
 
         if self.is_multi_cli:
             msg.append(
@@ -1260,6 +1257,11 @@ Total slime won in missions: **{total}**
                 )
 
     def _link_snails(self, message):
+        _r = r'`\1`[\2](https://www.snailtrail.art/snails/\3/about)`\4`'
+        m = self.SNAIL_ID1_BACKTICKS_RE.sub(_r, message)
+        m = self.SNAIL_ID2_BACKTICKS_RE.sub(_r, m)
+        if m != message:
+            return m
         _r = r'[\1](https://www.snailtrail.art/snails/\2/about)'
         m = self.SNAIL_ID1_RE.sub(_r, message)
         return self.SNAIL_ID2_RE.sub(_r, m)
