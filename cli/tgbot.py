@@ -335,10 +335,10 @@ class Notifier:
             if tx['status'] == 1:
                 query.edit_message_text(query.message.text + '\n✅  Race joined')
                 cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
-                self.logger.info(f'{msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
+                logger.info(f'{msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
             else:
                 query.edit_message_text(query.message.text + '\n❌  Race join REVERTED')
-                self.logger.error(f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
+                logger.error(f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
         except Exception as e:
             logger.exception('unexpected joinRace error')
             query.edit_message_text(
