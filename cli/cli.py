@@ -440,6 +440,8 @@ class CLI:
                     f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
                 )
                 if r.get('status') == 0:
+                    self.logger.info(msg)
+                    self.notify_mission(msg)
                     self.database.joins_normal.add((snail.id, race.id))
                     self.database.save()
                     ret.joined_normal += 1
@@ -450,6 +452,10 @@ class CLI:
                         self.logger.info(
                             f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
                         )
+                        if r['payload']['size'] == 0:
+                            self.notify_mission(f'{msg} 💰')
+                        else:
+                            self.notify_mission(f'{msg} 💸💰')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
                         ret.joined_last += 1

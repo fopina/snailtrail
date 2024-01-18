@@ -732,8 +732,10 @@ class Notifier:
             totals[1] += sum(data['WAVAX']) + data['AVAX']
             totals[2] += data['SNAILS']
             wstr = f"*WAVAX*: {data['WAVAX'][0]} / {data['WAVAX'][1]}\n" if sum(data['WAVAX']) else ''
-            msg.append(f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
-{wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}''')
+            msg.append(
+                f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
+{wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}'''
+            )
 
         if self.is_multi_cli:
             msg.append(
