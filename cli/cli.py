@@ -1837,10 +1837,23 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     )
                     msg = f"🏎️  Race {race} matched {candidate_list}"
                     if self.args.races_join:
+                        main_cand = cands[0][3]
+                        log_msg = f"🏎️ `#{main_cand.name_id}` joined race {race}"
                         join_actions = None
                         try:
-                            self.client.join_competitive_races(cands[0][3].id, race.id)
-                            msg += '\nJOINED ✅'
+                            r, tx = self.client.join_competitive_races(cands[0][3].id, race.id)
+                            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                            if tx['status'] == 1:
+                                msg += '\nJOINED ✅'
+                                cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
+                                self.logger.info(
+                                    f'{log_msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
+                                )
+                            else:
+                                msg += '\nJoin REVERTED ❌'
+                                self.logger.error(
+                                    f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
+                                )
                         except Exception:
                             self.logger.exception('failed to join race')
                             msg += '\nFAILED to join ❌'

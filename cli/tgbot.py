@@ -327,8 +327,16 @@ class Notifier:
         owner, snail_id, race_id = opts[0].split(' ')
         try:
             cli = self.clis[owner]
-            r, _ = cli.client.join_competitive_races(int(snail_id), int(race_id))
-            query.edit_message_text(query.message.text + '\n✅  Race joined')
+            r, tx = cli.client.join_competitive_races(int(snail_id), int(race_id))
+            msg = f"🏎️ `#{snail_id}` joined race {race_id}"
+            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            if tx['status'] == 1:
+                query.edit_message_text(query.message.text + '\n✅  Race joined')
+                cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
+                self.logger.info(f'{msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
+            else:
+                query.edit_message_text(query.message.text + '\n❌  Race join REVERTED')
+                self.logger.error(f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
         except Exception as e:
             logger.exception('unexpected joinRace error')
             query.edit_message_text(
