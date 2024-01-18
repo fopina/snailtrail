@@ -454,7 +454,10 @@ class CLI:
                         self.logger.info(
                             f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
                         )
-                        self.notify_mission(f'{notify_msg} *LAST SPOT*')
+                        if r['payload']['size'] == 0:
+                            self.notify_mission(f'{notify_msg} 💰')
+                        else:
+                            self.notify_mission(f'{notify_msg} 💸💰')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
                         ret.joined_last += 1
