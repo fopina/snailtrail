@@ -233,7 +233,7 @@ SNAILS: {totals[2]}'''
             if snail not in done:
                 tx = c.client.web3.set_snail_gender(snail, gender.value)
                 if tx:
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    fee = utils.tx_fee(tx)
                     print(f'{snail} changed gender to {gender} for {fee}')
                 done.add(snail)
             return fee
@@ -251,7 +251,7 @@ SNAILS: {totals[2]}'''
             c = self.clis[acc_indices[acc]]
             tx = c.client.web3.approve_slime_for_incubator()
             if tx:
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                fee = utils.tx_fee(tx)
                 print(f'{c.name} approved incubator for {fee}')
 
         def retriable_breed(c, fs, ms, use_scroll=False):
@@ -307,9 +307,9 @@ SNAILS: {totals[2]}'''
                             if oc != nc:
                                 ap_tx, tx = oc.client.transfer_snails(nc.owner, ms, fs)
                                 if ap_tx:
-                                    fee = ap_tx['gasUsed'] * ap_tx['effectiveGasPrice'] / cli.DECIMALS
+                                    fee = utils.tx_fee(ap_tx)
                                     print(f'Approved bulkTransfer for {fee} AVAX')
-                                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                                fee = utils.tx_fee(tx)
                                 print(f'bulkTransfer to {nc} for {fee} AVAX')
                                 transfer_fees += fee
                         else:
@@ -317,7 +317,7 @@ SNAILS: {totals[2]}'''
                                 oc = self._cli_by_address(owners[_s])
                                 if oc != nc:
                                     _, tx = oc.client.transfer_snail(nc.owner, _s)
-                                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                                    fee = utils.tx_fee(tx)
                                     print(f'transfer to {nc} for {fee} AVAX')
                                     transfer_fees += fee
                         c = nc
@@ -334,7 +334,7 @@ SNAILS: {totals[2]}'''
                     print(f'breeding {ms, fs} (with coeff {coef})...')
                     new_snail_id, tx = retriable_breed(c, fs, ms, use_scroll=self.args.execute_scroll)
                     new_snail = self._wait_api_transfer(c, new_snail_id)[0]
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                    fee = utils.tx_fee(tx)
                     breed_fees += fee
                     print(f'bred {new_snail} from {ms, fs} for {fee}')
         finally:
@@ -692,17 +692,17 @@ Total: {breed_fees + gender_fees + transfer_fees}
 
             if owner != new_owner:
                 tx = owner.client.web3.transfer_snail(owner.owner, new_owner.owner, snail.id)
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                fee = utils.tx_fee(tx)
                 print(f'{snail} transferred from {owner.name} to {new_owner.name} for {fee}')
 
             tx = new_owner.client.web3.approve_all_snails_for_lab()
             if tx:
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                fee = utils.tx_fee(tx)
                 print(f'{c.name} approved lab for {fee}')
 
             self._wait_api_transfer(new_owner, snail.id)
             tx = new_owner.client.microwave_snails([snail.id], use_scroll=True)
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+            fee = utils.tx_fee(tx)
             print(f'{snail} burnt for {fee}')
             del snail_owners[snail.id]
             del totals[new_owner]
@@ -760,7 +760,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
                     r = c.client.web3.web3.eth.wait_for_transaction_receipt(hash, timeout=120)
                     if r.get('status') == 1:
                         bal = int(r['logs'][1]['data'], 16) / cli.DECIMALS
-                        fee = r['gasUsed'] * r['effectiveGasPrice'] / cli.DECIMALS
+                        fee = utils.tx_fee(r)
                         total_fees += fee
                         print(f'Claimed {bal} on {c.name} for {fee}')
                 except cli.client.web3client.exceptions.ContractLogicError as e:
@@ -785,7 +785,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
                             bal = 0
                         else:
                             bal = int(r['logs'][0]['data'], 16) / cli.DECIMALS
-                        fee = r['gasUsed'] * r['effectiveGasPrice'] / cli.DECIMALS
+                        fee = utils.tx_fee(r)
                         total_fees += fee
                         print(f'Sent {bal} from {c.name} for {fee}')
                 except cli.client.web3client.exceptions.ContractLogicError as e:
@@ -796,7 +796,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
         print(f'Swapping {balance / cli.DECIMALS} SLIME for (at least) {out_min / cli.DECIMALS} AVAX')
 
         tx = final_c.client.web3.swap_slime_avax(amount_in=balance, amount_out=out_min)
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+        fee = utils.tx_fee(tx)
         total_fees += fee
         print(f'Swapped for {fee}')
         print(f'Total fees: {total_fees}')
@@ -837,7 +837,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
             c = list(totals.keys())[0] if owner_c not in totals else owner_c
             if prev_c != c:
                 tx = prev_c.client.web3.transfer_snail(prev_c.owner, c.owner, self.args.snail)
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / cli.DECIMALS
+                fee = utils.tx_fee(tx)
                 print(f'{snail} transferred from {prev_c.name} to {c.name} for {fee}')
 
             for v in totals[c]:

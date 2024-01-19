@@ -1,4 +1,4 @@
-from unittest import TestCase, mock
+from unittest import TestCase
 
 from cli import templates
 from snail.gqlclient import types as gtypes

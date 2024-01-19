@@ -331,7 +331,7 @@ class Notifier:
             cli = self.clis[owner]
             r, tx = cli.client.join_competitive_races(int(snail_id), int(race_id))
             msg = f"🏎️ `#{snail_id}` joined race {race_id}"
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            fee = utils.tx_fee(tx)
             if tx['status'] == 1:
                 query.edit_message_text(query.message.text + '\n✅  Race joined')
                 cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'

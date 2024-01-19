@@ -4,12 +4,16 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Union
 
 from snail.gqlclient.types import Race, Snail
-from snail.web3client import DECIMALS
+from snail.web3client import DECIMALS, web3_types
 
 if TYPE_CHECKING:
     from . import cli
 
 logger = logging.getLogger(__name__)
+
+
+def tx_fee(tx: web3_types.TxReceipt) -> float:
+    return tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
 
 
 def balance_balance(clis: 'list[cli.CLI]', limit, stop, callback, force=False):
@@ -39,7 +43,7 @@ def balance_balance(clis: 'list[cli.CLI]', limit, stop, callback, force=False):
         callback(f'{donor[1].name} to {p[2].name}: {p[1]}')
         if force:
             tx = donor[1].client.web3.transfer(p[2].owner, p[1])
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            fee = tx_fee(tx)
             total_fees += fee
             callback(f'> fee: {fee}')
     callback(f'> Total transfer: {total_transfer}')

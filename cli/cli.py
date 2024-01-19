@@ -20,7 +20,7 @@ from snail.web3client import BOTTOM_BASE_FEE, DECIMALS
 from . import commands, templates, tgbot
 from .database import MissionLoop, WalletDB
 from .types import RaceJoin, Wallet
-from .utils import CachedSnailHistory
+from .utils import CachedSnailHistory, tx_fee
 
 GENDER_COLORS = {
     Gender.MALE: Fore.BLUE,
@@ -446,7 +446,7 @@ class CLI:
                     self.database.save()
                     ret.joined_normal += 1
                 elif r.get('status') == 1:
-                    fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                    fee = tx_fee(tx)
                     if tx['status'] == 1:
                         cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
                         self.logger.info(
@@ -1483,9 +1483,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
         app_tx, tx = self.client.transfer_snails(transfer_wallet.address, *matches, estimate_only=self.args.estimate)
         if app_tx:
-            fee = app_tx['gasUsed'] * app_tx['effectiveGasPrice'] / DECIMALS
+            fee = tx_fee(app_tx)
             print(f'Approved bulkTransfer for {fee} AVAX')
-        fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+        fee = tx_fee(tx)
         print(f'Transferred for {fee} AVAX')
         for m in matches:
             transfer_snails.remove(m.id)
@@ -1722,7 +1722,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if not self.args.estimate:
             tx = self.client.web3.approve_all_snails_for_stake()
             if tx:
-                fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                fee = tx_fee(tx)
                 print(f'Approved staking for {fee} AVAX')
 
         total_fee = 0
@@ -1734,7 +1734,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
             snail_ids = [s.id for s in snails]
             tx = self.client.stake_snails(self._profile['guild']['id'], snail_ids, estimate_only=self.args.estimate)
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            fee = tx_fee(tx)
             total_fee += fee
             if self.args.estimate:
                 print(f'{len(snails)} snails WOULD stake for {fee} AVAX')
@@ -1770,7 +1770,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 break
             snail_ids = [s.id for s in snails]
             tx = self.client.web3.unstake_snails(snail_ids, estimate_only=self.args.estimate)
-            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+            fee = tx_fee(tx)
             total_fee += fee
             if self.args.estimate:
                 print(f'{len(snails)} snails WOULD unstake for {fee} AVAX')
@@ -1843,7 +1843,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         join_actions = None
                         try:
                             r, tx = self.client.join_competitive_races(cands[0][3].id, race.id)
-                            fee = tx['gasUsed'] * tx['effectiveGasPrice'] / DECIMALS
+                            fee = tx_fee(tx)
                             if tx['status'] == 1:
                                 msg += '\nJOINED ✅'
                                 cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'

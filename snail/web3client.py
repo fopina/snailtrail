@@ -171,7 +171,7 @@ class Client:
             )
         if estimate_only:
             gas = self.web3.eth.estimate_gas(tx)
-            return {'gasUsed': gas, 'effectiveGasPrice': self.gas_price}
+            return web3_types.TxReceipt({'gasUsed': gas, 'effectiveGasPrice': self.gas_price})
         signed_txn = self.account.sign_transaction(tx)
         try:
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
