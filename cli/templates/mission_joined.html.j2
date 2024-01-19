@@ -1,1 +1,18 @@
-`{{ snail.name_id }}` ({{snail.level_str}} - {{snail.stats['experience']['remaining']}}) joined mission{% if tx %} {% if telegram %}{% if not cheap %}💸{% endif %}💰{% else %}LAST SPOT ({% if cheap %}cheap{% else %}normal{% endif %}) - tx: {{tx.transactionHash.hex()}} - fee: {{tx_fee(tx)}}{% endif %}{% endif %}
+`{{ snail.name_id }}` ({{snail.level_str}} - {{snail.stats['experience']['remaining']}}) joined mission
+{%- if tx -%}
+{{ ' ' }}
+    {%- if telegram -%}
+        {% if not cheap -%}
+        💸
+        {%- endif -%}
+        💰
+    {%- else -%}
+    LAST SPOT (
+        {%- if cheap -%}
+        cheap
+        {%- else -%}
+        normal
+        {%- endif -%}
+    ) - tx: {{tx.transactionHash.hex()}} - fee: {{tx_fee(tx)}}
+    {%- endif -%}
+{%- endif -%}
