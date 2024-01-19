@@ -37,3 +37,9 @@ class Test(TestCase):
             templates.render_mission_joined(self._snail, tx=self._tx, cheap=False, telegram=True),
             '`x (#1)` (L1 - ) joined mission 💸💰',
         )
+
+    def test_mission_joined_reverted(self):
+        self.assertEqual(
+            templates.render_mission_joined_reverted(self._snail, tx=self._tx),
+            'Last spot transaction reverted - tx: 0xd34db33f - fee: 0.00025',
+        )

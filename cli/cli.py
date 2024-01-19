@@ -436,26 +436,19 @@ class CLI:
                         tx = self.client.rejoin_mission_races(r, priority_fee=self.args.mission_priority_fee)
                         self.logger.info(templates.render_cheap_soon_join(snail, race))
 
-                msg = (
-                    f"🐌 `{snail.name_id}` ({snail.level_str} - {snail.stats['experience']['remaining']}) joined mission"
-                )
                 if r.get('status') == 0:
-                    self.logger.info(msg)
-                    self.notify_mission(msg)
+                    self.logger.info(templates.render_mission_joined(snail))
+                    self.notify_mission(templates.render_mission_joined(snail, telegram=True))
                     self.database.joins_normal.add((snail.id, race.id))
                     self.database.save()
                     ret.joined_normal += 1
                 elif r.get('status') == 1:
-                    fee = tx_fee(tx)
                     if tx['status'] == 1:
-                        cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
-                        self.logger.info(
-                            f'{msg} LAST SPOT ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
+                        cheap_tx = r['payload']['size'] == 0
+                        self.logger.info(templates.render_mission_joined(snail, tx=tx, cheap=cheap_tx))
+                        self.notify_mission(
+                            templates.render_mission_joined(snail, tx=tx, cheap=cheap_tx, telegram=True)
                         )
-                        if r['payload']['size'] == 0:
-                            self.notify_mission(f'{msg} 💰')
-                        else:
-                            self.notify_mission(f'{msg} 💸💰')
                         self.database.joins_last.add((snail.id, race.id))
                         self.database.save()
                         ret.joined_last += 1
@@ -465,9 +458,7 @@ class CLI:
                             self.database.global_db.fee_spike_notified = False
                             self.database.global_db.save()
                     else:
-                        self.logger.error(
-                            f'Last spot transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
-                        )
+                        self.logger.error(templates.render_mission_joined_reverted(snail, tx))
                         _slow_snail(snail)
                         continue
             except client.ClientError as e:
