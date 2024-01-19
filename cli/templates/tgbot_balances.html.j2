@@ -6,22 +6,30 @@
 } -%}
 
 {% for cli, balances in data -%}
+{% set empty_message = True -%}
 {% if is_multi -%}
 {{ tgbot_cli_header(cli) }}
+{% set empty_message = False -%}
 {% endif -%}
 {% if balances['SLIME'] | sum -%}
+{% set empty_message = False -%}
 🧪 {{ balances['SLIME'][0] | round(3) }} / {{ balances['SLIME'][1] | round(3) }}
 {% if totals.update({'slime':  totals['slime'] + balances['SLIME'] | sum}) -%}{% endif -%}
 {% endif -%}
 {% if balances['WAVAX'] | sum -%}
+{% set empty_message = False -%}
 *WAVAX*: {{ balances['WAVAX'][0] | round(3) }} / {{ balances['WAVAX'][1] | round(3) }}
 {% if totals.update({'avax':  totals['avax'] + balances['WAVAX'] | sum}) -%}{% endif -%}
 {% endif -%}
+{% if balances['AVAX'] + balances['SNAILS'] -%}
+{% set empty_message = False -%}
 🔺 {{ balances['AVAX'] | round(3) }} / 🐌 {{ balances['SNAILS'] }}
 {% if totals.update({
     'avax':  totals['avax'] + balances['AVAX'],
     'snails': totals['snails'] + balances['SNAILS'],
 }) -%}{% endif -%}
+{% endif -%}
+{% if empty_message %}_Nothing to show here..._{% endif -%}
 {% endfor -%}
 
 {% if is_multi -%}

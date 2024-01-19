@@ -90,6 +90,37 @@ class TestBalances(TestCase):
 ''',
         )
 
+    def test_tgbot_balances_multi_less_lines(self):
+        self._data[0][1]['SLIME'] = (0, 0)
+        self._data[0][1]['WAVAX'] = (0, 0)
+        self._data[0][1]['AVAX'] = 0
+        self._data[0][1]['SNAILS'] = 0
+        self._data.append(
+            (
+                '0x02',
+                {
+                    'SLIME': (3.4, 0),
+                    'WAVAX': (1.6543, 0),
+                    'AVAX': 4.12,
+                    'SNAILS': 7,
+                },
+            )
+        )
+        self.assertEqual(
+            templates.render_tgbot_balances(self._data),
+            '''\
+`>> 0x01`
+`>> 0x02`
+🧪 3.4 / 0
+*WAVAX*: 1.654 / 0
+🔺 4.12 / 🐌 7
+`Total`
+🧪 3.4
+🔺 5.774
+🐌 7
+''',
+        )
+
     def test_tgbot_balances_single(self):
         self.assertEqual(
             templates.render_tgbot_balances(self._data),
@@ -100,7 +131,7 @@ class TestBalances(TestCase):
 ''',
         )
 
-    def test_tgbot_balances_no_slime(self):
+    def test_tgbot_balances_less_lines(self):
         self._data[0][1]['SLIME'] = (0, 0)
         self.assertEqual(
             templates.render_tgbot_balances(self._data),
@@ -109,10 +140,11 @@ class TestBalances(TestCase):
 🔺 5 / 🐌 10
 ''',
         )
+
         self._data[0][1]['WAVAX'] = (0, 0)
+        self._data[0][1]['AVAX'] = 0
+        self._data[0][1]['SNAILS'] = 0
         self.assertEqual(
             templates.render_tgbot_balances(self._data),
-            '''\
-🔺 5 / 🐌 10
-''',
+            '_Nothing to show here..._',
         )
