@@ -1,5 +1,6 @@
 import base64
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import Any, Optional, Union
@@ -275,41 +276,46 @@ class Client:
         avax=False,
         unclaimed_slime=False,
         unclaimed_wavax=False,
-    ):
+    ) -> 'dict[str, _MultiCallResult]':
         """
         return multiple balances in one single web3 (multi)call:
         snails, wavax, slime, avax, claimable slime, claimable wavax
         """
+
         calls = []
+        outputs = []
 
         contracts = [
-            (self.snailnft_contract, 'balanceOf', snails),
-            (self.wavax_contract, 'balanceOf', wavax),
-            (self.slime_contract, 'balanceOf', slime),
-            (self.multicall_contract, 'getEthBalance', avax),
-            (self.race_contract, 'dailyRewardTracker', unclaimed_slime),
-            (self.mega_race_contract, 'rewardTracker', unclaimed_wavax),
+            (self.snailnft_contract, 'balanceOf', snails, 'snails', 1),
+            (self.wavax_contract, 'balanceOf', wavax, 'wavax', DECIMALS),
+            (self.slime_contract, 'balanceOf', slime, 'slime', DECIMALS),
+            (self.multicall_contract, 'getEthBalance', avax, 'avax', DECIMALS),
+            (self.race_contract, 'dailyRewardTracker', unclaimed_slime, 'unclaimed_slime', DECIMALS),
+            (self.race_contract, 'compRewardTracker', unclaimed_slime, 'unclaimed_slime', DECIMALS),
+            (self.mega_race_contract, 'rewardTracker', unclaimed_wavax, 'unclaimed_wavax', DECIMALS),
         ]
 
         for w in wallets:
-            for contract, function, do_it in contracts:
+            for contract, function, do_it, prop, decs in contracts:
                 if _all or do_it:
                     calls.append(
                         (contract.address, contract.encodeABI(function, args=(w,))),
                     )
+        for contract, function, do_it, prop, decs in contracts:
+            if _all or do_it:
+                outputs.append((prop, decs))
+
         x = self.multicall_contract.functions.aggregate(calls).call({'from': self.wallet})
+        x = x[1]
         w_ind = 0
         results = {}
-        step = 6 if _all else len(list(x for x in contracts if x[2]))
-        for y in range(0, len(x[1]), step):
-            _r = []
+        step = len(outputs)
+        for y in range(0, len(x), step):
+            _r = _MultiCallResult()
             results[wallets[w_ind]] = _r
-            if _all or snails:
-                _r.append(self.web3.to_int(x[1][y]))
-            else:
-                _r.append(self.web3.to_int(x[1][y]) / DECIMALS)
-            for yy in range(1, step):
-                _r.append(self.web3.to_int(x[1][y + yy]) / DECIMALS)
+            for yy in range(step):
+                ov = getattr(_r, outputs[yy][0], None) or 0
+                setattr(_r, outputs[yy][0], ov + (self.web3.to_int(x[y + yy]) / outputs[yy][1]))
             w_ind += 1
         return results
 
@@ -700,3 +706,13 @@ class Client:
             results[snails[w_ind]] = self.web3.to_hex(x[1][y])[-40:]
             w_ind += 1
         return results
+
+
+@dataclass
+class _MultiCallResult:
+    snails: int = None
+    wavax: float = None
+    slime: float = None
+    avax: float = None
+    unclaimed_slime: float = None
+    unclaimed_wavax: float = None

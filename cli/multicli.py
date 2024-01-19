@@ -113,7 +113,7 @@ class MultiCLI:
                 )
                 # do all missions in a row, first (but skip wallets with 0 snails)
                 for c in self.clis:
-                    if snail_balance[c.owner][0] == 0:
+                    if snail_balance[c.owner].snails == 0:
                         c.database.mission_loop.status = MissionLoop.Status.NO_SNAILS
                         continue
                     if now < cli_waits[c.owner]:

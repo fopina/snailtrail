@@ -531,10 +531,10 @@ class CLI:
         if data is None:
             data = self.client.web3.multicall_balances([self.owner])[self.owner]
         r = {
-            'SLIME': (data[4], data[2]),
-            'WAVAX': (data[5], data[1]),
-            'AVAX': data[3],
-            'SNAILS': data[0],
+            'SLIME': (data.unclaimed_slime, data.slime),
+            'WAVAX': (data.unclaimed_wavax, data.wavax),
+            'AVAX': data.avax,
+            'SNAILS': data.snails,
         }
         return r
 

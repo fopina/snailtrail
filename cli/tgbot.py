@@ -358,7 +358,7 @@ class Notifier:
         cache = any_cli.client.web3.multicall_balances([c.owner for c in clis], _all=False, unclaimed_slime=True)
         for _cli in clis:
             if minimum:
-                _b = cache[_cli.owner][0]
+                _b = cache[_cli.owner].unclaimed_slime
                 if _b > minimum:
                     cb(_cli, 0, f'claiming {_b} from {_cli.name}...')
                 else:
@@ -952,7 +952,7 @@ Total slime won in missions: **{total}**
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f'💰 {c.name}: {cache[c.owner][0]}',
+                        f'💰 {c.name}: {cache[c.owner].unclaimed_slime}',
                         callback_data=f'claim {c.owner}',
                     )
                 ]

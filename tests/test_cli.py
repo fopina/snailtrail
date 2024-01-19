@@ -9,6 +9,7 @@ from unittest import TestCase, mock
 import cli
 from cli import types
 from snail.gqlclient.types import Race, Snail
+from snail.web3client import _MultiCallResult
 
 from . import data
 
@@ -372,7 +373,7 @@ class TestBot(TestCase):
         self.cli.args.send = None
         # FIXME: not called at the moment, get some claimable wavax
         # self.cli.client.web3.claimable_wavax.return_value = 1
-        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: [1, 1, 1, 1, 1, 1]}
+        self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: _MultiCallResult(1, 1, 1, 1, 1, 1)}
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.assertEqual(

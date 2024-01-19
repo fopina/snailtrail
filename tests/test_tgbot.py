@@ -4,6 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.user import User
 
 from cli import tempconfigparser, tgbot
+from snail.web3client import _MultiCallResult
 
 
 class Test(TestCase):
@@ -392,8 +393,8 @@ class Test(TestCase):
         self.bot.register_cli(cli2)
 
         self.cli.client.web3.multicall_balances.return_value = {
-            self.cli.owner: [1],
-            cli2.owner: [3],
+            self.cli.owner: _MultiCallResult(unclaimed_slime=1),
+            cli2.owner: _MultiCallResult(unclaimed_slime=3),
         }
 
         self.bot.cmd_claim(self.update, self.context)

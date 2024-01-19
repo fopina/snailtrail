@@ -22,8 +22,8 @@ def balance_balance(clis: 'list[cli.CLI]', limit, stop, callback, force=False):
     balances_d = main_c.client.web3.multicall_balances(wallets, _all=False, snails=True, avax=True)
     for c in clis:
         # ignore wallets with 0 snails, no need for balance...
-        if balances_d[c.owner][0] > 0:
-            balances.append((balances_d[c.owner][1], c))
+        if balances_d[c.owner].snails > 0:
+            balances.append((balances_d[c.owner].avax, c))
     if not balances:
         callback('No wallets in need')
         return False

@@ -1,6 +1,6 @@
 from unittest import TestCase, mock
 
-from snail.web3client import DECIMALS, Client
+from snail.web3client import DECIMALS, Client, _MultiCallResult
 
 from .test_cli import TEST_WALLET, TEST_WALLET_WALLET
 
@@ -39,38 +39,36 @@ class Test(TestCase):
 
         self.cli.multicall_contract.functions.aggregate.return_value.call.return_value = (
             [],
-            [1, 2 * DECIMALS, 3 * DECIMALS, 4 * DECIMALS, 5 * DECIMALS, 6 * DECIMALS],
+            [1, 2 * DECIMALS, 3 * DECIMALS, 4 * DECIMALS, 5 * DECIMALS, 5 * DECIMALS, 6 * DECIMALS],
         )
         data = self.cli.multicall_balances([TEST_WALLET])
         self.assertEqual(
             data,
             {
-                TEST_WALLET: [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                ]
+                TEST_WALLET: _MultiCallResult(
+                    snails=1.0, wavax=2.0, slime=3.0, avax=4.0, unclaimed_slime=10.0, unclaimed_wavax=6.0
+                )
             },
         )
         self.cli.multicall_contract.functions.aggregate.assert_called_once_with(
-            [mock.ANY, mock.ANY, mock.ANY, mock.ANY, mock.ANY, mock.ANY]
+            [mock.ANY, mock.ANY, mock.ANY, mock.ANY, mock.ANY, mock.ANY, mock.ANY]
         )
 
     def test_multicall_just_one(self):
         self.cli.web3.to_int = lambda x: x
 
-        self.cli.multicall_contract.functions.aggregate.return_value.call.return_value = ([], [2 * DECIMALS])
+        self.cli.multicall_contract.functions.aggregate.return_value.call.return_value = (
+            [],
+            [2 * DECIMALS, 1 * DECIMALS],
+        )
         data = self.cli.multicall_balances([TEST_WALLET], _all=False, unclaimed_slime=True)
-        self.assertEqual(data, {TEST_WALLET: [2]})
-        self.cli.multicall_contract.functions.aggregate.assert_called_once_with([mock.ANY])
+        self.assertEqual(data, {TEST_WALLET: _MultiCallResult(unclaimed_slime=3)})
+        self.cli.multicall_contract.functions.aggregate.assert_called_once_with([mock.ANY, mock.ANY])
 
     def test_multicall_snails_and_other(self):
         self.cli.web3.to_int = lambda x: x
 
         self.cli.multicall_contract.functions.aggregate.return_value.call.return_value = ([], [1, 2 * DECIMALS])
         data = self.cli.multicall_balances([TEST_WALLET], _all=False, snails=True, slime=True)
-        self.assertEqual(data, {TEST_WALLET: [1, 2]})
+        self.assertEqual(data, {TEST_WALLET: _MultiCallResult(snails=1, slime=2)})
         self.cli.multicall_contract.functions.aggregate.assert_called_once_with([mock.ANY, mock.ANY])
