@@ -8,6 +8,7 @@ from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Rep
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Updater
 from telegram.utils.helpers import escape_markdown
 
+from cli import templates
 from cli.database import MissionLoop
 from snail import web3client
 
@@ -181,7 +182,7 @@ class Notifier:
     def tag_with_wallet(self, cli: 'cli.CLI', output: Optional[list] = None):
         if not self.is_multi_cli:
             return ''
-        m = f'`>> {cli.name}`'
+        m = cli_header(cli.name)
         if output is not None:
             output.append(m)
         return m
@@ -720,31 +721,11 @@ class Notifier:
         Current balance (snail count, avax, slime)
         """
         update.message.reply_chat_action(constants.CHATACTION_TYPING)
-        msg = []
-        totals = [0, 0, 0]
         m = update.message.reply_markdown('Loading balances...')
 
         cache = self.main_cli.client.web3.multicall_balances([c.owner for c in self.clis.values()])
-        for c in self.clis.values():
-            self.tag_with_wallet(c, msg)
-            data = c._balance(data=cache[c.owner])
-            totals[0] += sum(data['SLIME'])
-            totals[1] += sum(data['WAVAX']) + data['AVAX']
-            totals[2] += data['SNAILS']
-            wstr = f"*WAVAX*: {data['WAVAX'][0]} / {data['WAVAX'][1]}\n" if sum(data['WAVAX']) else ''
-            msg.append(
-                f'''🧪 {data['SLIME'][0]} / {data['SLIME'][1]:.3f}
-{wstr}🔺 {data['AVAX']:.3f} / 🐌 {data['SNAILS']}'''
-            )
-
-        if self.is_multi_cli:
-            msg.append(
-                f'''`Total`
-🧪 {totals[0]:.3f}
-🔺 {totals[1]:.3f}
-🐌 {totals[2]}'''
-            )
-        m.edit_text(text='\n'.join(msg), parse_mode='Markdown')
+        data = [(c.name, c._balance(data=cache[c.owner])) for c in self.clis.values()]
+        m.edit_text(text=templates.render_tgbot_balances(data), parse_mode='Markdown')
 
     @bot_auth
     def cmd_inventory(self, update: Update, context: CallbackContext) -> None:
@@ -1281,3 +1262,7 @@ def trivial_edit_text(query, *args, **kwargs):
         return query.edit_text(*args, **kwargs)
     except Exception:
         logger.exception('telegram timeout')
+
+
+def cli_header(cli_name):
+    return f'`>> {cli_name}`'

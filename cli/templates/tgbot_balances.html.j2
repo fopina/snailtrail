@@ -1,0 +1,32 @@
+{% set is_multi = (data | length) > 1 -%}
+{% set totals = {
+    'slime': 0,
+    'avax': 0,
+    'snails': 0,
+} -%}
+
+{% for cli, balances in data -%}
+{% if is_multi -%}
+{{ tgbot_cli_header(cli) }}
+{% endif -%}
+{% if balances['SLIME'] | sum -%}
+🧪 {{ balances['SLIME'][0] | round(3) }} / {{ balances['SLIME'][1] | round(3) }}
+{% if totals.update({'slime':  totals['slime'] + balances['SLIME'] | sum}) -%}{% endif -%}
+{% endif -%}
+{% if balances['WAVAX'] | sum -%}
+*WAVAX*: {{ balances['WAVAX'][0] | round(3) }} / {{ balances['WAVAX'][1] | round(3) }}
+{% if totals.update({'avax':  totals['avax'] + balances['WAVAX'] | sum}) -%}{% endif -%}
+{% endif -%}
+🔺 {{ balances['AVAX'] | round(3) }} / 🐌 {{ balances['SNAILS'] }}
+{% if totals.update({
+    'avax':  totals['avax'] + balances['AVAX'],
+    'snails': totals['snails'] + balances['SNAILS'],
+}) -%}{% endif -%}
+{% endfor -%}
+
+{% if is_multi -%}
+`Total`
+🧪 {{ totals['slime'] | round(3) }}
+🔺 {{ totals['avax'] | round(3) }}
+🐌 {{ totals['snails'] }}
+{% endif -%}
