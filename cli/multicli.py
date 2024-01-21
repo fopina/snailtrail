@@ -661,7 +661,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
             for s in self.args.snail:
                 if s in c.my_snails:
                     ss = c.my_snails[s]
-                    print(f'Found {ss} in {c.name}')
+                    print(f'Found {ss} (🎫{ss.stats["mission_tickets"]}) in {c.name}')
                     snail_owners[s] = (ss, c)
             if len(snail_owners) == len(self.args.snail):
                 # all found
