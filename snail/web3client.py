@@ -692,7 +692,7 @@ class Client:
             **kwargs,
         )
 
-    def owner_of_snails(self, *snails: int):
+    def owner_of_snails(self, *snails: int) -> dict[int, str]:
         """
         return owners of `snails` in one single web3 (multi)call of `ownerOf`
         """

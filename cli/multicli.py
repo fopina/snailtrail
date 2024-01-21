@@ -656,16 +656,12 @@ Total: {breed_fees + gender_fees + transfer_fees}
     def cmd_utils_burn_snails(self):
         """Burn these snails using scrolls (and transfers)"""
         snail_owners = {}
-
-        for c in tqdm(self.clis, desc='Searching snail'):
-            for s in self.args.snail:
-                if s in c.my_snails:
-                    ss = c.my_snails[s]
-                    print(f'Found {ss} (🎫{ss.stats["mission_tickets"]}) in {c.name}')
-                    snail_owners[s] = (ss, c)
-            if len(snail_owners) == len(self.args.snail):
-                # all found
-                break
+        owners = self.main_cli.client.snail_owners(*self.args.snail)
+        for s, v in owners.items():
+            c = self._cli_by_address(v)
+            ss = c.my_snails[s]
+            print(f'Found {ss} (🎫{ss.stats["mission_tickets"]}) in {c.name}')
+            snail_owners[s] = (ss, c)
 
         if len(snail_owners) != len(self.args.snail):
             print('Some snails not found')
@@ -811,15 +807,13 @@ Total: {breed_fees + gender_fees + transfer_fees}
         """
         owner_c = None
         snail = None
-
-        for c in tqdm(self.clis, desc='Searching snail'):
-            if self.args.snail in c.my_snails:
-                owner_c = c
-                snail = c.my_snails[self.args.snail]
-                break
-        else:
+        owners = self.main_cli.client.snail_owners(self.args.snail)
+        if not owners:
             print('Snail not found')
             return
+
+        owner_c = owners[self.args.snail]
+        snail = owner_c.my_snails[self.args.snail]
         print(f'Found snail in {c.name}')
 
         totals = defaultdict(lambda: 0)
