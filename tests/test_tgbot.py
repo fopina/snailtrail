@@ -100,6 +100,7 @@ class Test(TestCase):
                 'minimum_tickets',
                 'cheap',
                 'cheap_soon',
+                'cheap_soon_max_tickets',
                 'races',
                 'races_join',
                 'race_stats',
