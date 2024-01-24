@@ -165,6 +165,9 @@ ABI = {repr(abi_definition)}
         header = f'# generated automatically - DO NOT MODIFY'
         (path / '__init__.py').write_text('\n'.join([header, ''] + modules))
 
+    def isort_em(self):
+        subprocess.check_call(['isort', CONTRACT_DIR])
+
     def black_em(self):
         subprocess.check_call(['black', CONTRACT_DIR])
 
@@ -184,6 +187,7 @@ ABI = {repr(abi_definition)}
         self.update_traderjoe()
 
         self.update_init()
+        self.isort_em()
         self.black_em()
 
 
