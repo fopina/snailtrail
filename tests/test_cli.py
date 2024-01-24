@@ -544,6 +544,51 @@ AVAX: 1.000 / SNAILS: 1
             from_wallet=TEST_WALLET_MASKED,
         )
 
+    def test_bot_tournament_market(self):
+        self.cli.client.gql.tournament.return_value = data.TOURNAMENT_PROMISE_DATA
+        self.cli.client.gql.get_all_snails_marketplace.return_value = {
+            "snails": [
+                {
+                    "id": 20282,
+                    "name": "Snail #20282",
+                    "purity": 18,
+                    "adaptations": ['Desert', 'Wind', 'Slide'],
+                    "market": {
+                        "price": 0.36,
+                    },
+                    "stats": {'experience': {'level': 15}},
+                },
+            ],
+            "count": 1,
+        }
+        self.cli._bot_tournament_market()
+        self.cli.notifier.notify.assert_called_once_with(
+            '🥇 Week 1 - Snail #20282 (Garden) - 0.36 🔺', from_wallet=TEST_WALLET_MASKED
+        )
+
+        self.cli.notifier.notify.reset_mock()
+        self.cli.client.gql.get_all_snails_marketplace.return_value['snails'].append(
+            {
+                "id": 20283,
+                "name": "Snail #20283",
+                "purity": 18,
+                "adaptations": ['Space', 'Hot', 'Roll'],
+                "market": {
+                    "price": 0.31,
+                },
+                "stats": {'experience': {'level': 15}},
+            }
+        )
+        self.cli._bot_tournament_market()
+        self.cli.notifier.notify.assert_called_once_with(
+            '🥈 Week 2 - Snail #20283 (Garden) - 0.31 🔺', from_wallet=TEST_WALLET_MASKED
+        )
+
+        self.cli.notifier.notify.reset_mock()
+        self.cli.client.gql.get_all_snails_marketplace.return_value['snails'] = []
+        self.cli._bot_tournament_market()
+        self.cli.notifier.notify.assert_not_called()
+
     def test_find_candidates(self):
         snails = [
             Snail({'id': 1, 'adaptations': ['Mountain', 'Cold', 'Slide'], 'purity': 13}),
