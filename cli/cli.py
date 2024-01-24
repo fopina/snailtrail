@@ -422,6 +422,12 @@ class CLI:
                         if not self.args.cheap_soon:
                             _slow_snail(snail)
                             continue
+                        if (
+                            self.args.cheap_soon_max_tickets
+                            and self.args.cheap_soon_max_tickets >= snail.stats['mission_tickets']
+                        ):
+                            _slow_snail(snail)
+                            continue
                         # never join last spots under fee spike
                         if under_fee_spike:
                             _slow_snail(snail)
@@ -767,6 +773,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         '--cheap-soon',
         action='store_true',
         help='If non-last spot fails and last spot is CHEAP, join anyway',
+    )
+    @commands.argument(
+        '--cheap-soon-max-tickets',
+        type=int,
+        default=None,
+        help='If set, a snail with this amount of tickets (or more) will ignore --cheap-soon',
     )
     @commands.argument('--races', action='store_true', help='Monitor onboarding races for snails lv5+')
     @commands.argument(
