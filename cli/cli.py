@@ -682,6 +682,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if snails_gone:
             changes = True
             self._notify('Tournament market snails gone:\n' + '\n'.join(f'Snail #{x}' for x in snails_gone))
+            for s in snails_gone:
+                del self.database.tournament_market_cache[s]
         if changes:
             self.database.save()
 

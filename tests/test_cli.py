@@ -596,6 +596,10 @@ AVAX: 1.000 / SNAILS: 1
             'Tournament market snails gone:\nSnail #20282\nSnail #20283', from_wallet=TEST_WALLET_MASKED
         )
 
+        self.cli.notifier.notify.reset_mock()
+        self.cli._bot_tournament_market()
+        self.cli.notifier.notify.assert_not_called()
+
     def test_find_candidates(self):
         snails = [
             Snail({'id': 1, 'adaptations': ['Mountain', 'Cold', 'Slide'], 'purity': 13}),
