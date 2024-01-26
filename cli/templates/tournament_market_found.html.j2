@@ -1,0 +1,6 @@
+{% if score == 1 -%}
+🥇
+{%- else -%}
+🥈
+{%- endif %} Week {{ week }} - {{ snail.name_id }} ({{ snail.family }}) - {{ snail.market_price}} 🔺
+{%- if cached_price %} (from {{ cached_price }}){% endif %}

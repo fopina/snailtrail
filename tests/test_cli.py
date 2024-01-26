@@ -563,7 +563,8 @@ AVAX: 1.000 / SNAILS: 1
         }
         self.cli._bot_tournament_market()
         self.cli.notifier.notify.assert_called_once_with(
-            '🥇 Week 1 - Snail #20282 (Garden) - 0.36 🔺', from_wallet=TEST_WALLET_MASKED
+            'New snails for tournament on sale:\n🥇 Week 1 - Snail #20282 (Garden) - 0.36 🔺',
+            from_wallet=TEST_WALLET_MASKED,
         )
 
         self.cli.notifier.notify.reset_mock()
@@ -581,13 +582,19 @@ AVAX: 1.000 / SNAILS: 1
         )
         self.cli._bot_tournament_market()
         self.cli.notifier.notify.assert_called_once_with(
-            '🥈 Week 2 - Snail #20283 (Garden) - 0.31 🔺', from_wallet=TEST_WALLET_MASKED
+            'New snails for tournament on sale:\n🥈 Week 2 - Snail #20283 (Garden) - 0.31 🔺',
+            from_wallet=TEST_WALLET_MASKED,
         )
 
         self.cli.notifier.notify.reset_mock()
-        self.cli.client.gql.get_all_snails_marketplace.return_value['snails'] = []
         self.cli._bot_tournament_market()
         self.cli.notifier.notify.assert_not_called()
+
+        self.cli.client.gql.get_all_snails_marketplace.return_value['snails'] = []
+        self.cli._bot_tournament_market()
+        self.cli.notifier.notify.assert_called_once_with(
+            'Tournament market snails gone:\nSnail #20282\nSnail #20283', from_wallet=TEST_WALLET_MASKED
+        )
 
     def test_find_candidates(self):
         snails = [

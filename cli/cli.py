@@ -661,26 +661,29 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         conditions = {tuple(week.ordered_conditions): week.week for week in data.weeks}
 
         matches = []
+        seen_snails = set()
         for snail, score, w in self._bot_tournament_market_search(conditions, minimum_level=15):
             if score > 2:
                 continue
-            place = '🥇🥈'[score - 1]
-            full = score == 1
+            seen_snails.add(snail.id)
 
             cached_price = self.database.tournament_market_cache.get(snail.id, [None])[0]
             if cached_price == snail.market_price:
                 continue
 
-            msg = f'{place} Week {w} - {snail.name_id} ({snail.family}) - {snail.market_price} 🔺'
-            if cached_price:
-                msg = f'{msg} (from {cached_price})'
-            matches.append(msg)
+            matches.append(templates.render_tournament_market_found(snail, w, score, cached_price=cached_price))
+            self.database.tournament_market_cache[snail.id] = (snail.market_price, score == 1, w)
 
-            self.database.tournament_market_cache[snail.id] = (snail.market_price, int(full), w)
-
+        changes = False
         if matches:
+            changes = True
+            self._notify('New snails for tournament on sale:\n' + '\n'.join(matches))
+        snails_gone = self.database.tournament_market_cache.keys() - seen_snails
+        if snails_gone:
+            changes = True
+            self._notify('Tournament market snails gone:\n' + '\n'.join(f'Snail #{x}' for x in snails_gone))
+        if changes:
             self.database.save()
-            self._notify('\n'.join(matches))
 
     def _bot_burn_coefficent(self):
         r = self._burn_coef()

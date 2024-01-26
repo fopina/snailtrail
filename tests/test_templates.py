@@ -5,7 +5,7 @@ from snail.gqlclient import types as gtypes
 from snail.web3client import web3_types
 
 
-class TestMissions(TestCase):
+class Test(TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._snail = gtypes.Snail({'name': 'x', 'id': 1, 'stats': {'experience': {'level': 1}}})
@@ -42,6 +42,18 @@ class TestMissions(TestCase):
         self.assertEqual(
             templates.render_mission_joined_reverted(self._snail, tx=self._tx),
             'Last spot transaction reverted - tx: 0xd34db33f - fee: 0.00025',
+        )
+
+    def test_render_tournament_market_found(self):
+        self.assertEqual(
+            templates.render_tournament_market_found(self._snail, 1, 1),
+            '🥇 Week 1 - x (#1) (None) - None 🔺',
+        )
+
+    def test_render_tournament_market_found_cached(self):
+        self.assertEqual(
+            templates.render_tournament_market_found(self._snail, 1, 1, cached_price=0.1),
+            '🥇 Week 1 - x (#1) (None) - None 🔺 (from 0.1)',
         )
 
 
