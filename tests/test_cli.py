@@ -464,7 +464,7 @@ AVAX: 1.000 / SNAILS: 1
             ],
         )
 
-    @mock.patch('cli.cli.datetime')
+    @mock.patch('cli.utils.datetime')
     def test_bot_tournament(self, now_mock):
         now_mock.now.return_value = datetime(2023, 7, 11, 15, tzinfo=timezone.utc)
         self.cli.client.gql.tournament.return_value = data.TOURNAMENT_PROMISE_DATA
