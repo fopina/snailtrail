@@ -878,7 +878,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
             if v[0].name.startswith('Double XP Boost'):
                 found = owner_c
                 break
-        
+
         if not found:
             for c in tqdm(self.clis, desc='Loading inventory'):
                 for v in c.cmd_inventory(verbose=False).values():
@@ -909,7 +909,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
                 time.sleep(0.5)
         else:
             raise Exception('too many retries, not the holder?!')
-        
+
         if found != owner_c:
             tx = found.client.web3.transfer_snail(found.owner, owner_c.owner, self.args.snail)
             fee = utils.tx_fee(tx)

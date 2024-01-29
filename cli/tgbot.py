@@ -967,24 +967,8 @@ Total slime won in missions: **{total}**
         """
         Show time to next daily mission
         """
-        msgs = []
-        for c in self.clis.values():
-            self.tag_with_wallet(c, msgs)
-            if c.database.mission_loop.status == MissionLoop.Status.DONE:
-                extra = f'{c.database.mission_loop.joined_normal}/{c.database.mission_loop.joined_last}/{c.database.mission_loop.resting}'
-                if c.database.mission_loop.pending:
-                    msgs.append(f'🫥 {c.database.mission_loop.pending} ({extra})')
-                else:
-                    msgs.append(f'⏲️ {str(c.database.mission_loop.next_at - c._now()).split(".")[0]} ({extra})')
-            elif c.database.mission_loop.status == MissionLoop.Status.NO_SNAILS:
-                # do nothing, cleaner message
-                pass
-            elif c.database.mission_loop.status == MissionLoop.Status.PROCESSING:
-                msgs.append('🚧')
-            else:
-                msgs.append('⁉️')
-
-        update.message.reply_markdown('\n'.join(msgs))
+        data = [(c.name, c.database.mission_loop) for c in self.clis.values()]
+        update.message.reply_markdown(templates.render_tgbot_nextmission(data))
 
     @bot_auth
     def cmd_incubate(self, update: Update, context: CallbackContext) -> None:

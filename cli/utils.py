@@ -1,6 +1,7 @@
 import logging
 import time
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Union
 
 from snail.gqlclient.types import Race, Snail
@@ -10,6 +11,10 @@ if TYPE_CHECKING:
     from . import cli
 
 logger = logging.getLogger(__name__)
+
+
+def tznow():
+    return datetime.now(tz=timezone.utc)
 
 
 def tx_fee(tx: web3_types.TxReceipt) -> float:

@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from cli import templates
+from cli import templates, utils
+from cli.database import MissionLoop
 from snail.gqlclient import types as gtypes
 from snail.web3client import web3_types
 
@@ -57,7 +58,7 @@ class Test(TestCase):
         )
 
 
-class TestBalances(TestCase):
+class TestTgBot(TestCase):
     def setUp(self) -> None:
         super().setUp()
         self._data = [
@@ -159,4 +160,48 @@ class TestBalances(TestCase):
         self.assertEqual(
             templates.render_tgbot_balances(self._data),
             '_Nothing to show here..._',
+        )
+
+    def test_tgbot_nextmission(self):
+        self._data = [
+            (
+                '0x01',
+                MissionLoop(
+                    pending=2,
+                    joined_last=3,
+                    status=MissionLoop.Status.DONE,
+                ),
+            ),
+            (
+                '0x02',
+                MissionLoop(
+                    status=MissionLoop.Status.NO_SNAILS,
+                ),
+            ),
+            (
+                '0x03',
+                MissionLoop(
+                    status=MissionLoop.Status.PROCESSING,
+                ),
+            ),
+            (
+                '0x04',
+                MissionLoop(
+                    status=MissionLoop.Status.DONE,
+                    joined_normal=1,
+                    next_at=utils.tznow(),
+                ),
+            ),
+        ]
+        self.assertEqual(
+            templates.render_tgbot_nextmission(self._data),
+            '''\
+`>> 0x01`
+🫥 2(0/3/0)
+`>> 0x02`
+`>> 0x03`
+🚧
+`>> 0x04`
+⏲️ -1 day, 23:59:59(1/0/0)
+''',
         )

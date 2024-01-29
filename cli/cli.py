@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import cached_property
 from pathlib import Path
 from typing import Optional, Union
@@ -20,7 +20,7 @@ from snail.web3client import BOTTOM_BASE_FEE, DECIMALS
 from . import commands, templates, tgbot
 from .database import MissionLoop, WalletDB
 from .types import RaceJoin, Wallet
-from .utils import CachedSnailHistory, tx_fee
+from .utils import CachedSnailHistory, tx_fee, tznow
 
 GENDER_COLORS = {
     Gender.MALE: Fore.BLUE,
@@ -82,7 +82,7 @@ class CLI:
 
     @staticmethod
     def _now():
-        return datetime.now(tz=timezone.utc)
+        return tznow()
 
     @cached_property
     def guild_leader(self):

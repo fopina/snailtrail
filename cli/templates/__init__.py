@@ -2,6 +2,7 @@ from typing import Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+from cli.database import MissionLoop
 from snail.gqlclient import types as gql_types
 from snail.web3client import web3_types
 
@@ -35,6 +36,11 @@ def render_mission_joined_reverted(snail: gql_types.Snail, tx: web3_types.TxRece
 def render_tgbot_balances(data: list[tuple[any, any]]):
     template = env.get_template("tgbot_balances.html.j2")
     return template.render(data=data)
+
+
+def render_tgbot_nextmission(data: list[tuple[str, MissionLoop]]):
+    template = env.get_template("tgbot_nextmission.md.j2")
+    return template.render(data=data, statuses=MissionLoop.Status, tznow=utils.tznow())
 
 
 def render_tournament_market_found(snail: gql_types.Snail, week: int, score: int, cached_price: Optional[float] = None):

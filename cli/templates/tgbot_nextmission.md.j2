@@ -1,0 +1,20 @@
+{% set is_multi = (data | length) > 1 -%}
+
+{% for cli, mission_loop in data -%}
+{% if is_multi -%}
+{{ tgbot_cli_header(cli) }}
+{% endif -%}
+{% if mission_loop.status == statuses.DONE -%}
+    {%- if mission_loop.pending -%}
+🫥 {{ mission_loop.pending}}
+    {%- else -%}
+⏲️ {{ ((mission_loop.next_at - tznow) | string).split(".")[0] }}
+    {%- endif -%}
+({{ mission_loop.joined_normal }}/{{ mission_loop.joined_last }}/{{ mission_loop.resting}})
+{% elif mission_loop.status == statuses.NO_SNAILS -%}
+{% elif mission_loop.status == statuses.PROCESSING -%}
+🚧
+{% else -%}
+⁉️
+{% endif -%}
+{% endfor -%}
