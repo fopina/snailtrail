@@ -812,9 +812,9 @@ Total: {breed_fees + gender_fees + transfer_fees}
             print('Snail not found')
             return
 
-        owner_c = owners[self.args.snail]
+        owner_c = self._cli_by_address(owners[self.args.snail])
         snail = owner_c.my_snails[self.args.snail]
-        print(f'Found snail in {c.name}')
+        print(f'Found snail in {owner_c.name}')
 
         totals = defaultdict(lambda: 0)
         for c in tqdm(self.clis, desc='Loading inventory'):
