@@ -855,6 +855,66 @@ Total: {breed_fees + gender_fees + transfer_fees}
             del totals[c]
             prev_c = c
 
+    @commands.argument('snail', type=int, help='Snail ID')
+    @commands.util_command()
+    def cmd_utils_xpboost_snail(self):
+        """
+        Apply one double XP boost scroll to this snail (transferring snail, if needed)
+        """
+        owner_c = None
+        snail = None
+        owners = self.main_cli.client.snail_owners(self.args.snail)
+        if not owners:
+            print('Snail not found')
+            return
+
+        owner_c = self._cli_by_address(owners[self.args.snail])
+        snail = owner_c.my_snails[self.args.snail]
+        print(f'Found snail in {owner_c.name}')
+
+        items = owner_c.cmd_inventory(verbose=False).values()
+        found = None
+        for v in items:
+            if v[0].name.startswith('Double XP Boost'):
+                found = owner_c
+                break
+        
+        if not found:
+            for c in tqdm(self.clis, desc='Loading inventory'):
+                for v in c.cmd_inventory(verbose=False).values():
+                    if v[0].name.startswith('Double XP Boost'):
+                        found = c
+                        break
+                if found:
+                    break
+
+        if found != owner_c:
+            tx = owner_c.client.web3.transfer_snail(owner_c.owner, found.owner, self.args.snail)
+            fee = utils.tx_fee(tx)
+            print(f'{snail} transferred from {owner_c.name} to {found.name} for {fee}')
+
+        # try a few times
+        for _ in range(30):
+            try:
+                r = found.client.apply_pressure(self.args.snail, v[0].id)
+                if not 'changes' in r:
+                    raise Exception('Unexpected reply', r)
+                for chg in r['changes']:
+                    print(f'{snail} xp boost applied: {chg}')
+                break
+            except cli.client.gqlclient.APIError as e:
+                if 'You are not the holder of Snail' not in str(e):
+                    raise
+                print('.', end='', flush=True)
+                time.sleep(0.5)
+        else:
+            raise Exception('too many retries, not the holder?!')
+        
+        if found != owner_c:
+            tx = found.client.web3.transfer_snail(found.owner, owner_c.owner, self.args.snail)
+            fee = utils.tx_fee(tx)
+            print(f'{snail} transferred from {found.name} to {owner_c.name} for {fee}')
+
     @commands.argument('-t', '--tournament', action='store_true', help='Also include tournament adapts to search for')
     @commands.argument(
         '-m',
