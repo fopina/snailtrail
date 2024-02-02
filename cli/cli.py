@@ -1265,6 +1265,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if (
             self.database.mission_loop.status == MissionLoop.Status.UNKNOWN
             or self.database.mission_loop.pending
+            # FIXME: can it be None with status !UNKNOWN?!
+            or self.database.mission_loop.next_at is None
             or self.database.mission_loop.next_at < now
         ):
             self.database.mission_loop.status = MissionLoop.Status.PROCESSING
