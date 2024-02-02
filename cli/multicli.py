@@ -316,7 +316,7 @@ SNAILS: {totals[2]}'''
                             for _s in (ms, fs):
                                 oc = self._cli_by_address(owners[_s])
                                 if oc != nc:
-                                    _, tx = oc.client.transfer_snail(nc.owner, _s)
+                                    _, tx = oc.client.transfer_snails(nc.owner, _s)
                                     fee = utils.tx_fee(tx)
                                     print(f'transfer to {nc} for {fee} AVAX')
                                     transfer_fees += fee

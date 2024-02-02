@@ -543,6 +543,17 @@ class CLI:
         metavar='account_or_address',
         help='Transfer slime to this account - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
     )
+    @commands.argument(
+        '--send-avax',
+        type=commands.wallet_ext_or_int,
+        metavar='account_or_address',
+        help='Transfer avax to this account - if <account_or_address> starts with 0x it will be used as external address otherwise it will be used as a local account index',
+    )
+    @commands.argument(
+        '--amount',
+        type=float,
+        help='Amount of slime/avax to send',
+    )
     @commands.command()
     def cmd_balance(self, data=None):
         """Check wallet balances for all the tokens"""
@@ -557,7 +568,9 @@ class CLI:
             except client.web3client.exceptions.ContractLogicError as e:
                 print(e)
         elif self.args.send is not None:
-            return self.cmd_balance_transfer(self.args.send.address)
+            return self.cmd_balance_transfer_slime(self.args.send.address)
+        elif self.args.send_avax is not None:
+            return self.cmd_balance_transfer_avax(self.args.send_avax.address, self.args.amount)
         else:
             r = self._balance(data=data)
             print(
@@ -568,7 +581,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             )
             return r
 
-    def cmd_balance_transfer(self, target):
+    def cmd_balance_transfer_slime(self, target):
         if target == self.owner:
             return
         bal = self.client.web3.balance_of_slime(raw=True)
@@ -579,6 +592,20 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         r = self.client.web3.transfer_slime(target, bal)
         sent = int(r['logs'][0]['data'], 16) / DECIMALS
         print(f'{sent} SLIME sent')
+
+    def cmd_balance_transfer_avax(self, target, amount):
+        if target == self.owner:
+            return
+        bal = self.client.web3.get_balance()
+        if bal < amount:
+            print(f'Not enough to send ({bal})')
+            return
+        print(f'Sending {amount} to {target}')
+        r = self.client.web3.transfer(target, amount)
+        if r['status'] == 1:
+            print('AVAX sent')
+        else:
+            raise Exception(r)
 
     def _bot_marketplace(self):
         d = self.client.marketplace_stats()

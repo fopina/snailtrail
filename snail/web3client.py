@@ -419,6 +419,9 @@ class Client:
         )
 
     def transfer(self, to: str, amount: float, wait_for_transaction_receipt: Union[bool, float] = None, **kwargs):
+        """
+        transfer AMOUNT (in AVAX, NOT GWEI!!)
+        """
         transaction = {
             'to': to,
             'value': int(amount * DECIMALS),
