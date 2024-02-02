@@ -527,6 +527,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
                     'Adapt Athletics',
                     'SB',
                     'WB',
+                    'Status',
                 ]
             )
             for c in self.clis:
@@ -546,6 +547,7 @@ Total: {breed_fees + gender_fees + transfer_fees}
                             ads[2],
                             snail.slime_boost,
                             snail.work_boost,
+                            snail.status,
                         ]
                     )
 

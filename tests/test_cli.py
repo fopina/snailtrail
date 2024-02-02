@@ -371,6 +371,7 @@ class TestBot(TestCase):
     def test_balance(self):
         self.cli.args.claim = False
         self.cli.args.send = None
+        self.cli.args.send_avax = None
         # FIXME: not called at the moment, get some claimable wavax
         # self.cli.client.web3.claimable_wavax.return_value = 1
         self.cli.client.web3.multicall_balances.return_value = {self.cli.owner: _MultiCallResult(1, 1, 1, 1, 1, 1)}

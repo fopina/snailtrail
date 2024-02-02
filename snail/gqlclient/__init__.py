@@ -236,6 +236,7 @@ class Client(requests.Session):
                         work_boost
                         slime_boost
                         purity
+                        status
                         breeding {
                         breed_detail {
                             cycle_end
@@ -520,6 +521,7 @@ class Client(requests.Session):
                     work_boost
                     slime_boost
                     purity
+                    status
                     breeding {
                         breed_detail {
                             cycle_end
