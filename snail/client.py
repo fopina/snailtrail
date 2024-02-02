@@ -98,7 +98,7 @@ class Client:
             logger.debug('fetching offset %d (call %d) for %s', c, calls, getattr(method, "__name__", str(method)))
             kwargs['offset'] = c
             objs = method(*args, **kwargs)
-            if not objs[key]:
+            if not objs.get(key):
                 break
             total = objs.get('count')
             _r = map(klass, objs[key]) if klass else objs[key]
