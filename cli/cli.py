@@ -917,6 +917,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
 
     @commands.argument('-s', '--stats', action='store_true', help='Print only tournament stats')
     @commands.argument('-w', '--week', type=int, help='Week to check (default to current week)')
+    @commands.argument('-t', '--tournament', type=int, help='Tournament to check (default to current tournament)')
     @commands.argument('--preview', action='store_true', help='Attempt to predict race results for given week')
     @commands.argument('--csv', action='store_true', help='Output in csv format - only for --preview')
     @commands.argument('--market', action='store_true', help='Search market snails that match tournament races')
@@ -931,7 +932,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             assert len(data.prize_pool) == 1
             print(f"Prize: {data.prize_pool[0]['amount']} {data.prize_pool[0]['symbol']}")
             for week in data.weeks:
-                print(f"Week {week.week}: {week.conditions} {week.distance}m ({week.guild_count} guilds)")
+                print(f"Week {week.week}: {week.ordered_conditions} {week.distance}m ({week.guild_count} guilds)")
         if self.args.stats:
             # only print stats
             return False

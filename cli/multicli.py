@@ -141,8 +141,6 @@ class MultiCLI:
                             'Tick-other processed in %s (%d seconds)', self.main_cli._now() - _start, duration
                         )
                 time.sleep(1)
-        except KeyboardInterrupt:
-            logger.info('Stopping...')
         finally:
             self.args.notify.stop_polling()
 
@@ -559,6 +557,24 @@ Total: {breed_fees + gender_fees + transfer_fees}
         print(f'Current median fee: {median}')
         pct = median * 100 / self.main_cli.client.max_fee
         print(f'Median is {pct:.2f}% of your base fee')
+
+    @commands.util_command()
+    def cmd_utils_tour_races(self):
+        """List races of ALL tournaments"""
+
+        def _deets(data):
+            print(f"Name: {data.name}")
+            print(f"Registered guilds: {data.guild_count}")
+            for week in data.weeks:
+                print(f"Week {week.week}: {week.ordered_conditions} {week.distance}m ({week.guild_count} guilds)")
+
+        data = self.main_cli.client.tournament(self.main_cli.owner)
+        _deets(data)
+        last_id = data['id']
+
+        for nid in range(last_id - 1, 0, -1):
+            data = self.main_cli.client.tournament(self.main_cli.owner, tournament_id=nid)
+            _deets(data)
 
     @commands.util_command()
     def cmd_utils_all_adapts(self):
@@ -1007,15 +1023,18 @@ Total: {breed_fees + gender_fees + transfer_fees}
         if not self.args.cmd:
             return
 
-        if self.is_multi or not hasattr(cli.CLI, f'cmd_{self.args.cmd}'):
-            m = getattr(self, f'cmd_{self.args.cmd}', None)
-            if m is not None:
-                r = m()
-                if r is not False:
-                    return r
+        try:
+            if self.is_multi or not hasattr(cli.CLI, f'cmd_{self.args.cmd}'):
+                m = getattr(self, f'cmd_{self.args.cmd}', None)
+                if m is not None:
+                    r = m()
+                    if r is not False:
+                        return r
 
-        for c in self.clis:
-            r = c.run()
-            if r is False:
-                # do not process any other clis
-                return
+            for c in self.clis:
+                r = c.run()
+                if r is False:
+                    # do not process any other clis
+                    return
+        except KeyboardInterrupt:
+            logger.info('Stopping...')

@@ -286,8 +286,8 @@ class Client:
             r['prices'][l['name']][1] = l['value']
         return r
 
-    def tournament(self, address):
-        return types.Tournament(self.gql.tournament(address))
+    def tournament(self, address, tournament_id=None):
+        return types.Tournament(self.gql.tournament(address, tournament_id=tournament_id))
 
     def microwave_snails_preview(self, snails: list[int]):
         signature = self.web3.sign_burn(snails)
