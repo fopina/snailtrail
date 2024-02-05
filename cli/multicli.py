@@ -582,6 +582,57 @@ Total: {breed_fees + gender_fees + transfer_fees}
         for triplet in Adaptation.all():
             print(', '.join(map(str, triplet)))
 
+    @commands.argument('snails', type=Path, help='file with snails list')
+    @commands.argument('adapts', type=Path, help='file with adaptations summary')
+    @commands.util_command()
+    def cmd_utils_tmp_snails_to_boost(self):
+        """Print out best snails to boost"""
+        stats = [0, 0, 0, 0, 0]
+        adapts = self.args.adapts.read_text().splitlines()
+        ad = {}
+        for adapt in adapts[1:]:
+            a = adapt.split('\t')
+            k, *v = a[:6]
+            k = tuple(x.strip() for x in k.split(','))
+            ad[k] = list(map(int, v))
+
+        famind = ['Atlantis', 'Agate', 'Helix', 'Milk', 'Garden']
+
+        data = self.args.snails.read_text().splitlines()
+        for s in data[1:]:
+            s = s.split('\t')
+            if not s[0]:
+                continue
+            stats[0] += 1
+            snail, family, lvl, purity, a1, a2, a3, *_ = s
+            lvl = int(lvl)
+            if lvl >= 15:
+                stats[1] += 1
+                continue
+            if lvl < 5:
+                stats[2] += 1
+                continue
+            stats[3] += 1
+            purity = int(purity)
+            find = famind.index(family)
+            for ak, av in ad.items():
+                ak1, ak2, ak3 = ak
+                if (not a1 or a1 == ak1) and (not a2 or a2 == ak2) and (not a3 or a3 == ak3):
+                    if not av[find]:
+                        print(f'{snail} L{lvl} P{purity}')
+                        stats[4] += 1
+                        break
+        print(
+            f'''
+Stats:
+- {stats[0]} snails in file
+- {stats[1]} 15+, ignored
+- {stats[2]} <5, ignored
+- {stats[3]} tested
+- {stats[4]} printed out to boost
+'''
+        )
+
     @commands.util_command()
     def cmd_utils_dkron(self):
         """Print out dkron balances command"""
