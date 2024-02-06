@@ -633,6 +633,21 @@ Stats:
 '''
         )
 
+    @commands.argument('adapts', type=Path, help='file with adaptations summary')
+    @commands.util_command()
+    def cmd_utils_tmp_market_adapts(self):
+        """Convert missing adapts TSV from excel to use after with utils_market_adapts"""
+        adapts = self.args.adapts.read_text().splitlines()
+        famind = ['Atlantis', 'Agate', 'Helix', 'Milk', 'Garden']
+
+        for adapt in adapts[1:]:
+            a = adapt.split('\t')
+            k, *v = a[:6]
+            k = k.replace(' ', '')
+            for vi, vv in enumerate(v):
+                if vv == '0':
+                    print(f'{k},{famind[vi]}')
+
     @commands.util_command()
     def cmd_utils_dkron(self):
         """Print out dkron balances command"""
@@ -991,7 +1006,16 @@ Stats:
         action='store_true',
         help='Also include adaptation triplets that do not exist in these wallets/accounts',
     )
-    @commands.argument('adaptations', nargs='*', help='Adaptation combo to look for, comma-separated: Desert,Hot,Slide')
+    @commands.argument(
+        '--file',
+        action='store_true',
+        help='Read adaptations from file instead of argv',
+    )
+    @commands.argument(
+        'adaptations',
+        nargs='*',
+        help='Adaptation combo to look for, comma-separated: Desert,Hot,Slide. Optionally, add family: Desert,Hot,Slide,Garden',
+    )
     @commands.util_command()
     def cmd_utils_market_adapts(self):
         """
@@ -1025,12 +1049,31 @@ Stats:
                     return
                 conditions[adapt] = ('f', families)
 
-        for adapt in self.args.adaptations:
-            c = tuple(adapt.split(','))
-            if c in conditions:
-                print('TRIPLET OVERLAP', c)
-                return
-            conditions[c] = ('m',)
+        if self.args.file:
+            adapt_list = Path(self.args.adaptations[0]).read_text().splitlines()
+        else:
+            adapt_list = self.args.adaptations
+
+        fam_included = adapt_list[0].count(',') > 2
+        if fam_included:
+            family_condition = defaultdict(lambda: set())
+            for adapt in adapt_list:
+                c = tuple(adapt.split(','))
+                k1 = c[:3]
+                k2 = Family.from_str(c[3])
+                family_condition[tuple(k1)].add(k2)
+            for adapt, families in family_condition.items():
+                if adapt in conditions:
+                    print('TRIPLET OVERLAP', adapt)
+                    return
+                conditions[adapt] = ('f', families)
+        else:
+            for adapt in adapt_list:
+                c = tuple(adapt.split(','))
+                if c in conditions:
+                    print('TRIPLET OVERLAP', c)
+                    return
+                conditions[c] = ('m',)
 
         if not conditions:
             print('Please specify SOME adaptations (or one of the flags)')
