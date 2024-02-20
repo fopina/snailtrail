@@ -284,7 +284,7 @@ SNAILS: {totals[2]}'''
             for acc, acc_plan in new_plan.items():
                 c = self.clis[acc_indices[acc]]
                 if not self.args.execute_scroll and last_client is not None and last_client != c:
-                    last_client.cmd_balance_transfer(c.owner)
+                    last_client.cmd_balance_transfer_slime(c.owner)
                 last_client = c
                 for ms, fs, *rest in acc_plan:
                     if rest:
@@ -349,14 +349,20 @@ Total: {breed_fees + gender_fees + transfer_fees}
 
     def _cmd_incubate_plan(self):
         snails = []
-        for c in self.clis:
-            _, ss = c.run()
+        for c in tqdm(self.clis):
+            _, ss = c.cmd_incubate_fee(verbose=False)
             snails.extend((x1, x2, x3, c) for x1, x2, x3 in ss)
         print(f'\n{Fore.GREEN}== FULL PLAN =={Fore.RESET}')
+        base_pc = self.main_cli.client.web3.get_current_coefficent()
+        last_pc = base_pc
+        total_slime = 0
         for fee, snail1, snail2, c in sorted(snails, key=lambda x: x[0]):
+            new_fee = fee / base_pc * last_pc
+            total_slime += fee
             print(
-                f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee} / {new_fee} / {total_slime}{Fore.RESET}'
             )
+            last_pc += 0.2
         return
 
     def cmd_tournament(self):

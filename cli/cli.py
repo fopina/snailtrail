@@ -2360,13 +2360,14 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     break
         return final_pairs
 
-    def cmd_incubate_fee(self):
+    def cmd_incubate_fee(self, verbose=True):
         pc = self.client.web3.get_current_coefficent()
         argc = len(self.args.fee)
         if argc == 2:
             snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
             assert len(snails) == 2
-            print(snails[0].incubation_fee(snails[1], pc=pc))
+            if verbose:
+                print(snails[0].incubation_fee(snails[1], pc=pc))
             return False
         elif argc == 1:
             snails = list(self.client.iterate_all_snails(filters={'id': self.args.fee}))
@@ -2411,19 +2412,21 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if self.args.plan:
             # lazy planning, only useful with many-to-many snails
             snails = self.cmd_incubate_fee_lazy_plan(snail_fees)
-            for fee, snail1, snail2 in snails:
-                print(
-                    f'{snail1.id}:{snail2.id} - '
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
-                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
-                )
+            if verbose:
+                for fee, snail1, snail2 in snails:
+                    print(
+                        f'{snail1.id}:{snail2.id} - '
+                        f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
+                        f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    )
             return True, snails
         else:
-            for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
-                print(
-                    f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
-                    f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
-                )
+            if verbose:
+                for fee, snail1, snail2 in sorted(snail_fees, key=lambda x: x[0]):
+                    print(
+                        f'{GENDER_COLORS[snail1.gender]}{snail1.name_id}{self._incubate_locked_gender(snail1)}{self._incubate_breed_limit(snail1)}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - '
+                        f'{GENDER_COLORS[snail2.gender]}{snail2.name_id}{self._incubate_locked_gender(snail2)}{self._incubate_breed_limit(snail2)}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee}{Fore.RESET}'
+                    )
         return True
 
     def cmd_incubate_sim_report(self, results, indent=0):
