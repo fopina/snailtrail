@@ -362,7 +362,8 @@ Total: {breed_fees + gender_fees + transfer_fees}
             print(
                 f'{c._profile["_i"]}:{snail1.id}:{snail2.id} - {c.name} - {cli.GENDER_COLORS[snail1.gender]}{snail1.name_id}{Fore.RESET} P{snail1.purity} {snail1.family.gene} - {cli.GENDER_COLORS[snail2.gender]}{snail2.name_id}{Fore.RESET} P{snail2.purity} {snail2.family.gene} for {Fore.RED}{fee} / {new_fee} / {total_slime}{Fore.RESET}'
             )
-            last_pc += 0.2
+            # FIXME: not the right increment!
+            last_pc += 0.06
         return
 
     def cmd_tournament(self):
