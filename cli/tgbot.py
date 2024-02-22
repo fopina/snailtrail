@@ -806,7 +806,12 @@ Total slime won in missions: **{total}**
         boosted = set(args.boost or [])
         boosted_wallets = set(w.address for w in (args.boost_wallet or []))
         total = 0
+        snail_balances = self.main_cli.client.web3.multicall_balances(
+            [c.owner for c in self.clis.values()], _all=False, snails=True
+        )
         for c in self.clis.values():
+            if snail_balances[c.owner].snails == 0:
+                continue
             self.tag_with_wallet(c, msg)
             msg.append('...Loading...')
             trivial_edit_text(m, text=self._link_snails('\n'.join(msg)), parse_mode='Markdown')
