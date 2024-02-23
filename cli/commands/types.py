@@ -3,6 +3,7 @@ from pathlib import Path
 import configargparse
 
 from ..types import RaceJoin, Wallet
+from ._eth_acc_hdpath_patch_ import cached_path
 
 
 class FileOrString(str):
@@ -38,11 +39,10 @@ class AppendWalletAction(configargparse.argparse._AppendAction):
                 from web3 import Web3
 
                 w3 = Web3()
-                w3.eth.account.enable_unaudited_hdwallet_features()
                 ind = int(val[1:])
-                w = Wallet.from_private_key(
-                    w3.eth.account.from_mnemonic(namespace.wallet_seed, account_path=f"m/44'/60'/0'/0/{ind}").key
-                )
+                private_key = cached_path(namespace.wallet_seed).derive(ind)
+                key = w3.eth.account._parsePrivateKey(private_key)
+                w = Wallet.from_private_key(key)
             else:
                 w = Wallet.from_private_key(val)
 
