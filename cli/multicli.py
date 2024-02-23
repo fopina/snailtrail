@@ -750,6 +750,9 @@ Stats:
         owners = self.main_cli.client.snail_owners(*self.args.snail)
         for s, v in owners.items():
             c = self._cli_by_address(v)
+            if c is None:
+                print(f'UNABLE TO BURN {s} owned by {v}: in sink?')
+                continue
             ss = c.my_snails[s]
             print(f'Found {ss} (🎫{ss.stats["mission_tickets"]}) in {c.name}')
             snail_owners[s] = (ss, c)
