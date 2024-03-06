@@ -7,6 +7,8 @@ from urllib3.util.retry import Retry
 
 from .errors import (  # noqa: import like this for now, retrocompatibility - but fix callers in future
     APIError,
+    JoinedGuildAfterCycleStartAPIError,
+    MissHardWordersAPIError,
     NeedsToRestAPIError,
     RaceAlreadyFullAPIError,
     RaceEntryFailedAPIError,

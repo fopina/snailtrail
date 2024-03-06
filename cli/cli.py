@@ -1212,10 +1212,13 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             else:
                 try:
                     r = self.client.claim_building(self._profile['guild']['id'], building)
-                except client.gqlclient.APIError as e:
-                    if 'You have joined this guild after the current cycle start, wait for next cycle' in str(e):
-                        continue
-                    raise
+                except (
+                    client.gqlclient.JoinedGuildAfterCycleStartAPIError,
+                    client.gqlclient.MissHardWordersAPIError,
+                ) as e:
+                    self.logger.error('Error on guild %s: %s', self.profile_guild, str(e))
+                    continue
+
                 if 'changes' in r:
                     for c in r['changes']:
                         _a = int(c['_to']) - int(c['_from'])

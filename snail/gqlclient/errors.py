@@ -14,6 +14,8 @@ class APIError(Exception):
         NeedsToRestAPIError([['This snail tried joining a mission as last, needs to rest 92 seconds']])
         >>> e.seconds
         92.0
+        >>> APIError.make([['Guild has 0 hardworkers. Guild needs at least 50 hard-workers to be eligible for rewards.']])
+        MissHardWordersAPIError([['Guild has 0 hardworkers. Guild needs at least 50 hard-workers to be eligible for rewards.']])
         """
         return '\n'.join('|'.join(y) for x in self.args for y in x)
 
@@ -28,6 +30,15 @@ class APIError(Exception):
                 return RaceEntryFailedAPIError(problems)
             if problems[0][0].startswith('This snail tried joining a mission as last, needs to rest '):
                 return NeedsToRestAPIError(problems)
+            if (
+                problems[0][0]
+                == 'Guild has 0 hardworkers. Guild needs at least 50 hard-workers to be eligible for rewards.'
+            ):
+                return MissHardWordersAPIError(problems)
+            if problems[0][0].startswith(
+                'You have joined this guild after the current cycle start, wait for next cycle'
+            ):
+                return JoinedGuildAfterCycleStartAPIError(problems)
         return cls(problems)
 
 
@@ -49,3 +60,11 @@ class NeedsToRestAPIError(APIError):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
         self.seconds = float(args[0][0][0][58:].split(' ', 1)[0])
+
+
+class MissHardWordersAPIError(APIError):
+    """Specific type for claim error when missing hard workers"""
+
+
+class JoinedGuildAfterCycleStartAPIError(APIError):
+    """Specific type for claim error when joined guild after cycle start"""
