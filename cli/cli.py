@@ -552,7 +552,7 @@ class CLI:
     @commands.argument(
         '--amount',
         type=float,
-        help='Amount of slime/avax to send',
+        help='Amount of slime/avax to send (use -999 to send ALL)',
     )
     @commands.command()
     def cmd_balance(self, data=None):
@@ -597,6 +597,18 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if target == self.owner:
             return
         bal = self.client.web3.get_balance()
+        if not bal:
+            print(f'Nothing to send')
+            return
+        if amount == -999:
+            amount = bal
+            r = self.client.web3.transfer(target, 0, estimate_only=True)
+            amount -= tx_fee(r)
+            try:
+                self.client.web3.transfer(target, amount, estimate_only=True)
+            except ValueError:
+                # adjust some margin
+                amount -= 8 / DECIMALS
         if bal < amount:
             print(f'Not enough to send ({bal})')
             return

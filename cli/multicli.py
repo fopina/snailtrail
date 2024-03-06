@@ -145,7 +145,7 @@ class MultiCLI:
             self.args.notify.stop_polling()
 
     def cmd_balance(self):
-        if self.args.claim or self.args.send is not None:
+        if self.args.claim or self.args.send is not None or self.args.send_avax is not None:
             return False
         totals = [0, 0, 0]
 
