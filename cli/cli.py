@@ -1885,11 +1885,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     cands = [cand for cand in race.candidates if cand[0] >= self.args.race_matches and cand[1] > 1]
                     if not cands:
                         continue
-                    candidate_list = ','.join(
-                        f"{cand[3].name_id} {cand[3].level_str} {cand[3].purity_str}{(cand[0] * '⭐')}{self.race_stats_text(cand[3], race)}"
-                        for cand in cands
-                    )
-                    msg = f"🏎️  Race {race} matched {candidate_list}"
+                    auto_join_result = None
                     if self.args.races_join:
                         main_cand = cands[0][3]
                         log_msg = f"🏎️ `#{main_cand.name_id}` joined race {race}"
@@ -1897,20 +1893,19 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         try:
                             r, tx = self.client.join_competitive_races(cands[0][3].id, race.id)
                             fee = tx_fee(tx)
+                            auto_join_result = tx['status'] == 1
                             if tx['status'] == 1:
-                                msg += '\nJOINED ✅'
                                 cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
                                 self.logger.info(
                                     f'{log_msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}'
                                 )
                             else:
-                                msg += '\nJoin REVERTED ❌'
                                 self.logger.error(
                                     f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}'
                                 )
                         except Exception:
+                            auto_join_result = -1
                             self.logger.exception('failed to join race')
-                            msg += '\nFAILED to join ❌'
                     else:
                         # TODO: reformat join message race
                         # * stats on different line
@@ -1929,8 +1924,17 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         ] + [
                             ('🏳️ Skip', 'joinrace'),
                         ]
-                    self.logger.info(msg)
-                    self._notify(msg, actions=join_actions)
+                    msg_args = dict(
+                        race=race,
+                        snails=cands,
+                        race_stats_text=self.race_stats_text,
+                        auto_join_result=auto_join_result,
+                    )
+                    self.logger.info(templates.render_race_matched(**msg_args, telegram=False))
+                    self._notify(
+                        templates.render_race_matched(**msg_args, telegram=True),
+                        actions=join_actions,
+                    )
                     self.database.notified_races.add(race['id'])
                     self.database.save()
 

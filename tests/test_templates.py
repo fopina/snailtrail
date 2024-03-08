@@ -9,15 +9,16 @@ from snail.web3client import web3_types
 class Test(TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self._snail = gtypes.Snail({'name': 'x', 'id': 1, 'stats': {'experience': {'level': 1}}})
-        self._race = gtypes.Race({'id': 2})
+        self._snail = gtypes.Snail({'name': 'x', 'id': 1, 'purity': 20, 'stats': {'experience': {'level': 1}}})
+        self._mission = gtypes.Race({'id': 2})
+        self._race = gtypes.Race({'id': 3, 'track': 'Monaco', 'distance': 27, 'race_type': 200})
         self._tx = web3_types.TxReceipt(
             {'gasUsed': 1000000, 'effectiveGasPrice': 250000000, 'transactionHash': web3_types.HexBytes('0xd34db33f')}
         )
 
     def test_cheap_soon_join(self):
         self.assertEqual(
-            templates.render_cheap_soon_join(self._snail, self._race),
+            templates.render_cheap_soon_join(self._snail, self._mission),
             'Joined cheap last spot without need - x (#1) on 2',
         )
 
@@ -43,6 +44,57 @@ class Test(TestCase):
         self.assertEqual(
             templates.render_mission_joined_reverted(self._snail, tx=self._tx),
             'Last spot transaction reverted - tx: 0xd34db33f - fee: 0.00025',
+        )
+
+    def _fake_race_stats(self, snail, race):
+        return '`0.0.0.0`'
+
+    def test_race_matched(self):
+        kwargs = dict(race=self._race, snails=[(1, 0, 0, self._snail)], race_stats_text=self._fake_race_stats)
+        self.assertEqual(
+            templates.render_race_matched(**kwargs),
+            '🏎️ Race Monaco (#3): 27m 200 🪙 matched x (#1) L1 P20⭐`0.0.0.0`',
+        )
+        self.assertEqual(
+            templates.render_race_matched(**kwargs, telegram=True),
+            '''🏎️ Race Monaco (#3): 27m 200 🪙 matched:
+x (#1) L1 P20⭐`0.0.0.0`''',
+        )
+
+    def test_race_matched_multiple(self):
+        kwargs = dict(
+            race=self._race,
+            snails=[(1, 0, 0, self._snail), (2, 0, 0, self._snail)],
+            race_stats_text=self._fake_race_stats,
+        )
+        self.assertEqual(
+            templates.render_race_matched(**kwargs),
+            '🏎️ Race Monaco (#3): 27m 200 🪙 matched x (#1) L1 P20⭐`0.0.0.0`, x (#1) L1 P20⭐⭐`0.0.0.0`',
+        )
+        self.assertEqual(
+            templates.render_race_matched(**kwargs, telegram=True),
+            '''🏎️ Race Monaco (#3): 27m 200 🪙 matched:
+x (#1) L1 P20⭐`0.0.0.0`
+x (#1) L1 P20⭐⭐`0.0.0.0`''',
+        )
+
+    def test_race_matched_multiple_auto_results(self):
+        kwargs = dict(
+            race=self._race,
+            snails=[(1, 0, 0, self._snail), (2, 0, 0, self._snail)],
+            race_stats_text=self._fake_race_stats,
+            auto_join_result=-1,
+        )
+        self.assertEqual(
+            templates.render_race_matched(**kwargs),
+            '🏎️ Race Monaco (#3): 27m 200 🪙 matched x (#1) L1 P20⭐`0.0.0.0`, x (#1) L1 P20⭐⭐`0.0.0.0`',
+        )
+        self.assertEqual(
+            templates.render_race_matched(**kwargs, telegram=True),
+            '''🏎️ Race Monaco (#3): 27m 200 🪙 matched:
+x (#1) L1 P20⭐`0.0.0.0`
+x (#1) L1 P20⭐⭐`0.0.0.0`
+FAILED to join ❌''',
         )
 
     def test_render_tournament_market_found(self):

@@ -343,7 +343,9 @@ class Notifier:
         except Exception as e:
             logger.exception('unexpected joinRace error')
             query.edit_message_text(
-                query.message.text_markdown + f'\n❌ Race FAILED to join: {e}', reply_markup=query.message.reply_markup, parse_mode='Markdown'
+                query.message.text_markdown + f'\n❌ Race FAILED to join: {e}',
+                reply_markup=query.message.reply_markup,
+                parse_mode='Markdown',
             )
 
     @staticmethod

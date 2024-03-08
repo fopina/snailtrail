@@ -1,0 +1,15 @@
+🏎️ Race {{ race }} matched{% if telegram %}:{% else %} {% endif -%}
+{% for cand in snails -%}
+{% if telegram %}
+{% else %}{% if not loop.first %}, {% endif %}{% endif -%}
+{{ cand[3].name_id }} {{ cand[3].level_str }} {{cand[3].purity_str}}{{(cand[0] * '⭐')}}{{race_stats_text(cand[3], race)}}
+{%- endfor -%}
+{%- if telegram and auto_join_result is not none -%}
+{%- if auto_join_result == -1 %}
+FAILED to join ❌
+{%- elif auto_join_result %}
+JOINED ✅
+{%- else %}
+Join REVERTED ❌
+{%- endif %}
+{%- endif -%}
