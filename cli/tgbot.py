@@ -67,10 +67,10 @@ class Notifier:
     clis: Dict[str, 'cli.CLI']
     _owner_chat_id = None
 
-    SNAIL_ID1_RE = re.compile(r'(Snail \#(\d+))')
-    SNAIL_ID2_RE = re.compile(r'(\(#(\d+)\))')
-    SNAIL_ID1_BACKTICKS_RE = re.compile(r'`(.*?)(Snail \#(\d+))(.*?)`')
-    SNAIL_ID2_BACKTICKS_RE = re.compile(r'`(.*?)(\(#(\d+)\))(.*?)`')
+    SNAIL_ID1_RE = re.compile(r'(Snail \#(\d{1,5}))')
+    SNAIL_ID2_RE = re.compile(r'(\(#(\d{1,5})\))')
+    SNAIL_ID1_BACKTICKS_RE = re.compile(r'`(.*?)(Snail \#(\d{1,5}))(.*?)`')
+    SNAIL_ID2_BACKTICKS_RE = re.compile(r'`(.*?)(\(#(\d{1,5})\))(.*?)`')
 
     def __init__(self, token, chat_id, owner_chat_id=None):
         self.__token = token
@@ -334,16 +334,16 @@ class Notifier:
             msg = f"🏎️ `#{snail_id}` joined race {race_id}"
             fee = utils.tx_fee(tx)
             if tx['status'] == 1:
-                query.edit_message_text(query.message.text + '\n✅  Race joined')
+                query.edit_message_text(query.message.text_markdown + '\n✅  Race joined', parse_mode='Markdown')
                 cheap_or_not = 'cheap' if r['payload']['size'] == 0 else 'normal'
                 logger.info(f'{msg} ({cheap_or_not} -  tx: {tx.transactionHash.hex()} - fee: {fee}')
             else:
-                query.edit_message_text(query.message.text + '\n❌  Race join REVERTED')
+                query.edit_message_text(query.message.text_markdown + '\n❌  Race join REVERTED', parse_mode='Markdown')
                 logger.error(f'Race join transaction reverted - tx: {tx.transactionHash.hex()} - fee: {fee}')
         except Exception as e:
             logger.exception('unexpected joinRace error')
             query.edit_message_text(
-                query.message.text + f'\n❌ Race FAILED to join: {e}', reply_markup=query.message.reply_markup
+                query.message.text_markdown + f'\n❌ Race FAILED to join: {e}', reply_markup=query.message.reply_markup, parse_mode='Markdown'
             )
 
     @staticmethod

@@ -721,6 +721,16 @@ Swapped 1.50 SLIME for 0.01 AVAX ✅''',
             reply_markup=None,
         )
 
+        send_mock.reset_mock()
+        self.bot.notify('Race Shanghai (#798739): 27m for Snail #18238 L17,Snail #11829 L25 ')
+        send_mock.assert_called_once_with(
+            999999999,
+            'Race Shanghai (#798739): 27m for [Snail #18238](https://www.snailtrail.art/snails/18238/about) L17,[Snail #11829](https://www.snailtrail.art/snails/11829/about) L25 ',
+            parse_mode='Markdown',
+            disable_notification=False,
+            reply_markup=None,
+        )
+
     def test_notify_snail_link_backticks(self):
         """test to cover snail IDs inside `` (markdown breaks links)"""
         send_mock = mock.MagicMock()

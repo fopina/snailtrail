@@ -28,6 +28,13 @@ def render_mission_joined(
     return template.render(snail=snail, tx=tx, cheap=cheap, telegram=telegram)
 
 
+def race_matched(
+    snail: gql_types.Snail, tx: web3_types.TxReceipt = None, cheap: bool = False, telegram: bool = False
+):
+    template = env.get_template("race_matched.html.j2")
+    return template.render(snail=snail, tx=tx, cheap=cheap, telegram=telegram)
+
+
 def render_mission_joined_reverted(snail: gql_types.Snail, tx: web3_types.TxReceipt):
     template = env.get_template("mission_joined_reverted.html.j2")
     return template.render(snail=snail, tx=tx)
