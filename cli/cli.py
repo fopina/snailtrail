@@ -1443,6 +1443,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         action='store_true',
         help='Only estimate transaction costs',
     )
+    @commands.argument(
+        '--show-genome',
+        action='store_true',
+        help='Also show genome when printing out snail info',
+    )
     @commands.command()
     def cmd_snails(self):
         """
@@ -1502,7 +1507,9 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     f'{snail} - {snail.stats["elo"]} - WIN: {snail.tmp_stat_wins:.2f} / TOP3: {snail.tmp_stat_top3:.2f} / TOTAL: {snail.tmp_total_races}'
                 )
             else:
-                print(f"{snail} {self._breed_status_str(snail.breed_status)} 🎫 {snail.stats['mission_tickets']}")
+                print(
+                    f"{snail} {snail.genome_str + ' ' if self.args.show_genome else ''}{self._breed_status_str(snail.breed_status)} 🎫 {snail.stats['mission_tickets']}"
+                )
         print(f'==> {len(it)} snails')
 
     def cmd_snails_transfer(self):
