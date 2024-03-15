@@ -294,8 +294,12 @@ class CLI:
         athletes = len(race.athletes)
         candidates = self.find_candidates(race, queueable, include_zero=True)
         for score, adapts, _, snail in candidates:
+            if snail.slime_boost > 1 and self.args.sb_mission_matches:
+                mission_matches = self.args.sb_mission_matches
+            else:
+                mission_matches = self.args.mission_matches
             # mission-matches only applies to lv15+
-            score_match = adapts < 3 or self.args.mission_matches <= score
+            score_match = adapts < 3 or mission_matches <= score
             if athletes == 9:
                 # don't queue non-boosted!
                 # ignore required matches if "--no-adapt" (both for boosted and for need-tickets)
@@ -331,6 +335,8 @@ class CLI:
             not_cheap = boosted.copy()
         else:
             not_cheap = set()
+        if self.args.cheap and self.args.sb_not_cheap:
+            not_cheap.update({snail.id for snail in queueable if snail.slime_boost > 1})
 
         # add snails with few tickets to "boosted" to re-use logic
         boosted.update({s.id for s in queueable if s.stats['mission_tickets'] < self.args.minimum_tickets})
@@ -800,6 +806,11 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         help='For snails in --boost, --cheap is ignored (if enabled)',
     )
     @commands.argument(
+        '--sb-not-cheap',
+        action='store_true',
+        help='For snails with slime boost, --cheap is ignored (if enabled)',
+    )
+    @commands.argument(
         '--minimum-tickets',
         type=int,
         default=0,
@@ -848,6 +859,12 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         type=int,
         default=1,
         help='Minimum adaptation matches to join mission - only applies to lv15+ snails',
+    )
+    @commands.argument(
+        '--sb-mission-matches',
+        type=int,
+        default=None,
+        help='Minimum adaptation matches to join mission when using a slime boosted snail - if not set, it will be the same as --mission-matches - only applies to lv15+ snails',
     )
     @commands.argument('--market', action='store_true', help='Monitor marketplace stats')
     @commands.argument('-c', '--coefficent', action='store_true', help='Monitor incubation coefficent drops')

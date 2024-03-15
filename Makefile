@@ -1,6 +1,9 @@
 test:
 	pytest --doctest-modules --cov
 
+doctest:
+	pytest --doctest-modules cli snail
+
 all: test pub deploy
 
 all-rent: all deploy-rent

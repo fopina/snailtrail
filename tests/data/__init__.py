@@ -155,6 +155,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Wind', 'Slide', 'Desert'],
             'name': 'Snail #8922',
             'queueable_at': '2021-08-09 23:32:27.108936',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -104,
                 'experience': {'level': 8, 'xp': 1770, 'remaining': 230},
@@ -167,6 +168,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Mountain', 'Cold'],
             'name': 'Snail #9104',
             'queueable_at': '2021-08-09 23:45:10.742612',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -100,
                 'experience': {'level': 5, 'xp': 1220, 'remaining': 30},
@@ -179,6 +181,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Cold', 'Beach'],
             'name': 'Powerpuff',
             'queueable_at': '2021-08-10 00:03:36.358478',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -100,
                 'experience': {'level': 11, 'xp': 2950, 'remaining': 100},
@@ -191,6 +194,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Cold', 'Roll'],
             'name': 'Snail #8416',
             'queueable_at': '2021-08-10 00:16:06.700280',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -105,
                 'experience': {'level': 10, 'xp': 2290, 'remaining': 310},
@@ -202,6 +206,7 @@ GQL_MISSION_SNAILS = {
             'id': 8667,
             'adaptations': ['Cold', 'Dodge'],
             'name': 'Snail #8667',
+            'slime_boost': 1,
             'queueable_at': '2021-08-10 00:47:51.918061',
             'stats': {
                 'mission_tickets': -98,
@@ -213,6 +218,7 @@ GQL_MISSION_SNAILS = {
         {
             'id': 8851,
             'adaptations': ['Jump', 'Glacier'],
+            'slime_boost': 1,
             'name': 'SK006',
             'queueable_at': '2021-08-10 01:13:04.036512',
             'stats': {
@@ -227,6 +233,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Mountain', 'Slide'],
             'name': 'Snail #8813',
             'queueable_at': '2021-08-10 01:22:44.489910',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -100,
                 'experience': {'level': 8, 'xp': 1895, 'remaining': 105},
@@ -238,6 +245,7 @@ GQL_MISSION_SNAILS = {
             'id': 8860,
             'adaptations': ['Desert', 'Wind'],
             'name': 'Snail #8860',
+            'slime_boost': 1,
             'queueable_at': '2021-08-10 01:39:50.960050',
             'stats': {
                 'mission_tickets': -86,
@@ -250,6 +258,7 @@ GQL_MISSION_SNAILS = {
             'id': 8663,
             'adaptations': ['Roll', 'Snow'],
             'name': 'SK004',
+            'slime_boost': 1,
             'queueable_at': '2021-08-10 02:07:32.175944',
             'stats': {
                 'mission_tickets': -102,
@@ -263,6 +272,7 @@ GQL_MISSION_SNAILS = {
             'adaptations': ['Jump', 'Space'],
             'name': 'Snail #8392',
             'queueable_at': '2021-08-10 03:23:56.308578',
+            'slime_boost': 1,
             'stats': {
                 'mission_tickets': -105,
                 'experience': {'level': 10, 'xp': 2375, 'remaining': 225},

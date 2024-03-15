@@ -13,7 +13,7 @@ from snail import gqlclient, proxy
 
 # yes, these are mine, feel free to send avax/slime/eth
 TEST_ADDRESS = '0xd991975e1C72E43C5702ced3230dA484442F195a'
-TEST_SNAIL = 8813
+TEST_SNAIL = 17796
 TEST_ADDRESS2 = '0x9ED8Fbd1af94d34e99119Bee2d64b7b00d637E76'
 
 

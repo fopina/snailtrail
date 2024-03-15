@@ -438,6 +438,7 @@ class Client(requests.Session):
                         adaptations
                         purity
                         name
+                        slime_boost
                         queueable_at
                         stats {
                         mission_tickets
