@@ -295,13 +295,13 @@ class CLI:
         athletes = len(race.athletes)
         candidates = self.find_candidates(race, queueable, include_zero=True)
         for candidate in candidates:
-            score, adapts, snail = candidate.score, len(candidate.snail.adaptations), candidate.snail
+            score, snail = candidate.score, candidate.snail
             if snail.slime_boost > 1 and self.args.sb_mission_matches:
                 mission_matches = self.args.sb_mission_matches
             else:
                 mission_matches = self.args.mission_matches
             # mission-matches only applies to lv15+
-            score_match = adapts < 3 or mission_matches <= score
+            score_match = snail.level < 15 or mission_matches <= score
             if athletes == 9:
                 # don't queue non-boosted!
                 # ignore required matches if "--no-adapt" (both for boosted and for need-tickets)
