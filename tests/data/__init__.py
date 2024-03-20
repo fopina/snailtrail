@@ -158,7 +158,7 @@ GQL_MISSION_SNAILS = {
             'slime_boost': 1,
             'stats': {
                 'mission_tickets': -104,
-                'experience': {'level': 8, 'xp': 1770, 'remaining': 230},
+                'experience': {'level': 15, 'xp': 1770, 'remaining': 230},
                 '__typename': 'DashboardStats',
             },
             '__typename': 'Snail',

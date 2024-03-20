@@ -220,13 +220,14 @@ class TestBot(TestCase):
         self.assertEqual(
             self.cli.client.gql.join_mission_races.call_args_list,
             [
-                mock.call(8922, 169396, self._wallet, 'signed'),
+                mock.call(9104, 169396, self._wallet, 'signed'),
                 mock.call(8392, 169399, self._wallet, 'signed'),
                 mock.call(8416, 169400, self._wallet, 'signed'),
                 mock.call(8267, 169401, self._wallet, 'signed'),
                 mock.call(8663, 169402, self._wallet, 'signed'),
-                mock.call(9104, 169403, self._wallet, 'signed'),
-                mock.call(8667, 169405, self._wallet, 'signed'),
+                mock.call(8851, 169403, self._wallet, 'signed'),
+                mock.call(8922, 169405, self._wallet, 'signed'),
+                mock.call(8667, 169406, self._wallet, 'signed'),
             ],
         )
         self.cli.client.web3.join_daily_mission.assert_not_called()

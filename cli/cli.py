@@ -291,9 +291,11 @@ class CLI:
     def _notify(self, *args, **kwargs):
         return self.notifier.notify(*args, from_wallet=self.masked_wallet, **kwargs)
 
-    def _join_missions_race_snail(self, race, queueable, boosted):
+    def _join_missions_race_snail(self, race, queueable: list[Snail], boosted):
         athletes = len(race.athletes)
-        candidates = self.find_candidates(race, queueable, include_zero=True)
+        candidates = self.find_candidates(
+            race, queueable, include_zero=True, extra_sorting={snail.id: snail.slime_boost for snail in queueable}
+        )
         for candidate in candidates:
             score, snail = candidate.score, candidate.snail
             if snail.slime_boost > 1 and self.args.sb_mission_matches:
