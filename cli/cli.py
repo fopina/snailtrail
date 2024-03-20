@@ -1128,7 +1128,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                                     snail_data[snail.id][0],
                                     snail.name_id,
                                     extra_sorting[snail.id],
-                                    canc,
+                                    m2,
                                     m1,
                                     snail.purity,
                                     snail.klass,
