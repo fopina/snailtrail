@@ -623,7 +623,7 @@ AVAX: 1.000 / SNAILS: 1
 
         candidates = self.cli.find_candidates(race, snails)
         self.assertEqual(
-            [(c1, c2, c3, c4.id) for c1, c2, c3, c4 in candidates],
+            [(c.score, len(c.snail.adaptations), c.snail.purity, c.snail.id) for c in candidates],
             [
                 (3, 3, 13, 1),
                 (2, 3, 12, 3),
@@ -635,7 +635,7 @@ AVAX: 1.000 / SNAILS: 1
 
         candidates = self.cli.find_candidates(race, snails, include_zero=True)
         self.assertEqual(
-            [(c1, c2, c3, c4.id) for c1, c2, c3, c4 in candidates],
+            [(c.score, len(c.snail.adaptations), c.snail.purity, c.snail.id) for c in candidates],
             [
                 (3, 3, 13, 1),
                 (2, 3, 12, 3),

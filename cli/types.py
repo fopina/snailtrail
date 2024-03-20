@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from web3 import Account
 
+from snail.gqlclient.types import Snail
+
 
 @dataclass
 class RaceJoin:
@@ -31,3 +33,9 @@ class Wallet:
 
     def __repr__(self) -> str:
         return str(self)
+
+
+@dataclass
+class RaceCandidate:
+    score: int
+    snail: Snail

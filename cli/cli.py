@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import cached_property
 from pathlib import Path
@@ -19,7 +20,7 @@ from snail.web3client import BOTTOM_BASE_FEE, DECIMALS
 
 from . import commands, templates, tgbot
 from .database import MissionLoop, WalletDB
-from .types import RaceJoin, Wallet
+from .types import RaceCandidate, RaceJoin, Wallet
 from .utils import CachedSnailHistory, tx_fee, tznow
 
 GENDER_COLORS = {
@@ -293,7 +294,8 @@ class CLI:
     def _join_missions_race_snail(self, race, queueable, boosted):
         athletes = len(race.athletes)
         candidates = self.find_candidates(race, queueable, include_zero=True)
-        for score, adapts, _, snail in candidates:
+        for candidate in candidates:
+            score, adapts, snail = candidate.score, len(candidate.snail.adaptations), candidate.snail
             if snail.slime_boost > 1 and self.args.sb_mission_matches:
                 mission_matches = self.args.sb_mission_matches
             else:
@@ -989,7 +991,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             snails = list(self.client.iterate_all_snails(filters={'owner': self.owner}))
             candidates = self.find_candidates(Race(week), snails)
             for candidate in candidates:
-                snail = candidate[3]
+                snail = candidate.snail
                 if snail.family not in per_family:
                     per_family[snail.family] = []
                 per_family[snail.family].append(candidate)
@@ -997,8 +999,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
             for family, snails in per_family.items():
                 print(f'{Fore.BLUE}{family}{Fore.RESET}')
                 for candidate in snails:
-                    score = candidate[0]
-                    snail = candidate[3]
+                    score = candidate.score
+                    snail = candidate.snail
                     print(f'{score}: {snail.name} {snail.adaptations} {snail.purity_str} {snail.level_str}')
         return True, per_family, data
 
@@ -1112,7 +1114,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                 extra_sorting[snail.id] = drinks[entry['guild']['id']].get(day['family'], 0)
                 snails.append(snail)
             candidates = self.find_candidates(race, snails, include_zero=True, extra_sorting=extra_sorting)
-            for m1, m2, _, snail in candidates:
+            for candidate in candidates:
+                m1, m2, snail = candidate.score, len(candidate.snail.adaptations), candidate.snail
                 if self.args.csv:
                     print(
                         ','.join(
@@ -1125,7 +1128,7 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                                     snail_data[snail.id][0],
                                     snail.name_id,
                                     extra_sorting[snail.id],
-                                    m2,
+                                    canc,
                                     m1,
                                     snail.purity,
                                     snail.klass,
@@ -1857,18 +1860,24 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
         if total_fee:
             print(f'\nTotal fee: {total_fee} AVAX')
 
-    def find_candidates_sorting(self, candidates, extra_sorting=None):
+    def find_candidates_sorting(self, candidates: list[RaceCandidate], extra_sorting=None):
         candidates.sort(
-            key=lambda x: (x[0], extra_sorting[x[3].id] if extra_sorting else None, x[1], x[2]), reverse=True
+            key=lambda x: (
+                x.score,
+                extra_sorting[x.snail.id] if extra_sorting else None,
+                len(x.snail.adaptations),
+                x.snail.purity,
+            ),
+            reverse=True,
         )
 
-    def find_candidates(self, race, snails, include_zero=False, **kwargs):
+    def find_candidates(self, race, snails, include_zero=False, **kwargs) -> list[RaceCandidate]:
         candidates = []
         conditions = set(race.conditions)
         for s in snails:
             score = len(conditions.intersection(s.adaptations))
             if score or include_zero:
-                candidates.append((score, len(s.adaptations), s.purity, s))
+                candidates.append(RaceCandidate(score, s))
         self.find_candidates_sorting(candidates, **kwargs)
         return candidates
 
@@ -1906,16 +1915,20 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                     continue
                 if race.candidates:
                     # report on just required minimum matches, but use only snails with 2 adaptations (stronger)
-                    cands = [cand for cand in race.candidates if cand[0] >= self.args.race_matches and cand[1] > 1]
+                    cands: list[RaceCandidate] = [
+                        cand
+                        for cand in race.candidates
+                        if cand.score >= self.args.race_matches and cand.snail.level >= 5
+                    ]
                     if not cands:
                         continue
                     auto_join_result = None
                     if self.args.races_join:
-                        main_cand = cands[0][3]
+                        main_cand = cands[0].snail
                         log_msg = f"🏎️ `#{main_cand.name_id}` joined race {race}"
                         join_actions = None
                         try:
-                            r, tx = self.client.join_competitive_races(cands[0][3].id, race.id)
+                            r, tx = self.client.join_competitive_races(cands[0].snail.id, race.id)
                             fee = tx_fee(tx)
                             auto_join_result = tx['status'] == 1
                             if tx['status'] == 1:
@@ -1941,8 +1954,8 @@ AVAX: {r['AVAX']:.3f} / SNAILS: {r['SNAILS']}'''
                         # (if this code is ever used again - competitives suck!)
                         join_actions = [
                             (
-                                f'✅ {cand[3].name_id} {cand[0] * "⭐"}',
-                                f'joinrace {self.owner} {cand[3].id} {race.id}',
+                                f'✅ {cand.snail.name_id} {cand.score * "⭐"}',
+                                f'joinrace {self.owner} {cand.snail.id} {race.id}',
                             )
                             for cand in cands
                         ] + [
