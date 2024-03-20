@@ -1109,11 +1109,14 @@ Stats:
         owners = self.main_cli.client.snail_owners(*transfer_snails)
         done = set()
         r = True
-        for _, v in owners.items():
+        for sns, v in owners.items():
             if v in done:
                 continue
             done.add(v)
             cli = self._cli_by_address(v)
+            if cli is None:
+                logger.error('Wallet %s not found - owns %s', v, sns)
+                continue
             cli._header()
             r = cli.cmd_snails_transfer()
 
