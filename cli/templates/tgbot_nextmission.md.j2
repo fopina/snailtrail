@@ -8,7 +8,11 @@
     {%- if mission_loop.pending -%}
 🫥 {{ mission_loop.pending}}
     {%- else -%}
-⏲️ {{ ((mission_loop.next_at - tznow) | string).split(".")[0] }}
+⏲️ {% if mission_loop.next_at -%}
+{{ ((mission_loop.next_at - tznow) | string).split(".")[0] }}
+{%- else -%}
+???
+{%- endif %}
     {%- endif -%}
 ({{ mission_loop.joined_normal }}/{{ mission_loop.joined_last }}/{{ mission_loop.resting}})
 {% elif mission_loop.status == statuses.NO_SNAILS -%}
