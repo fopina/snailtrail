@@ -1,3 +1,5 @@
+> I stopped playing long time ago as the game sucks now. Archived. Enjoy the bot if you can.
+
 `snail/proxy.py` handles mitmproxy startup/shutdown
 `snail/client.py` implements GraphQL operations
 
